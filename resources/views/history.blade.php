@@ -1,0 +1,188 @@
+@extends('layouts.app')
+
+@section('content')
+<!-- App hero header starts -->
+<div class="app-hero-header d-flex align-items-center">
+    <!-- Breadcrumb starts -->
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <i class="ri-home-8-line lh-1 pe-3 me-3 border-end"></i>
+            <a href="{{ url('admin/dashboard') }}">Home</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ route('pasien.index') }}">Pasien</a>
+        </li>
+        <li class="breadcrumb-item text-primary" aria-current="page">
+            History Pasien - {{ $latestPatient->rm_pasien ?? '' }}
+        </li>
+    </ol>
+    <!-- Breadcrumb ends -->
+</div>
+<!-- App Hero header ends -->
+
+<!-- App body starts -->
+<div class="app-body">
+    {{-- Alert pesan berhasil/gagal --}}
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+    {{-- Tampilkan error validasi --}}
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    <!-- Header info pasien -->
+    <div class="row gx-3 mb-4">
+        <div class="col-sm-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4 class="mb-2">History Pasien</h4>
+                            <p class="mb-1"><strong>RM Pasien:</strong> {{ $latestPatient->rm_pasien ?? '-' }}</p>
+                            <p class="mb-1"><strong>Nama Pasien:</strong> {{ $latestPatient->nama_pasien ?? '-' }}</p>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <p class="mb-1"><strong>Total Kunjungan:</strong> {{ $histories->total() }}</p>
+                            <p class="mb-1"><strong>Kunjungan Terakhir:</strong>
+                                {{ $latestPatient ? \Carbon\Carbon::parse($latestPatient->created_at)->format('d/m/Y') : '-' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabel history -->
+    <div class="row gx-3">
+        <div class="col-sm-12">
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Riwayat Pemeriksaan</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="{{ route('pasien.create') }}" class="btn btn-sm btn-primary">+ Tambah Pasien Baru</a>
+                        <a href="{{ route('pasien.index') }}" class="btn btn-sm btn-secondary">Kembali ke Daftar Pasien</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Table starts -->
+                    <div class="table-outer">
+                        <div class="table-responsive">
+                            <table class="table m-0 align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>No Lab</th>
+                                        <th>Tanggal</th>
+                                        <th>Nama Pasien</th>
+                                        <th>Hematology</th>
+                                        <th>Kimia</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($histories as $patient)
+                                    <tr>
+                                        <td>{{ $patient->no_lab ?? '-'}}</td>
+                                        <td>{{ $patient->updated_at ? \Carbon\Carbon::parse($patient->created_at)->format('d/m/Y') : '-' }}</td>
+                                        <td>{{ $patient->nama_pasien ?? '-'}}</td>
+                                        <td>
+                                            @if($patient->hematology->isNotEmpty())
+                                            <span class="badge bg-success">✅ Selesai</span>
+                                            @else
+                                            <span class="badge bg-danger">❌ Belum</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($patient->kimia->isNotEmpty())
+                                            <span class="badge bg-success">✅ Selesai</span>
+                                            @else
+                                            <span class="badge bg-danger">❌ Belum</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @php
+                                            $totalTests = 0;
+                                            $completedTests = 0;
+
+                                            if($patient->hematology->isNotEmpty()) {
+                                            $totalTests++;
+                                            $completedTests++;
+                                            }
+
+                                            if($patient->kimia->isNotEmpty()) {
+                                            $totalTests++;
+                                            $completedTests++;
+                                            }
+
+                                            if($totalTests == 0) {
+                                            $status = 'Menunggu';
+                                            $badgeClass = 'bg-warning';
+                                            } elseif ($completedTests == $totalTests) {
+                                            $status = 'Selesai';
+                                            $badgeClass = 'bg-success';
+                                            } else {
+                                            $status = 'Diproses';
+                                            $badgeClass = 'bg-info';
+                                            }
+                                            @endphp
+                                            <span class="badge {{ $badgeClass }}">{{ $status }}</span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{{ route('pasien.print', $patient->no_lab) }}" target="_blank" class="btn btn-sm btn-secondary" title="Print">
+                                                    <i class="ri-printer-line"></i>
+                                                </a>
+                                                <a href="{{ route('pasien.show', $patient->no_lab) }}" class="btn btn-sm btn-primary" title="View">
+                                                    <i class="ri-eye-line"></i>
+                                                </a>
+
+                                                <form action="{{ route('pasien.destroy', $patient->no_lab) }}" method="POST" class="d-inline">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete" onclick="return confirm('Are you sure you want to delete this patient record?')">
+                                                        <i class="ri-delete-bin-line"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center">Tidak ada data history untuk pasien ini.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+
+                            <!-- Pagination -->
+                            <div class="d-flex justify-content-center mt-3">
+                                {{ $histories->links('pagination::bootstrap-5') }}
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Table ends -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection
