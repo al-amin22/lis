@@ -20,10 +20,10 @@ class PemeriksaanHematology extends Model
         'satuan_hasil_pengujian',
         'rujukan',
         'keterangan',
-        'kode_pemeriksaan',
         'status_pemeriksaan',
         'id_jenis_pemeriksaan',
         'catatan',
+        'id_data_pemeriksaan',
     ];
 
     // Relasi ke pasien
@@ -40,6 +40,6 @@ class PemeriksaanHematology extends Model
 
     public function dataPemeriksaan()
     {
-        return $this->belongsTo(DataPemeriksaan::class, 'kode_pemeriksaan', 'kode_pemeriksaan');
+        return $this->belongsTo(DataPemeriksaan::class, 'id_data_pemeriksaan', 'id_data_pemeriksaan');
     }
 }

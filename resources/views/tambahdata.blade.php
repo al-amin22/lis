@@ -70,210 +70,136 @@
                 <!-- Form start -->
                 <form action="{{ route('pasien.store') }}" method="POST">
                     @csrf
+
                     <!-- Row starts -->
                     <div class="row gx-3">
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
                                 <label class="form-label" for="a1">RM Pasien</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="a1"
-                                    name="rm_pasien"
-                                    value="{{ $nextRm}}"
-                                    placeholder="Masukkan RM Pasien jika ada" />
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="a2">No. Lab</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="a2"
-                                    name="no_lab"
-                                    value="{{ old('no_lab', $nextLabNumber) }}"
-                                    placeholder="Masukkan No. Lab Jika Ada" />
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="a2">Nota</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="a2"
-                                    name="nota"
-                                    value="{{ old('nota', $nextNota) }}"
-                                    placeholder="Masukkan No. Nota Jika Ada" />
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="a11">Tanggal Registrasi</label>
-                                <input
-                                    type="date"
-                                    class="form-control"
-                                    id="a11"
-                                    name="tgl_pendaftaran"
-                                    value="{{ old('tgl_pendaftaran', date('Y-m-d')) }}"
-                                    placeholder="Pilih Tanggal Registrasi" />
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="a2">Nama Pasien</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="a2"
-                                    name="nama_pasien"
-                                    placeholder="Masukkan Nama Lengkap" />
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="a12">Tgl Lahir</label>
-                                <input
-                                    type="date"
-                                    class="form-control"
-                                    id="a12"
-                                    name="tgl_lahir"
-                                    placeholder="Pilih Tanggal Lahir"
-                                    max="{{ date('Y-m-d') }}" />
+                                <input type="text" class="form-control" id="a1" name="rm_pasien" placeholder="Masukkan RM Pasien jika ada">
                             </div>
                         </div>
 
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a13">Umur</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="a13"
-                                    name="umur"
-                                    placeholder="Umur akan otomatis terisi"
-                                    readonly />
+                                <label class="form-label" for="a2">No. Registrasi Lab</label>
+                                <input type="text" class="form-control" id="a2" name="no_lab"
+                                    value="{{ old('no_lab', $nextLabNumber) }}"
+                                    placeholder="Masukkan No. Registrasi Lab Jika Ada">
                             </div>
                         </div>
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a3">jenis Kelamin</label>
-                                <select class="form-select" id="a3" name="jenis_kelamin">
+                                <label class="form-label">Nama Pasien</label>
+                                <input type="text" class="form-control" name="nama_pasien"
+                                    placeholder="Masukkan Nama Lengkap">
+                            </div>
+                        </div>
+
+                        <div class="col-xxl-3 col-lg-4 col-sm-6">
+                            <div class="mb-3">
+                                <label class="form-label">Tgl Lahir</label>
+                                <input type="date" class="form-control" name="tgl_lahir"
+                                    max="{{ date('Y-m-d') }}">
+                            </div>
+                        </div>
+
+                        <div class="col-xxl-3 col-lg-4 col-sm-6">
+                            <div class="mb-3">
+                                <label class="form-label">Jenis Kelamin</label>
+                                <select class="form-select" name="jenis_kelamin">
                                     <option value="">Select</option>
-                                    <option value="Laki-Laki">Laki-Laki</option>
-                                    <option value="Perempuan">Perempuan</option>
+                                    <option value="PRIA">Laki-Laki</option>
+                                    <option value="WANITA">Perempuan</option>
                                 </select>
                             </div>
                         </div>
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a13">No. Telepon</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="a13"
-                                    name="no_telepon"
-                                    placeholder="Masukkan No. Telepon" />
+                                <label class="form-label">No. Telepon</label>
+                                <input type="text" class="form-control" name="no_telepon"
+                                    placeholder="Masukkan No. Telepon">
                             </div>
                         </div>
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a14">Alamat</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="a14"
-                                    name="alamat"
-                                    placeholder="Masukkan Alamat Lengkap" />
+                                <label class="form-label">Alamat</label>
+                                <input type="text" class="form-control" name="alamat"
+                                    placeholder="Masukkan Alamat Lengkap">
                             </div>
                         </div>
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a15">Ruangan</label>
-                                <select name="id_ruangan" class="form-select">
-                                    <option value="">Pilih Ruangan</option>
-                                    @foreach($ruangan as $ruangan)
-                                    <option value="{{ $ruangan->id_ruangan }}">{{ $ruangan->nama_ruangan }}</option>
+                                <label class="form-label">Penjamin</label>
+                                <select name="nota" class="form-select">
+                                    <option value="">Pilih Penjamin</option>
+                                    @foreach($penjamin as $item)
+                                        <option value="{{ $item->nama_penjamin }}">
+                                            {{ $item->nama_penjamin }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a16">Kelas</label>
+                                <label class="form-label">Kelas</label>
                                 <select name="id_kelas" class="form-select">
                                     <option value="">Pilih Kelas</option>
-                                    @foreach($kelas as $kelas)
-                                    <option value="{{ $kelas->id_kelas }}">{{ $kelas->nama_kelas }}</option>
+                                    @foreach($kelas as $item)
+                                        <option value="{{ $item->id_kelas }}">
+                                            {{ $item->nama_kelas }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a17">Keterangan Klinik</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="a17"
-                                    name="ket_klinik"
-                                    placeholder="Masukkan Keterangan Klinik" />
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label " for="a19">Dokter ACC</label>
-                                <select name="id_dokter" class="form-select">
-                                    <option value="">Pilih Dokter ACC</option>
-                                    @foreach($dokter as $dokter)
-                                    <option value="{{ $dokter->id_dokter }}">{{ $dokter->nama_dokter }}</option>
+                                <label class="form-label">Ruangan</label>
+                                <select name="ket_klinik" class="form-select">
+                                    <option value="">Pilih Ruangan</option>
+                                    @foreach($ruangan as $item)
+                                        <option value="{{ $item->nama_ruangan }}">
+                                            {{ $item->nama_ruangan }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a20">Penguji</label>
+                                <label class="form-label">Validator</label>
                                 <select name="id_pemeriksa" class="form-select">
-                                    <option value="">Pilih Penguji</option>
-                                    @foreach($pemeriksa as $pemeriksa)
-                                    <option value="{{ $pemeriksa->id_pemeriksa }}">{{ $pemeriksa->nama_pemeriksa }}</option>
+                                    <option value="">Pilih Validator</option>
+                                    @foreach($pemeriksa as $item)
+                                        <option value="{{ $item->id_pemeriksa }}">
+                                            {{ $item->nama_pemeriksa }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
                         </div>
+
                         <div class="col-xxl-3 col-lg-4 col-sm-6">
                             <div class="mb-3">
-                                <label class="form-label" for="a21">Tanggal Ambil Sampel</label>
-                                <input
-                                    type="date"
-                                    class="form-control"
-                                    id="a21"
-                                    name="tgl_ambil_sample"
-                                    placeholder="Pilih Tanggal Ambil Sampel" />
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="catatan">Catatan</label>
-                                <textarea
-                                    class="form-control"
-                                    id="catatan"
-                                    name="catatan"
-                                    rows="2"
-                                    placeholder="Masukkan catatan pasien"></textarea>
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label" for="pengirim">Pengirim</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="pengirim"
-                                    name="pengirim"
-                                    placeholder="Masukkan Nama Pengirim" />
+                                <label class="form-label">Pengirim</label>
+                                <select name="pengirim" class="form-select">
+                                    <option value="">Pilih Pengirim</option>
+                                    @foreach($dokter as $item)
+                                        <option value="{{ $item->nama_dokter }}">
+                                            {{ $item->nama_dokter }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                         </div>
 
@@ -287,9 +213,11 @@
                                 </button>
                             </div>
                         </div>
+
                     </div>
                     <!-- Row ends -->
                 </form>
+
                 <!-- Form end -->
             </div>
         </div>

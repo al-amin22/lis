@@ -40,6 +40,8 @@ class Pasien extends Model
         'id_pemeriksa',
         'tgl_ambil_sample',
         'acc',
+        'nomor_registrasi',
+        'waktu_validasi',
     ];
 
     protected $casts = [
@@ -82,5 +84,10 @@ class Pasien extends Model
       public function ujiPemeriksaan()
     {
         return $this->hasMany(UjiPemeriksaan::class, 'no_lab', 'no_lab');
+    }
+
+    public function penjamin()
+    {
+        return $this->belongsTo(Penjamin::class, 'nama_penjamin', 'nota');
     }
 }

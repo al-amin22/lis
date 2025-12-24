@@ -49,7 +49,7 @@
                                 </div>
                                 <div class="d-flex flex-column">
                                     <h2 class="m-0 lh-1">{{ $statusOrders ?? 0}}</h2>
-                                    <p class="m-0">Order</p>
+                                    <p class="m-0">Total Pasien</p>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center">
@@ -58,7 +58,7 @@
                                 </div>
                                 <div class="d-flex flex-column">
                                     <h2 class="m-0 lh-1">{{ $statusSelesai ?? 0}}</h2>
-                                    <p class="m-0">selesai</p>
+                                    <p class="m-0">Selesai</p>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center">
@@ -108,71 +108,133 @@
         <div class="col-sm-12">
             <div class="card mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0">Pemeriksaan Hari Ini</h5>
+                    <h5 class="card-title mb-0">Pemeriksaan
+                        @if(request('search_date'))
+                            Tanggal: {{ \Carbon\Carbon::parse(request('search_date'))->format('d/m/Y') }}
+                        @else
+                            Hari Ini
+                        @endif
+                    </h5>
                     <div class="d-flex align-items-center gap-2">
                         <button id="ambilOrder" class="btn btn-sm btn-primary">Cek Order</button>
                         <a href="{{ route('pasien.create') }}" class="btn btn-sm btn-primary">+ Tambah Pasien</a>
                         <a href="{{ route('pasien.index') }}" class="btn btn-sm btn-primary">Refresh</a>
-                        <form method="GET" action="{{ route('pasien.search') }}" class="d-flex" style="max-width: 300px;">
-                            <input type="text" name="search" class="form-control form-control-sm me-2"
-                                placeholder="Cari RM Pasien / Nama" value="{{ request('search') }}">
-                            <button type="submit" class="btn btn-sm btn-primary">Search</button>
+
+                        <!-- FORM PENCARIAN TANGGAL -->
+                        <div class="position-relative" style="max-width: 250px;">
+                            <form method="GET" action="{{ route('pasien.search') }}" class="d-flex" id="dateSearchForm">
+                                <input type="date"
+                                    name="search_date"
+                                    id="searchDateInput"
+                                    class="form-control form-control-sm me-2"
+                                    value="{{ request('search_date') }}"
+                                    title="Cari berdasarkan tanggal">
+                                <button type="submit" class="btn btn-sm btn-primary" title="Cari berdasarkan tanggal">
+                                    <i class="ri-calendar-line"></i>
+                                </button>
+                            </form>
+                            <div id="dateSearchLoading" class="position-absolute top-50 end-0 translate-middle-y me-2" style="display: none;">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FORM PENCARIAN KEYWORD -->
+                        <form method="GET" action="{{ route('pasien.search') }}" class="d-flex" style="max-width: 250px;">
+                            <input type="text"
+                                name="search"
+                                class="form-control form-control-sm me-2"
+                                placeholder="Cari Data Pasien..."
+                                value="{{ request('search') }}">
+
+                            {{-- 🔥 PERTAHANKAN TANGGAL --}}
+                            @if(request('search_date'))
+                                <input type="hidden" name="search_date" value="{{ request('search_date') }}">
+                            @endif
+
+                            <button type="submit" class="btn btn-sm btn-primary">
+                                <i class="ri-search-line"></i>
+                            </button>
                         </form>
+
+                        <!-- TOMBOL RESET JIKA ADA FILTER -->
+                        @if(request('search_date') || request('search'))
+                            <a href="{{ route('pasien.index') }}" class="btn btn-sm btn-secondary" title="Reset filter">
+                                <i class="ri-close-line"></i> Reset
+                            </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body">
                     <!-- Table starts -->
                     <div class="table-outer">
                         <div class="table-responsive">
-                            <table class="table m-0 align-middle">
+                            <table class="table table-bordered align-middle text-nowrap">
                                 <thead>
                                     <tr>
-                                        <th>No Lab</th>
+                                        <th>Tanggal</th>
+                                        <th>No. Registrasi Lab</th>
                                         <th>RM Pasien</th>
                                         <th>Nama Pasien</th>
-                                        <th>Hematology</th>
-                                        <th>Kimia</th>
+                                        <th>Asal Kunjungan</th>
+                                        <th>Penjamin</th>
+                                        <th>Status</th> <!-- Kolom baru untuk status -->
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($pasiens as $patient)
                                     <tr>
-                                        <td>{{ $patient->no_lab ?? '-'}}</td>
+                                        <td>
+                                            @php
+                                                // Parse tanggal dari nomor_registrasi (yymmdd)
+                                                $nomorRegistrasi = $patient->nomor_registrasi ?? '';
+
+                                                if (strlen($nomorRegistrasi) >= 6) {
+                                                    $datePart = substr($nomorRegistrasi, 0, 6);
+
+                                                    $year  = substr($datePart, 0, 2);
+                                                    $month = substr($datePart, 2, 2);
+                                                    $day   = substr($datePart, 4, 2);
+
+                                                    // Konversi tahun 2 digit ke 4 digit
+                                                    $year = (int)$year < 50 ? '20' . $year : '19' . $year;
+
+                                                    echo "{$day}/{$month}/{$year}";
+                                                } else {
+                                                    echo '-';
+                                                }
+                                            @endphp
+
+                                        </td>
+                                        <td>{{ $patient->nomor_registrasi ?? '-'}}</td>
                                         <td>{{ $patient->rm_pasien ?? '-'}}</td>
                                         <td>{{ $patient->nama_pasien ?? '-'}}</td>
+                                        <td>{{ $patient->ket_klinik ?? '-'}}</td>
+                                        <td>{{ $patient->nota ?? '-'}}</td>
                                         <td>
-                                            @if($patient->hematology->isNotEmpty())
-                                            ✅
+                                            @if($patient->id_pemeriksa && $patient->waktu_validasi)
+                                                <span class="badge bg-success">Selesai</span>
                                             @else
-                                            ❌
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @if($patient->kimia->isNotEmpty())
-                                            ✅ <!-- centang biru -->
-                                            @else
-                                            ❌ <!-- X merah -->
+                                                <span class="badge bg-warning">Diproses</span>
                                             @endif
                                         </td>
                                         <td>
                                             <a href="{{ route('pasien.print', $patient->no_lab) }}" target="_blank" class="btn btn-sm btn-secondary">
                                                 Print
                                             </a>
-
                                             <a href="{{ route('pasien.show', $patient->no_lab) }}" class="btn btn-sm btn-primary">View</a>
-                                            <!-- <a href="{{ route('pasien.edit', $patient->no_lab) }}" class="btn btn-sm btn-warning">Edit</a> -->
-                                            <a
-                                                href="{{ $patient->rm_pasien ? route('pasien.history', $patient->rm_pasien) : route('pasien.history', '') }}"
-                                                class="btn btn-sm btn-info"
-                                                title="History">
+                                            <a href="{{ route('pasien.history', $patient->rm_pasien ?? '') }}"
+                                            class="btn btn-sm btn-info" title="History">
                                                 History
                                             </a>
-
                                             <form action="{{ route('pasien.destroy', $patient->no_lab) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this patient?')">Delete</button>
+                                                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">
+                                                    Delete
+                                                </button>
                                             </form>
                                         </td>
                                     </tr>
@@ -197,7 +259,7 @@
 
         try {
             btn.disabled = true;
-            btn.innerText = auto ? 'Sinkronisasi otomatis... ⏳' : 'Sedang sinkronisasi... ⏳';
+            btn.innerText = auto ? 'Proses... ⏳' : 'Proses... ⏳';
 
             const response = await fetch('/api/pasien/ambil-order', {
                 method: 'POST',
@@ -207,13 +269,17 @@
             const result = await response.json();
 
             if (result.success) {
-                if (!auto) alert('Berhasil: ' + result.message);
-                btn.innerText = `Berhasil ✅ (${result.total_diterima})`;
-                setTimeout(() => btn.innerText = 'Ambil Order', 3000);
+                btn.innerText = `Berhasil..`;
+                setTimeout(() => btn.innerText = 'Ambil Order', 5000);
+
+                // 🔥 RELOAD HALAMAN AGAR DATA LANGSUNG MUNCUL
+                location.reload();
             } else {
-                if (!auto) alert('Gagal: ' + result.message);
                 btn.innerText = 'Gagal ❌';
-                setTimeout(() => btn.innerText = 'Ambil Order', 3000);
+                setTimeout(() => btn.innerText = 'Ambil Order', 5000);
+
+                // // 🔥 RELOAD HALAMAN AGAR DATA LANGSUNG MUNCUL
+                // location.reload();
             }
 
         } catch (error) {
@@ -231,4 +297,35 @@
     // Otomatis setiap 20 menit
     setInterval(() => ambilOrder(true), 20 * 60 * 1000);
 </script>
+<script>
+    // Auto-submit dengan loading indicator
+    document.getElementById('searchDateInput').addEventListener('change', function() {
+        const loading = document.getElementById('dateSearchLoading');
+        const form = this.form;
+
+        // Tampilkan loading
+        if (loading) loading.style.display = 'block';
+
+        // Submit form
+        setTimeout(() => {
+            form.submit();
+        }, 100);
+    });
+
+    // Sembunyikan loading saat halaman selesai dimuat
+    document.addEventListener('DOMContentLoaded', function() {
+        const loading = document.getElementById('dateSearchLoading');
+        if (loading) loading.style.display = 'none';
+
+        // Set nilai input tanggal dari URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const searchDate = urlParams.get('search_date');
+        const searchInput = document.getElementById('searchDateInput');
+
+        if (searchDate && searchInput) {
+            searchInput.value = searchDate;
+        }
+    });
+</script>
+
 @endsection

@@ -23,247 +23,295 @@
 <!-- App body starts -->
 <div class="app-body">
     @if($pasien)
-    <!-- Row starts -->
-    <div class="row gx-3">
-        <div class="col-sm-12">
-            <div class="card">
+        <!-- Content starts -->
+        <div class="row gx-3">
+            <div class="col-sm-12">
+                <div class="card">
                 <div class="card-header">
-                    <h5 class="card-title">Hasil Pengujian Lab - {{ $pasien->nama_pasien ?? '-' }}</h5>
-                </div>
-                <div class="card-body">
-                    <!-- Data pasien display starts -->
-                    <div class="row gx-3">
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted small mb-1">No. Lab / RM Pasien</label>
-                                <div class="d-flex align-items-center">
-                                    <i class="ri-file-list-3-line me-2 text-primary"></i>
-                                    <h6 class="m-0 text-dark">{{ $pasien->no_lab ?? '-' }} / {{ $pasien->rm_pasien ?? '-' }}</h6>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label">Nama Pasien</label>
-                                <div class="input-group">
-                                    <input
-                                        type="text"
-                                        class="form-control realtime-field"
-                                        data-field="nama_pasien"
-                                        value="{{ $pasien->nama_pasien }}"
-                                        placeholder="Nama lengkap pasien">
-                                    <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label">Jenis Kelamin</label>
-                                <div class="input-group">
-                                    <select class="form-select realtime-select" data-field="jenis_kelamin">
-                                        <option value="">Pilih</option>
-                                        <option value="L" {{ $pasien->jenis_kelamin == 'L' ? 'selected' : '' }}>Laki-laki</option>
-                                        <option value="P" {{ $pasien->jenis_kelamin == 'P' ? 'selected' : '' }}>Perempuan</option>
-                                    </select>
-                                    <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
-                                </div>
-                            </div>
-                        </div> -->
-
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label">Alamat</label>
-                                <div class="input-group">
-                                    <input
-                                        type="text"
-                                        class="form-control realtime-field"
-                                        data-field="alamat"
-                                        value="{{ $pasien->alamat }}"
-                                        placeholder="Alamat lengkap pasien">
-                                    <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TANGGAL LAHIR - DENGAN DATEPICKER -->
-                        <!-- TANGGAL LAHIR - INPUT TYPE DATE NATIVE -->
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label">Tanggal Lahir</label>
-                                <div class="input-group">
-                                    <input
-                                        type="date"
-                                        class="form-control realtime-date"
-                                        data-field="tgl_lahir"
-                                        value="{{ $pasien->tgl_lahir ? \Carbon\Carbon::parse($pasien->tgl_lahir)->format('Y-m-d') : '' }}"
-                                        max="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                                        min="1900-01-01">
-                                    <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
-                                    <span class="input-group-text">
-
-                                    </span>
-                                </div>
-                                <small class="text-muted">Klik untuk memilih tanggal dari kalender</small>
-                            </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label">Umur</label>
-                                <input
-                                    type="text"
-                                    class="form-control"
-                                    id="display_umur"
-                                    value="{{ $pasien->umur }}"
-                                    readonly
-                                    style="background-color: #f8f9fa;">
-                                <input type="hidden" data-field="umur" value="{{ $pasien->umur }}">
-                            </div>
-                        </div>
-
-                        <!-- Pengirim -->
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-2 mb-sm-3">
-                                <label class="form-label">Pengirim</label>
-                                <div class="input-group dropdown"> <!-- Tambahkan class dropdown di sini -->
-                                    <input
-                                        type="text"
-                                        class="form-control form-control-sm form-control-md realtime-dokter dropdown-toggle"
-                                        data-field="pengirim"
-                                        id="pengirimInput"
-                                        value="{{ $pasien->pengirim }}"
-                                        placeholder="Cari atau ketik nama dokter..."
-                                        autocomplete="off"
-                                        data-bs-toggle="dropdown"
-                                        aria-expanded="false"
-                                        aria-haspopup="true">
-                                    <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
-                                    <button class="btn btn-outline-secondary btn-sm btn-md" type="button" id="addDokterBtn" title="Tambah dokter baru">
-                                        <i class="ri-user-add-line"></i>
-                                    </button>
-
-                                    <!-- Dropdown Bootstrap -->
-                                    <div id="dokterDropdown" class="dropdown-menu w-100" aria-labelledby="pengirimInput"
-                                        style="max-height: 300px; overflow-y: auto; position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate(0px, 40px);">
-                                        <div class="dropdown-item text-muted py-2">
-                                            <div class="d-flex align-items-center">
-                                                <i class="ri-search-line me-2"></i>
-                                                <span>Ketik minimal 2 karakter untuk mencari dokter</span>
-                                            </div>
-                                        </div>
+                        <h5 class="card-title">Hasil Pengujian Lab - {{ $pasien->nama_pasien ?? '-' }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Data pasien display starts -->
+                        <div class="row gx-3">
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small mb-1">No. Registrasi Lab / RM Pasien</label>
+                                    <div class="d-flex align-items-center">
+                                        <i class="ri-file-list-3-line me-2 text-primary"></i>
+                                        <h6 class="m-0 text-dark">{{ $pasien->nomor_registrasi ?? '-' }} / {{ $pasien->rm_pasien ?? '-' }}</h6>
                                     </div>
                                 </div>
-                                <small class="text-muted">
-                                    <span id="dokterInfo" style="display: none;">
-                                        <i class="ri-check-line text-success me-1"></i>
-                                        <span id="selectedDokterName"></span>
-                                        <span id="dokterDetail" class="text-muted ms-1"></span>
-                                    </span>
-                                </small>
                             </div>
-                        </div>
 
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label text-muted small mb-1">Penjamin</label>
-                                <div class="d-flex align-items-center">
-                                    <i class="ri-shield-check-line me-2 text-primary"></i>
-                                    <div class="flex-grow-1 position-relative">
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">No. Registrasi Lab</label>
+                                    <div class="input-group">
                                         <input
                                             type="text"
                                             class="form-control realtime-field"
-                                            data-field="nota"
-                                            value="{{ $pasien->nota ?? '' }}"
-                                            placeholder="Ketik nama penjamin..."
-                                            style="font-size: 1rem; font-weight: 500; min-height: 1.8rem;">
-                                        <div class="save-status position-absolute end-0 top-50 translate-middle-y me-2" style="display: none;">
-                                            <i class="fas fa-spinner fa-spin text-primary" style="font-size: 0.8rem;"></i>
-                                        </div>
+                                            data-field="nomor_registrasi"
+                                            value="{{ $pasien->nomor_registrasi }}"
+                                            placeholder="Nomor registrasi pasien">
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
                                     </div>
                                 </div>
-                                <small class="text-muted penjamin-message" style="display: none; font-size: 0.75rem;"></small>
                             </div>
-                        </div>
 
-                        <!-- Asal Kunjungan - FIX: Gunakan textarea bukan input -->
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label">Asal Kunjungan</label>
-                                <div class="input-group">
-                                    <textarea
-                                        class="form-control realtime-field"
-                                        data-field="ket_klinik"
-                                        rows="1"
-                                        placeholder="Keterangan klinis">{{ $pasien->ket_klinik ?? '-' }}</textarea>
-                                    <span class="input-group-text save-status" style="display: none; min-width: 40px; align-self: flex-start;"></span>
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nama Pasien</label>
+                                    <div class="input-group">
+                                        <input
+                                            type="text"
+                                            class="form-control realtime-field"
+                                            data-field="nama_pasien"
+                                            value="{{ $pasien->nama_pasien }}"
+                                            placeholder="Nama lengkap pasien">
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label">Waktu Periksa</label>
-                                <div class="input-group">
-                                    <input
-                                        type="datetime-local"
-                                        class="form-control realtime-datetime"
-                                        data-field="created_at"
-                                        value="{{ $pasien->created_at ? \Carbon\Carbon::parse($pasien->waktu_periksa)->format('Y-m-d\TH:i') : '' }}">
-                                    <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+                            <!-- <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Jenis Kelamin</label>
+                                    <div class="input-group">
+                                        <select class="form-select realtime-select" data-field="jenis_kelamin">
+                                            <option value="">Pilih</option>
+                                            <option value="L" {{ $pasien->jenis_kelamin == 'L' ? 'selected' : '' }}>Laki-laki</option>
+                                            <option value="P" {{ $pasien->jenis_kelamin == 'P' ? 'selected' : '' }}>Perempuan</option>
+                                        </select>
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+                                    </div>
+                                </div>
+                            </div> -->
+
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Alamat</label>
+                                    <div class="input-group">
+                                        <input
+                                            type="text"
+                                            class="form-control realtime-field"
+                                            data-field="alamat"
+                                            value="{{ $pasien->alamat }}"
+                                            placeholder="Alamat lengkap pasien">
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-xxl-3 col-lg-4 col-sm-6">
-                            <div class="mb-3">
-                                <label class="form-label">Waktu Validasi</label>
-                                <div class="input-group">
-                                    <input
-                                        type="datetime-local"
-                                        class="form-control realtime-datetime"
-                                        data-field="updated_at"
-                                        value="{{ $pasien->updated_at ? \Carbon\Carbon::parse($pasien->waktu_validasi)->format('Y-m-d\TH:i') : '' }}">
-                                    <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+
+                            <!-- TANGGAL LAHIR - DENGAN DATEPICKER -->
+                            <!-- TANGGAL LAHIR - INPUT TYPE DATE NATIVE -->
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tanggal Lahir</label>
+                                    <div class="input-group">
+                                        <input
+                                            type="date"
+                                            class="form-control realtime-date"
+                                            data-field="tgl_lahir"
+                                            value="{{ $pasien->tgl_lahir ? \Carbon\Carbon::parse($pasien->tgl_lahir)->format('Y-m-d') : '' }}"
+                                            max="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                                            min="1900-01-01">
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+                                        <span class="input-group-text">
+
+                                        </span>
+                                    </div>
+                                    <small class="text-muted">Klik untuk memilih tanggal dari kalender</small>
                                 </div>
                             </div>
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Umur</label>
+                                    <input
+                                        type="text"
+                                        class="form-control"
+                                        id="display_umur"
+                                        value="{{ $pasien->umur }}"
+                                        readonly
+                                        style="background-color: #f8f9fa;">
+                                    <input type="hidden" data-field="umur" value="{{ $pasien->umur }}">
+                                </div>
+                            </div>
+
+                            <!-- Pengirim -->
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-2 mb-sm-3">
+                                    <label class="form-label">Pengirim</label>
+                                    <div class="input-group dropdown"> <!-- Tambahkan class dropdown di sini -->
+                                        <input
+                                            type="text"
+                                            class="form-control form-control-sm form-control-md realtime-dokter dropdown-toggle"
+                                            data-field="pengirim"
+                                            id="pengirimInput"
+                                            value="{{ $pasien->pengirim }}"
+                                            placeholder="Cari atau ketik nama dokter..."
+                                            autocomplete="off"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                            aria-haspopup="true">
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+                                        <button class="btn btn-outline-secondary btn-sm btn-md" type="button" id="addDokterBtn" title="Tambah dokter baru">
+                                            <i class="ri-user-add-line"></i>
+                                        </button>
+
+                                        <!-- Dropdown Bootstrap -->
+                                        <div id="dokterDropdown" class="dropdown-menu w-100" aria-labelledby="pengirimInput"
+                                            style="max-height: 300px; overflow-y: auto; position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate(0px, 40px);">
+                                            <div class="dropdown-item text-muted py-2">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-search-line me-2"></i>
+                                                    <span>Ketik minimal 2 karakter untuk mencari dokter</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">
+                                        <span id="dokterInfo" style="display: none;">
+                                            <i class="ri-check-line text-success me-1"></i>
+                                            <span id="selectedDokterName"></span>
+                                            <span id="dokterDetail" class="text-muted ms-1"></span>
+                                        </span>
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Ganti bagian Penjamin yang ada -->
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label text-muted small mb-1">Penjamin</label>
+                                    <div class="d-flex align-items-center">
+                                        <i class="ri-shield-check-line me-2 text-primary"></i>
+                                        <div class="flex-grow-1 position-relative">
+                                            <!-- Input untuk search penjamin -->
+                                            <input
+                                                type="text"
+                                                class="form-control realtime-penjamin dropdown-toggle"
+                                                data-field="nota"
+                                                id="penjaminInput"
+                                                value="{{ $pasien->penjamin->nama_penjamin ?? ($pasien->nota ?? '') }}"
+                                                placeholder="Ketik nama penjamin..."
+                                                autocomplete="off"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false"
+                                                aria-haspopup="true"
+                                                style="font-size: 1rem; font-weight: 500; min-height: 1.8rem;">
+                                            <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+
+                                            <!-- Hidden input untuk ID penjamin -->
+                                            <input
+                                                type="hidden"
+                                                id="id_penjamin"
+                                                name="id_penjamin"
+                                                value="{{ $pasien->id_penjamin ?? '' }}">
+
+                                            <!-- Dropdown untuk hasil pencarian -->
+                                            <div id="penjaminDropdown" class="dropdown-menu w-100" aria-labelledby="penjaminInput"
+                                                style="max-height: 300px; overflow-y: auto; position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate(0px, 40px);">
+                                                <div class="dropdown-item text-muted py-2">
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="ri-search-line me-2"></i>
+                                                        <span>Ketik minimal 2 karakter untuk mencari penjamin</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <small class="ri-check-line text-success me-1" style="display: none;"></small>
+                                    <div id="penjaminInfo" style="display: none;">
+                                        <small>
+                                            <i class="ri-check-line me-1"></i>
+                                            <span id="selectedPenjaminName"></span>
+                                            <span id="penjaminDetail" class="text-muted ms-1"></span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ganti bagian Asal Kunjungan yang ada -->
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Asal Kunjungan</label>
+                                    <div class="input-group">
+                                        <!-- Input untuk search ruangan -->
+                                        <input
+                                            type="text"
+                                            class="form-control realtime-ruangan dropdown-toggle"
+                                            data-field="ket_klinik"
+                                            id="ruanganInput"
+                                            value="{{ $pasien->ruangan->nama_ruangan ?? ($pasien->ket_klinik ?? '') }}"
+                                            placeholder="Ketik nama ruangan..."
+                                            autocomplete="off"
+                                            data-bs-toggle="dropdown"
+                                            aria-expanded="false"
+                                            aria-haspopup="true">
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px; align-self: flex-start;"></span>
+
+                                        <!-- Hidden input untuk ID ruangan -->
+                                        <input
+                                            type="hidden"
+                                            id="id_ruangan"
+                                            name="id_ruangan"
+                                            value="{{ $pasien->id_ruangan ?? '' }}">
+
+                                        <!-- Dropdown untuk hasil pencarian -->
+                                        <div id="ruanganDropdown" class="dropdown-menu w-100" aria-labelledby="ruanganInput"
+                                            style="max-height: 300px; overflow-y: auto; position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate(0px, 40px);">
+                                            <div class="dropdown-item text-muted py-2">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-search-line me-2"></i>
+                                                    <span>Ketik minimal 2 karakter untuk mencari ruangan</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="ruanganInfo" style="display: none;">
+                                        <small>
+                                            <i class="ri-check-line me-1"></i>
+                                            <span id="selectedRuanganName"></span>
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Waktu Periksa</label>
+                                    <div class="input-group">
+                                        <input
+                                            type="datetime-local"
+                                            class="form-control realtime-datetime"
+                                            data-field="created_at"
+                                            value="{{ $pasien->created_at ? \Carbon\Carbon::parse($pasien->waktu_periksa)->format('Y-m-d\TH:i') : '' }}">
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xxl-3 col-lg-4 col-sm-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Waktu Validasi</label>
+                                    <div class="input-group">
+                                        <input
+                                            type="datetime-local"
+                                            class="form-control realtime-datetime"
+                                            data-field="waktu_validasi"
+                                            value="{{ $pasien->waktu_validasi ? \Carbon\Carbon::parse($pasien->waktu_validasi)->format('Y-m-d\TH:i') : '' }}">
+                                        <span class="input-group-text save-status" style="display: none; min-width: 40px;"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Data pasien display ends -->
                         </div>
-                        <!-- Data pasien display ends -->
                     </div>
                 </div>
-            </div>
-            <div class="col-sm-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="alert alert-info mb-0">
-                            <i class="ri-information-line me-2"></i>
-                            <strong>Info:</strong> Jenis Pengujian Yang Diminta:
-                            <ul class="mb-0 mt-1">
-                                @foreach($pasien->ujiPemeriksaan->groupBy('kategori') as $kategori => $ujiGroup)
-                                    <li>
-                                        <strong>{{ $kategori }}</strong>
-                                        <ul>
-                                            @foreach($ujiGroup as $uji)
-                                                <li>{{ $uji->nama_pemeriksaan }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Row ends -->
-
-        <!-- Hasil Pengujian Section -->
-        <div class="row gx-3 mt-3">
-            <div class="col-sm-12">
                 <div class="card mb-3">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="card-title mb-0">Hasil Pengujian Laboratorium</h5>
-                            <p class="card-subtitle text-muted mb-0">No. Lab: {{ $pasien->no_lab }} | Nama: {{ $pasien->nama_pasien }}</p>
+                            <p class="card-subtitle text-muted mb-0">No. Lab: {{ $pasien->nomor_registrasi }} | Nama: {{ $pasien->nama_pasien }}</p>
                         </div>
                         <div>
                             <span id="saveStatus" class="badge bg-secondary">
@@ -290,117 +338,170 @@
                             </div>
 
                             <!-- HEMATOLOGY SECTION -->
-                            <!-- HEMATOLOGY SECTION -->
                             @if(count(array_filter($hematology_fix)) > 0)
                             <div class="mb-4">
-                                <h6 class="mb-3 border-bottom pb-2">
-                                    <i class="ri-test-tube-line me-2"></i>HEMATOLOGY
-                                </h6>
+                                <div class="row">
+                                    <!-- TABEL HEMATOLOGY -->
+                                    <div class="col-lg-9 col-md-12">
+                                        <h6 class="mb-3 border-bottom pb-2">
+                                            <i class="ri-test-tube-line me-2"></i>HEMATOLOGY
+                                        </h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered table-sm">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th width="10%" class="bg-light">Jenis Pengujian</th>
+                                                        <th width="10%">Hasil Pengujian</th>
+                                                        <th width="15%" class="bg-light">Satuan</th>
+                                                        <th width="15%" class="bg-light">Rujukan</th>
+                                                        <th width="10%" class="bg-light">CH</th>
+                                                        <th width="10%" class="bg-light">CL</th>
+                                                        <th width="20%">Keterangan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @php
+                                                    $jenis_pemeriksaan_list = [
+                                                    'WBC', 'Neutrofil%', 'Limfosit%', 'Monosit%', 'Eosinofil%',
+                                                    'Basofil%', 'RBC', 'HGB', 'HCT', 'MCV', 'MCH', 'MCHC',
+                                                    'RDW-CV', 'RDW-SD', 'PLT', 'MPV', 'PDW', 'PCT'
+                                                    ];
+                                                    @endphp
 
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-sm">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th width="25%" class="bg-light">Jenis Pengujian</th>
-                                                <th width="20%">Hasil Pengujian</th>
-                                                <th width="15%" class="bg-light">Satuan</th>
-                                                <th width="20%" class="bg-light">Rujukan</th>
-                                                <th width="20%">Keterangan</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @php
-                                            $jenis_pemeriksaan_list = [
-                                            'WBC', 'Neutrofil%', 'Limfosit%', 'Monosit%', 'Eosinofil%',
-                                            'Basofil%', 'RBC', 'HGB', 'HCT', 'MCV', 'MCH', 'MCHC',
-                                            'RDW-CV', 'RDW-SD', 'PLT', 'MPV', 'PDW', 'PCT'
-                                            ];
-                                            @endphp
+                                                    @foreach($hematology_fix as $index => $item)
+                                                    @php
+                                                    $jenis = $jenis_pemeriksaan_list[$index] ?? 'Unknown';
+                                                    $keterangan = $item->keterangan ?? '';
 
-                                            @foreach($hematology_fix as $index => $item)
-                                            @php
-                                            $jenis = $jenis_pemeriksaan_list[$index] ?? 'Unknown';
-                                            $keterangan = $item->keterangan ?? '';
+                                                    // Ambil CH dan CL dari dataPemeriksaan
+                                                    $ch_value = $item->dataPemeriksaan->ch ?? '-';
+                                                    $cl_value = $item->dataPemeriksaan->cl ?? '-';
+                                                    $rujukan_pemeriksaan = $item->dataPemeriksaan->rujukan ?? '-';
 
-                                            // PASTIKAN INI ADA: Ambil rujukan dari dataPemeriksaan
-                                            $rujukan_pemeriksaan = $item->dataPemeriksaan->rujukan ?? '-';
+                                                    // Tentukan warna untuk keterangan
+                                                    if ($keterangan === 'CH' || $keterangan === 'H') {
+                                                    $bgColor = 'bg-danger bg-opacity-10';
+                                                    $textColor = 'text-danger';
+                                                    $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
+                                                    } elseif ($keterangan === 'CL' || $keterangan === 'L') {
+                                                    $bgColor = 'bg-primary bg-opacity-10';
+                                                    $textColor = 'text-primary';
+                                                    $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
+                                                    } elseif ($keterangan === '-' || $keterangan === '') {
+                                                    $bgColor = 'bg-success bg-opacity-10';
+                                                    $textColor = 'text-success';
+                                                    $textDisplay = '-';
+                                                    } else {
+                                                    $bgColor = 'bg-light';
+                                                    $textColor = 'text-muted';
+                                                    $textDisplay = '-';
+                                                    }
+                                                    @endphp
 
-                                            // Tentukan warna untuk keterangan
-                                            if ($keterangan === 'H') {
-                                            $bgColor = 'bg-danger bg-opacity-10';
-                                            $textColor = 'text-danger';
-                                            $textDisplay = 'H';
-                                            } elseif ($keterangan === 'L') {
-                                            $bgColor = 'bg-primary bg-opacity-10';
-                                            $textColor = 'text-primary';
-                                            $textDisplay = 'L';
-                                            } elseif ($keterangan === '-' || $keterangan === '') {
-                                            $bgColor = 'bg-success bg-opacity-10';
-                                            $textColor = 'text-success';
-                                            $textDisplay = '-';
-                                            } else {
-                                            $bgColor = 'bg-light';
-                                            $textColor = 'text-muted';
-                                            $textDisplay = '-';
-                                            }
-                                            @endphp
+                                                    <tr data-index="{{ $index }}">
+                                                        <td class="bg-light">
+                                                            <strong>{{ $jenis }}</strong>
+                                                            <input type="hidden"
+                                                                name="hematology[{{ $index }}][id]"
+                                                                value="{{ $item->id_pemeriksaan_hematology ?? '' }}">
+                                                            <input type="hidden"
+                                                                name="hematology[{{ $index }}][jenis_pengujian]"
+                                                                value="{{ $jenis }}">
+                                                        </td>
+                                                        <td class="hasil-cell">
+                                                            @if($item && $item->id_pemeriksaan_hematology)
+                                                            <input type="text"
+                                                                name="hematology[{{ $index }}][hasil_pengujian]"
+                                                                class="form-control form-control-sm excel-input hasil-input"
+                                                                value="{{ $item->hasil_pengujian ?? '' }}"
+                                                                placeholder="Hasil"
+                                                                data-original="{{ $item->hasil_pengujian ?? '' }}"
+                                                                data-id="{{ $item->id_pemeriksaan_hematology }}"
+                                                                data-type="hematology"
+                                                                data-rujukan="{{ $rujukan_pemeriksaan }}"
+                                                                data-ch="{{ $ch_value }}"
+                                                                data-cl="{{ $cl_value }}"
+                                                                data-jenis="{{ $jenis }}"
+                                                                data-rm="{{ $pasien->rm_pasien }}"
+                                                                autocomplete="off">
+                                                            @else
+                                                            <input type="text"
+                                                                name="hematology[{{ $index }}][hasil_pengujian]"
+                                                                class="form-control form-control-sm excel-input hasil-input"
+                                                                value=""
+                                                                placeholder="Hasil"
+                                                                data-original=""
+                                                                data-id=""
+                                                                data-type="hematology"
+                                                                data-rujukan=""
+                                                                data-ch=""
+                                                                data-cl=""
+                                                                data-jenis="{{ $jenis }}"
+                                                                data-rm="{{ $pasien->rm_pasien }}"
+                                                                autocomplete="off">
+                                                            @endif
+                                                        </td>
+                                                        <td class="bg-light">
+                                                            {{ $item->dataPemeriksaan->satuan ?? '-' }}
+                                                        </td>
+                                                        <td class="bg-light rujukan-cell">
+                                                            {{ $rujukan_pemeriksaan }}
+                                                        </td>
+                                                        <td class="bg-light ch-cell" style="text-align:center;">
+                                                            {{ $ch_value }}
+                                                        </td>
+                                                        <td class="bg-light cl-cell" style="text-align:center;">
+                                                            {{ $cl_value }}
+                                                        </td>
+                                                        <td class="keterangan-cell">
+                                                            <div class="keterangan-display {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
+                                                                data-keterangan="{{ $keterangan }}">
+                                                                <strong>{{ $textDisplay }}</strong>
+                                                            </div>
+                                                            <input type="hidden"
+                                                                name="hematology[{{ $index }}][keterangan]"
+                                                                value="{{ $keterangan }}">
+                                                        </td>
+                                                    </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div> <!-- END col-lg-9 -->
 
-                                            <tr data-index="{{ $index }}">
-                                                <td class="bg-light">
-                                                    <strong>{{ $jenis }}</strong>
-                                                    <input type="hidden"
-                                                        name="hematology[{{ $index }}][id]"
-                                                        value="{{ $item->id_pemeriksaan_hematology ?? '' }}">
-                                                    <input type="hidden"
-                                                        name="hematology[{{ $index }}][jenis_pengujian]"
-                                                        value="{{ $jenis }}">
-                                                </td>
-                                                <td class="hasil-cell">
-                                                    @if($item && $item->id_pemeriksaan_hematology)
-                                                    <input type="text"
-                                                        name="hematology[{{ $index }}][hasil_pengujian]"
-                                                        class="form-control form-control-sm excel-input hasil-input"
-                                                        value="{{ $item->hasil_pengujian ?? '' }}"
-                                                        placeholder="Hasil"
-                                                        data-original="{{ $item->hasil_pengujian ?? '' }}"
-                                                        data-id="{{ $item->id_pemeriksaan_hematology }}"
-                                                        data-type="hematology"
-                                                        data-rujukan="{{ $rujukan_pemeriksaan }}"
-                                                        autocomplete="off">
-                                                    @else
-                                                    <input type="text"
-                                                        name="hematology[{{ $index }}][hasil_pengujian]"
-                                                        class="form-control form-control-sm excel-input hasil-input"
-                                                        value=""
-                                                        placeholder="Hasil"
-                                                        data-original=""
-                                                        data-id=""
-                                                        data-type="hematology"
-                                                        data-rujukan=""
-                                                        autocomplete="off">
-                                                    @endif
-                                                </td>
-                                                <td class="bg-light">
-                                                    {{ $item->dataPemeriksaan->satuan ?? '-' }}
-                                                </td>
-                                                <td class="bg-light rujukan-cell">
-                                                    {{ $rujukan_pemeriksaan }}
-                                                </td>
-                                                <td class="keterangan-cell">
-                                                    <div class="keterangan-display {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
-                                                        data-keterangan="{{ $keterangan }}">
-                                                        <strong>{{ $textDisplay }}</strong>
+                                    <!-- HISTORY PANEL HEMATOLOGY -->
+                                    <div class="col-lg-3 col-md-12">
+                                        <div class="card h-100 border-start border-primary">
+                                            <div class="card-header bg-light py-2">
+                                                <h6 class="card-title mb-0 small">
+                                                    <i class="ri-history-line me-2 text-primary"></i>History Hematology
+                                                </h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="p-2 border-bottom bg-primary bg-opacity-5" id="currentHoverInfo_hematology">
+                                                    <div class="text-center">
+                                                        <div class="text-primary mb-1 small" id="hoverJenisPemeriksaan_hematology">
+                                                            <i class="ri-cursor-line me-1"></i>
+                                                            <span>Pilih hasil</span>
+                                                        </div>
+                                                        <div class="small text-muted" id="hoverTypeInfo_hematology">
+                                                            Klik pada kolom "Hasil"
+                                                        </div>
                                                     </div>
-                                                    <input type="hidden"
-                                                        name="hematology[{{ $index }}][keterangan]"
-                                                        value="{{ $keterangan }}">
-                                                </td>
-                                            </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                                                </div>
+
+                                                <div class="p-2" id="historyPanelContent_hematology" style="height: 300px; overflow-y: auto; font-size: 0.85rem;">
+                                                    <div class="text-center text-muted py-4">
+                                                        <i class="ri-file-list-3-line display-6 mb-3 opacity-50"></i>
+                                                        <p class="mb-1 small">History akan muncul di sini</p>
+                                                        <small class="text-muted">Klik pada hasil</small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div> <!-- END col-lg-3 -->
+                                </div> <!-- END row -->
+                            </div> <!-- END mb-4 -->
                             @else
                             <div class="alert alert-warning mb-3">
                                 <i class="ri-test-tube-line me-2"></i>Data hasil pemeriksaan untuk Hematology Belum/Tidak Dilakukan
@@ -410,346 +511,457 @@
                             <!-- KIMIA SECTION -->
                             @if($kimia->count() > 0)
                             <div class="mt-4">
-                                <h6 class="mb-3 border-bottom pb-2">
-                                    <i class="ri-flask-line me-2"></i>KIMIA
-                                </h6>
+                                <div class="row">
+                                    <!-- TABEL KIMIA -->
+                                    <div class="col-lg-9 col-md-12">
+                                        <h6 class="mb-3 border-bottom pb-2">
+                                            <i class="ri-flask-line me-2"></i>KIMIA
+                                        </h6>
 
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-sm">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th width="15%" class="bg-light">Nama Dari Alat</th>
-                                                <th width="30%" class="bg-light">Nama Standar dari RS</th> <!-- Kolom baru -->
-                                                <th width="15%" class="bg-light">Method</th>
-                                                <th width="15%">Hasil Pengujian</th>
-                                                <th width="10%" class="bg-light">Satuan</th>
-                                                <th width="5%" class="bg-light">Rujukan</th>
-                                                <th width="10%">Ket</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($kimia as $index => $item)
-                                            @php
-                                            $keterangan = $item->keterangan ?? '';
-                                            $kode_pemeriksaan = $item->kode_pemeriksaan ?? null;
-                                            $analysis = $item->analysis ?? '';
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered align-middle text-nowrap">
+                                                <thead class="table-light">
+                                                    <tr>
+                                                        <th width="15%" class="bg-light">Nama Dari Alat</th>
+                                                        <th width="15%">Nama Standar dari RS</th>
+                                                        <th width="10%" class="bg-light">Hasil</th>
+                                                        <th width="10%" class="bg-light">Satuan</th>
+                                                        <th width="10%" class="bg-light">Rujukan</th>
+                                                        <th width="5%" class="bg-light">CH</th>
+                                                        <th width="5%" class="bg-light">CL</th>
+                                                        <th width="20%">Keterangan</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    @foreach($kimia as $index => $item)
+                                                    @php
+                                                    $keterangan = $item->keterangan ?? '';
+                                                    $id_data_pemeriksaan = $item->id_data_pemeriksaan ?? null;
+                                                    $analysis = $item->analysis ?? '';
 
-                                            // Warna untuk keterangan (sama seperti sebelumnya)
-                                            if ($keterangan === 'H') {
-                                            $bgColor = 'bg-danger bg-opacity-10';
-                                            $textColor = 'text-danger';
-                                            $textDisplay = 'H';
-                                            } elseif ($keterangan === 'L') {
-                                            $bgColor = 'bg-primary bg-opacity-10';
-                                            $textColor = 'text-primary';
-                                            $textDisplay = 'L';
-                                            } elseif ($keterangan === '-') {
-                                            $bgColor = 'bg-success bg-opacity-10';
-                                            $textColor = 'text-success';
-                                            $textDisplay = '';
-                                            } else {
-                                            $bgColor = 'bg-light';
-                                            $textColor = 'text-muted';
-                                            $textDisplay = '-';
-                                            }
-                                            @endphp
-                                            <tr data-index="{{ $index }}" data-kimia-id="{{ $item->id_pemeriksaan_kimia }}">
-                                                <td class="bg-light">
-                                                    <strong>{{ $analysis }}</strong>
-                                                    <input type="hidden"
-                                                        name="kimia[{{ $index }}][id]"
-                                                        value="{{ $item->id_pemeriksaan_kimia }}">
-                                                    <input type="hidden"
-                                                        name="kimia[{{ $index }}][analysis]"
-                                                        value="{{ $analysis }}">
-                                                </td>
+                                                    // Ambil CH dan CL dari dataPemeriksaan
+                                                    $ch_value = $item->dataPemeriksaan->ch ?? '-';
+                                                    $cl_value = $item->dataPemeriksaan->cl ?? '-';
 
-                                                <!-- Kolom Search Kode Pemeriksaan -->
-                                                <!-- Kolom Search Kode Pemeriksaan -->
-                                                <td class="search-cell">
-                                                    @if(!$kode_pemeriksaan)
-                                                    <div class="position-relative">
-                                                        <input type="text"
-                                                            class="form-control form-control-sm kode-search-input"
-                                                            placeholder="Cari kode pemeriksaan..."
-                                                            data-kimia-id="{{ $item->id_pemeriksaan_kimia }}"
-                                                            data-analysis="{{ $analysis }}"
-                                                            autocomplete="off">
-                                                        <div class="kode-search-results dropdown-menu w-100"
-                                                            style="display: none; max-height: 200px; overflow-y: auto;">
-                                                            <!-- Hasil pencarian akan dimuat di sini -->
+                                                    // Warna untuk keterangan
+                                                    if ($keterangan === 'CH' || $keterangan === 'H') {
+                                                    $bgColor = 'bg-danger bg-opacity-10';
+                                                    $textColor = 'text-danger';
+                                                    $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
+                                                    } elseif ($keterangan === 'CL' || $keterangan === 'L') {
+                                                    $bgColor = 'bg-primary bg-opacity-10';
+                                                    $textColor = 'text-primary';
+                                                    $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
+                                                    } elseif ($keterangan === '-') {
+                                                    $bgColor = 'bg-success bg-opacity-10';
+                                                    $textColor = 'text-success';
+                                                    $textDisplay = '';
+                                                    } else {
+                                                    $bgColor = 'bg-light';
+                                                    $textColor = 'text-muted';
+                                                    $textDisplay = '-';
+                                                    }
+                                                    @endphp
+                                                    <tr data-index="{{ $index }}" data-kimia-id="{{ $item->id_pemeriksaan_kimia }}">
+                                                        <td class="bg-light">
+                                                            <strong>{{ $analysis }}</strong>
+                                                            <input type="hidden"
+                                                                name="kimia[{{ $index }}][id]"
+                                                                value="{{ $item->id_pemeriksaan_kimia }}">
+                                                            <input type="hidden"
+                                                                name="kimia[{{ $index }}][analysis]"
+                                                                value="{{ $analysis }}">
+                                                        </td>
+
+                                                        <!-- Kolom Search Kode Pemeriksaan -->
+                                                        <td class="search-cell">
+                                                            @if(!$id_data_pemeriksaan)
+                                                            <div class="position-relative">
+                                                                <input type="text"
+                                                                    class="form-control form-control-sm kode-search-input"
+                                                                    placeholder="Cari data pemeriksaan..."
+                                                                    data-kimia-id="{{ $item->id_pemeriksaan_kimia }}"
+                                                                    data-analysis="{{ $analysis }}"
+                                                                    autocomplete="off">
+                                                                <div class="kode-search-results dropdown-menu w-100"
+                                                                    style="display: none; max-height: 200px; overflow-y: auto;">
+                                                                </div>
+                                                                <input type="hidden"
+                                                                    name="kimia[{{ $index }}][id_data_pemeriksaan]"
+                                                                    class="kode-pemeriksaan-input"
+                                                                    value="">
+                                                            </div>
+                                                            <div class="mt-1">
+                                                                <small class="text-warning">
+                                                                    <i class="ri-alert-line me-1"></i>Belum dipetakan
+                                                                </small>
+                                                            </div>
+                                                            @else
+                                                            <div class="position-relative">
+                                                                <input type="text"
+                                                                    class="form-control form-control-sm kode-edit-input"
+                                                                    placeholder="Cari data pemeriksaan..."
+                                                                    value="{{ $item->dataPemeriksaan->data_pemeriksaan ?? '' }}"
+                                                                    data-kimia-id="{{ $item->id_pemeriksaan_kimia }}"
+                                                                    data-analysis="{{ $analysis }}"
+                                                                    data-current-id="{{ $id_data_pemeriksaan }}"
+                                                                    autocomplete="off">
+                                                                <div class="kode-search-results dropdown-menu w-100"
+                                                                    style="display: none; max-height: 200px; overflow-y: auto;">
+                                                                </div>
+                                                                <input type="hidden"
+                                                                    name="kimia[{{ $index }}][id_data_pemeriksaan]"
+                                                                    class="kode-pemeriksaan-input"
+                                                                    value="{{ $id_data_pemeriksaan }}">
+
+                                                                <div class="mt-1 d-flex justify-content-between align-items-center">
+                                                                    <small class="text-success">
+                                                                        <i class="ri-links-line me-1"></i>
+                                                                        <span class="kode-display">
+                                                                            {{ $item->dataPemeriksaan->data_pemeriksaan ?? '' }}
+                                                                        </span>
+                                                                    </small>
+                                                                </div>
+                                                            </div>
+                                                            @endif
+                                                        </td>
+
+                                                        <td class="hasil-cell">
+                                                            <input type="text"
+                                                                name="kimia[{{ $index }}][hasil_pengujian]"
+                                                                class="form-control form-control-sm excel-input hasil-input"
+                                                                value="{{ $item->hasil_pengujian ?? '' }}"
+                                                                placeholder="Hasil"
+                                                                data-original="{{ $item->hasil_pengujian ?? '' }}"
+                                                                data-id="{{ $item->id_pemeriksaan_kimia }}"
+                                                                data-type="kimia"
+                                                                data-rujukan="{{ $item->rujukan ?? '' }}"
+                                                                data-ch="{{ $ch_value }}"
+                                                                data-cl="{{ $cl_value }}"
+                                                                data-jenis="{{ $analysis }}"
+                                                                data-rm="{{ $pasien->rm_pasien }}"
+                                                                autocomplete="off">
+                                                        </td>
+                                                        <td class=" bg-light satuan-cell" style="text-align:center;">
+                                                            <span class="satuan-display">
+                                                                {{ $item->dataPemeriksaan->satuan ?? '-' }}
+                                                            </span>
+                                                        </td>
+                                                        <td class=" bg-light rujukan-cell" style="text-align:center;">
+                                                            <span class="rujukan-display">
+                                                                {{ $item->dataPemeriksaan->rujukan ?? '-' }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="bg-light ch-cell" style="text-align:center;">
+                                                            {{ $ch_value }}
+                                                        </td>
+                                                        <td class="bg-light cl-cell" style="text-align:center;">
+                                                            {{ $cl_value }}
+                                                        </td>
+                                                        <td class="keterangan-cell">
+                                                            <div class="keterangan-display {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
+                                                                data-keterangan="{{ $keterangan }}">
+                                                                <strong>{{ $textDisplay }}</strong>
+                                                            </div>
+                                                            <input type="hidden"
+                                                                name="kimia[{{ $index }}][keterangan]"
+                                                                value="{{ $keterangan }}">
+                                                        </td>
+                                                    </tr>
+                                                    @endforeach
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div> <!-- END col-lg-9 -->
+
+                                    <!-- HISTORY PANEL KIMIA -->
+                                    <div class="col-lg-3 col-md-12">
+                                        <div class="card h-100 border-start border-primary">
+                                            <div class="card-header bg-light py-2">
+                                                <h6 class="card-title mb-0 small">
+                                                    <i class="ri-history-line me-2 text-primary"></i>History Kimia
+                                                </h6>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <div class="p-2 border-bottom bg-primary bg-opacity-5" id="currentHoverInfo_kimia">
+                                                    <div class="text-center">
+                                                        <div class="text-primary mb-1 small" id="hoverJenisPemeriksaan_kimia">
+                                                            <i class="ri-cursor-line me-1"></i>
+                                                            <span>Pilih hasil</span>
                                                         </div>
-                                                        <input type="hidden"
-                                                            name="kimia[{{ $index }}][kode_pemeriksaan]"
-                                                            class="kode-pemeriksaan-input"
-                                                            value="">
-                                                    </div>
-                                                    <div class="mt-1">
-                                                        <small class="text-warning">
-                                                            <i class="ri-alert-line me-1"></i>Belum dipetakan
-                                                        </small>
-                                                    </div>
-                                                    @else
-                                                    <div class="position-relative">
-                                                        <!-- Input untuk edit dengan display kode -->
-                                                        <input type="text"
-                                                            class="form-control form-control-sm kode-edit-input"
-                                                            placeholder="Cari kode pemeriksaan..."
-                                                            value="{{ $item->dataPemeriksaan->data_pemeriksaan ?? $kode_pemeriksaan }}"
-                                                            data-kimia-id="{{ $item->id_pemeriksaan_kimia }}"
-                                                            data-analysis="{{ $analysis }}"
-                                                            data-current-kode="{{ $kode_pemeriksaan }}"
-                                                            autocomplete="off">
-                                                        <div class="kode-search-results dropdown-menu w-100"
-                                                            style="display: none; max-height: 200px; overflow-y: auto;">
-                                                            <!-- Hasil pencarian akan dimuat di sini -->
-                                                        </div>
-                                                        <input type="hidden"
-                                                            name="kimia[{{ $index }}][kode_pemeriksaan]"
-                                                            class="kode-pemeriksaan-input"
-                                                            value="{{ $kode_pemeriksaan }}">
-
-                                                        <!-- Tombol Edit/Reset -->
-                                                        <div class="mt-1 d-flex justify-content-between align-items-center">
-                                                            <small class="text-success">
-                                                                <i class="ri-links-line me-1"></i>Telah dipetakan: <span class="kode-display">{{ $kode_pemeriksaan }}</span>
-                                                            </small>
-                                                            <!-- <button type="button" class="btn-reset-kode btn btn-xs btn-outline-danger"
-                                                                data-kimia-id="{{ $item->id_pemeriksaan_kimia }}"
-                                                                title="Reset mapping">
-                                                                <i class="ri-close-line"></i>
-                                                            </button> -->
+                                                        <div class="small text-muted" id="hoverTypeInfo_kimia">
+                                                            Klik pada kolom "Hasil"
                                                         </div>
                                                     </div>
-                                                    @endif
-                                                </td>
+                                                </div>
 
-                                                <td class="bg-light method-cell">
-                                                    {{ $item->dataPemeriksaan->metode ?? '-' }}
-                                                    <input type="hidden"
-                                                        name="kimia[{{ $index }}][method]"
-                                                        value="{{ $item->dataPemeriksaan->metode ?? '' }}">
-                                                </td>
-                                                <td class="hasil-cell">
-                                                    <input type="text"
-                                                        name="kimia[{{ $index }}][hasil_pengujian]"
-                                                        class="form-control form-control-sm excel-input hasil-input"
-                                                        value="{{ $item->hasil_pengujian ?? '' }}"
-                                                        placeholder="Hasil"
-                                                        data-original="{{ $item->hasil_pengujian ?? '' }}"
-                                                        data-id="{{ $item->id_pemeriksaan_kimia }}"
-                                                        data-type="kimia"
-                                                        data-rujukan="{{ $item->rujukan ?? '' }}"
-                                                        autocomplete="off">
-                                                </td>
-                                                <td class="bg-light satuan-cell" style="text-align:center;">
-                                                    <span class="satuan-display">
-                                                        {{ $item->dataPemeriksaan->satuan_hasil_pengujian ?? '-' }}
-                                                    </span>
-                                                </td>
-                                                <td class=" bg-light rujukan-cell" style="text-align:center;">
-                                                    <span class="rujukan-display">
-                                                        {{ $item->dataPemeriksaan->rujukan ?? '-' }}
-                                                    </span>
-                                                </td>
-                                                <td class="keterangan-cell">
-                                                    <div class="keterangan-display {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
-                                                        data-keterangan="{{ $keterangan }}">
-                                                        <strong>{{ $textDisplay }}</strong>
+                                                <div class="p-2" id="historyPanelContent_kimia" style="height: 300px; overflow-y: auto; font-size: 0.85rem;">
+                                                    <div class="text-center text-muted py-4">
+                                                        <i class="ri-file-list-3-line display-6 mb-3 opacity-50"></i>
+                                                        <p class="mb-1 small">History akan muncul di sini</p>
+                                                        <small class="text-muted">Klik pada hasil</small>
                                                     </div>
-                                                    <input type="hidden"
-                                                        name="kimia[{{ $index }}][keterangan]"
-                                                        value="{{ $keterangan }}">
-                                                </td>
-                                            </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div> <!-- END col-lg-3 -->
+                                </div> <!-- END row -->
+                            </div> <!-- END mt-4 -->
                             @else
                             <div class="alert alert-warning">
                                 <i class="ri-flask-line me-2"></i>Data hasil pemeriksaan untuk Kimia Belum/Tidak Dilakukan
                             </div>
                             @endif
 
+                            <!-- HASIL LAIN SECTION -->
                             @if($hasil_lain->count() > 0)
-                            <!-- Tampilkan pemeriksaan yang sudah ada -->
                             @foreach($hasil_lain_grouped as $jenis_pemeriksaan => $items)
-                            <div class="mt-4 pemeriksaan-lain-section" data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0 border-bottom pb-2">
-                                        <i class="ri-list-check me-2"></i>{{ $jenis_pemeriksaan }}
-                                    </h6>
-                                    <!-- DUA TOMBOL TERPISAH -->
-                                    <div>
-                                        <!-- TOMBOL 1: TAMBAH ROW KOSONG (Langsung) -->
-                                        <button type="button" class="btn btn-sm btn-outline-primary tambah-row-btn"
-                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
-                                            <i class="ri-add-line me-1"></i>Tambah Row
-                                        </button>
+                                @php
+                                    $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $jenis_pemeriksaan));
+                                @endphp
 
-                                        <!-- TOMBOL 2: TAMBAH DENGAN MODAL CHECKBOX -->
-                                        <button type="button" class="btn btn-sm btn-outline-success tambah-modal-btn ms-2"
-                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
-                                            <i class="ri-checkbox-multiple-line me-1"></i>Pilih dari Daftar
-                                        </button>
-
-                                        <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn ms-2"
-                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
-                                            <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="table-responsive">
-                                    <table class="table table-bordered table-sm pemeriksaan-lain-table">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th width="20%" class="bg-light" style="text-align:center;" hidden>Jenis Pengujian</th>
-                                                <th width="25%" class="bg-light" style="text-align:center;">Pilih Jenis Pemeriksaan</th>
-                                                <th width="15%" class="bg-light" style="text-align:center;">Satuan</th>
-                                                <th width="15%" class="bg-light" style="text-align:center;">Rujukan</th>
-                                                <th width="15%" style="text-align:center;">Hasil Pengujian</th>
-                                                <th width="10%" style="text-align:center;">Ket</th>
-                                                <th width="5%" style="text-align:center;">Aksi</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach($items as $index => $item)
-                                            @php
-                                            // Ambil data dari object hasil query
-                                            $jenis_pemeriksaan_id = $item->jenis_pemeriksaan_id ?? '';
-                                            $data_pemeriksaan = $item->data_pemeriksaan ?? $item->jenis_pengujian ?? '';
-                                            $satuan = $item->satuan_pemeriksaan ?? $item->satuan_hasil_pengujian ?? '-';
-                                            $rujukan = $item->rujukan_pemeriksaan ?? $item->rujukan ?? '-';
-                                            $keterangan = $item->Keterangan ?? '';
-
-                                            // Tentukan warna untuk keterangan
-                                            if ($keterangan === 'H') {
-                                            $bgColor = 'bg-danger bg-opacity-10';
-                                            $textColor = 'text-danger';
-                                            $textDisplay = 'H';
-                                            } elseif ($keterangan === 'L') {
-                                            $bgColor = 'bg-primary bg-opacity-10';
-                                            $textColor = 'text-primary';
-                                            $textDisplay = 'L';
-                                            } else {
-                                            $bgColor = 'bg-success bg-opacity-10';
-                                            $textColor = 'text-success';
-                                            $textDisplay = '-';
-                                            }
-                                            @endphp
-
-                                            <tr data-index="{{ $index }}"
-                                                data-id="{{ $item->id_hasil_lain ?? '' }}"
-                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
-                                                data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}">
-                                                <td class="bg-light" hidden>
-                                                    <strong>{{ $item->jenis_pengujian ?? 'Belum dipilih' }}</strong>
-                                                    <input type="hidden"
-                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id]"
-                                                        value="{{ $item->id_hasil_lain ?? '' }}">
-                                                    <input type="hidden"
-                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][jenis_pengujian]"
-                                                        value="{{ $item->jenis_pengujian ?? '' }}">
-                                                </td>
-
-                                                <td class="search-cell">
-                                                    @if(!$item->kode_pemeriksaan)
-                                                    <div class="position-relative">
-                                                        <input type="text"
-                                                            class="form-control form-control-sm kode-search-input-lain"
-                                                            placeholder="Cari kode pemeriksaan..."
-                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
-                                                            data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}"
-                                                            data-index="{{ $index }}"
-                                                            data-row-id="{{ $item->id_hasil_lain ?? '' }}"
-                                                            autocomplete="off">
-                                                        <div class="kode-search-results dropdown-menu w-100"
-                                                            style="display: none; max-height: 200px; overflow-y: auto;">
-                                                            <!-- Hasil pencarian akan dimuat di sini -->
-                                                        </div>
-                                                        <input type="hidden"
-                                                            name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][kode_pemeriksaan]"
-                                                            class="kode-pemeriksaan-input"
-                                                            value="">
-                                                    </div>
-                                                    @else
-                                                    <div class="position-relative">
-                                                        <input type="text"
-                                                            class="form-control form-control-sm kode-edit-input-lain"
-                                                            placeholder="Cari kode pemeriksaan..."
-                                                            value="{{ $data_pemeriksaan }}"
-                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
-                                                            data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}"
-                                                            data-index="{{ $index }}"
-                                                            data-row-id="{{ $item->id_hasil_lain ?? '' }}"
-                                                            data-current-kode="{{ $item->kode_pemeriksaan }}"
-                                                            autocomplete="off">
-                                                        <div class="kode-search-results dropdown-menu w-100"
-                                                            style="display: none; max-height: 200px; overflow-y: auto;">
-                                                            <!-- Hasil pencarian akan dimuat di sini -->
-                                                        </div>
-                                                        <input type="hidden"
-                                                            name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][kode_pemeriksaan]"
-                                                            class="kode-pemeriksaan-input"
-                                                            value="{{ $item->kode_pemeriksaan }}">
-                                                        <div class="mt-1">
-                                                            <small class="text-success">
-                                                                <i class="ri-links-line me-1"></i>Telah dipetakan
-                                                            </small>
-                                                        </div>
-                                                    </div>
-                                                    @endif
-                                                </td>
-
-                                                <td class="bg-light satuan-cell" style="text-align:center;">
-                                                    <span class="satuan-display">
-                                                        {{ $satuan }}
-                                                    </span>
-                                                </td>
-
-                                                <td class="bg-light rujukan-cell" style="text-align:center;">
-                                                    <span class="rujukan-display">
-                                                        {{ $rujukan }}
-                                                    </span>
-                                                </td>
-
-                                                <td class="hasil-cell">
-                                                    <input type="text"
-                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][hasil_pengujian]"
-                                                        class="form-control form-control-sm excel-input hasil-input-lain"
-                                                        value="{{ $item->hasil_pengujian ?? '' }}"
-                                                        placeholder="Hasil"
-                                                        data-original="{{ $item->hasil_pengujian ?? '' }}"
-                                                        data-id="{{ $item->id_hasil_lain }}"
-                                                        data-type="hasil_lain"
-                                                        data-rujukan="{{ $rujukan }}"
-                                                        autocomplete="off">
-                                                </td>
-
-                                                <td class="keterangan-cell">
-                                                    <div class="keterangan-display {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
-                                                        data-keterangan="{{ $keterangan }}">
-                                                        <strong>{{ $textDisplay }}</strong>
-                                                    </div>
-                                                    <input type="hidden"
-                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][keterangan]"
-                                                        value="{{ $keterangan }}">
-                                                </td>
-
-                                                <td>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn">
-                                                        <i class="ri-delete-bin-line"></i>
+                                <div class="mt-4 pemeriksaan-lain-section" data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                    <div class="row">
+                                        <!-- TABEL PEMERIKSAAN LAIN -->
+                                        <div class="col-lg-9 col-md-12">
+                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                <h6 class="mb-0 border-bottom pb-2">
+                                                    <i class="ri-list-check me-2"></i>{{ $jenis_pemeriksaan }}
+                                                </h6>
+                                                <div>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary tambah-row-btn"
+                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                                        <i class="ri-add-line me-1"></i>Tambah Row
                                                     </button>
-                                                </td>
-                                            </tr>
-                                            @endforeach
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                                                    <button type="button" class="btn btn-sm btn-outline-success tambah-modal-btn ms-2"
+                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                                        <i class="ri-checkbox-multiple-line me-1"></i>Pilih dari Daftar
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn ms-2"
+                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                                        <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered table-sm pemeriksaan-lain-table">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th width="20%" class="bg-light" style="text-align:center;" hidden>Jenis Pengujian</th>
+                                                            <th width="20%" class="bg-light" style="text-align:center;">Pilih Jenis Pemeriksaan</th>
+                                                            <th width="10%" class="bg-light" style="text-align:center;">Satuan</th>
+                                                            <th width="10%" class="bg-light" style="text-align:center;">Rujukan</th>
+                                                            <th width="5%" class="bg-light" style="text-align:center;">CH</th>
+                                                            <th width="5%" class="bg-light" style="text-align:center;">CL</th>
+                                                            <th width="10%" style="text-align:center;">Hasil Pengujian</th>
+                                                            <th width="20%" style="text-align:center;">Keterangan</th>
+                                                            <th width="5%" style="text-align:center;">Aksi</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($items as $index => $item)
+                                                        @php
+                                                        // Ambil data dari object hasil query
+                                                        $jenis_pemeriksaan_id = $item->jenis_pemeriksaan_id ?? '';
+                                                        $data_pemeriksaan = $item->data_pemeriksaan ?? $item->jenis_pengujian ?? '';
+                                                        $satuan = $item->satuan ?? $item->satuan_hasil_pengujian ?? '-';
+                                                        $rujukan = $item->rujukan ?? $item->rujukan ?? '-';
+                                                        $keterangan = $item->Keterangan ?? '';
+
+                                                        // Ambil CH dan CL dari data_pemeriksaan
+                                                        $ch_value = $item->ch ?? '-';
+                                                        $cl_value = $item->cl ?? '-';
+
+                                                        // Tentukan warna untuk keterangan
+                                                        if ($keterangan === 'CH' || $keterangan === 'H') {
+                                                        $bgColor = 'bg-danger bg-opacity-10';
+                                                        $textColor = 'text-danger';
+                                                        $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
+                                                        } elseif ($keterangan === 'CL' || $keterangan === 'L') {
+                                                        $bgColor = 'bg-primary bg-opacity-10';
+                                                        $textColor = 'text-primary';
+                                                        $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
+                                                        } else {
+                                                        $bgColor = 'bg-success bg-opacity-10';
+                                                        $textColor = 'text-success';
+                                                        $textDisplay = '-';
+                                                        }
+                                                        @endphp
+
+                                                        <tr data-index="{{ $index }}"
+                                                            data-id="{{ $item->id_hasil_lain ?? '' }}"
+                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
+                                                            data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}">
+                                                            <td class="bg-light" hidden>
+                                                                <strong>{{ $item->jenis_pengujian ?? 'Belum dipilih' }}</strong>
+                                                                <input type="hidden"
+                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id]"
+                                                                    value="{{ $item->id_hasil_lain ?? '' }}">
+                                                                <input type="hidden"
+                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][jenis_pengujian]"
+                                                                    value="{{ $item->jenis_pengujian ?? '' }}">
+                                                            </td>
+
+                                                            <td class="search-cell">
+                                                                @if(!$item->id_data_pemeriksaan)
+                                                                <div class="position-relative">
+                                                                    <input type="text"
+                                                                        class="form-control form-control-sm kode-search-input-lain"
+                                                                        placeholder="Cari data pemeriksaan..."
+                                                                        data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
+                                                                        data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}"
+                                                                        data-index="{{ $index }}"
+                                                                        data-row-id="{{ $item->id_hasil_lain ?? '' }}"
+                                                                        autocomplete="off">
+                                                                    <div class="kode-search-results dropdown-menu w-100"
+                                                                        style="display: none; max-height: 200px; overflow-y: auto;">
+                                                                    </div>
+                                                                    <input type="hidden"
+                                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id_data_pemeriksaan]"
+                                                                        class="kode-pemeriksaan-input"
+                                                                        value="">
+                                                                </div>
+                                                                @else
+                                                                <div class="position-relative">
+                                                                    <input type="text"
+                                                                        class="form-control form-control-sm kode-edit-input-lain"
+                                                                        placeholder="Cari data pemeriksaan..."
+                                                                        value="{{ $data_pemeriksaan }}"
+                                                                        data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
+                                                                        data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}"
+                                                                        data-index="{{ $index }}"
+                                                                        data-row-id="{{ $item->id_hasil_lain ?? '' }}"
+                                                                        data-current-id="{{ $item->id_data_pemeriksaan }}"
+                                                                        autocomplete="off">
+                                                                    <div class="kode-search-results dropdown-menu w-100"
+                                                                        style="display: none; max-height: 200px; overflow-y: auto;">
+                                                                    </div>
+                                                                    <input type="hidden"
+                                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id_data_pemeriksaan]"
+                                                                        class="kode-pemeriksaan-input"
+                                                                        value="{{ $item->id_data_pemeriksaan }}">
+                                                                    <div class="mt-1">
+                                                                        <small class="text-success">
+                                                                            <i class="ri-links-line me-1"></i>
+                                                                            {{ $item->id_data_pemeriksaan }}
+                                                                        </small>
+                                                                    </div>
+                                                                </div>
+                                                                @endif
+                                                            </td>
+
+                                                            <td class="bg-light satuan-cell" style="text-align:center;">
+                                                                <span class="satuan-display">
+                                                                    {{ $satuan }}
+                                                                </span>
+                                                            </td>
+
+                                                            <td class="bg-light rujukan-cell" style="text-align:center;">
+                                                                <span class="rujukan-display">
+                                                                    {{ $rujukan }}
+                                                                </span>
+                                                            </td>
+
+                                                            <!-- TAMBAHKAN KOLOM CH -->
+                                                            <td class="bg-light ch-cell" style="text-align:center;">
+                                                                <span class="ch-display">
+                                                                    {{ $ch_value }}
+                                                                </span>
+                                                                <input type="hidden"
+                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][ch]"
+                                                                    class="ch-input"
+                                                                    value="{{ $ch_value }}">
+                                                            </td>
+
+                                                            <!-- TAMBAHKAN KOLOM CL -->
+                                                            <td class="bg-light cl-cell" style="text-align:center;">
+                                                                <span class="cl-display">
+                                                                    {{ $cl_value }}
+                                                                </span>
+                                                                <input type="hidden"
+                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][cl]"
+                                                                    class="cl-input"
+                                                                    value="{{ $cl_value }}">
+                                                            </td>
+
+                                                            <td class="hasil-cell">
+                                                                <input type="text"
+                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][hasil_pengujian]"
+                                                                    class="form-control form-control-sm excel-input hasil-input-lain"
+                                                                    value="{{ $item->hasil_pengujian ?? '' }}"
+                                                                    placeholder="Hasil"
+                                                                    data-original="{{ $item->hasil_pengujian ?? '' }}"
+                                                                    data-id="{{ $item->id_hasil_lain }}"
+                                                                    data-type="hasil_lain"
+                                                                    data-rujukan="{{ $rujukan }}"
+                                                                    data-ch="{{ $ch_value }}"
+                                                                    data-cl="{{ $cl_value }}"
+                                                                    data-jenis="{{ $data_pemeriksaan }}"
+                                                                    data-rm="{{ $pasien->rm_pasien }}"
+                                                                    autocomplete="off">
+                                                            </td>
+
+                                                            <td class="keterangan-cell">
+                                                                <div class="keterangan-display {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
+                                                                    data-keterangan="{{ $keterangan }}">
+                                                                    <strong>{{ $textDisplay }}</strong>
+                                                                </div>
+                                                                <input type="hidden"
+                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][keterangan]"
+                                                                    value="{{ $keterangan }}">
+                                                            </td>
+
+                                                            <td>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn">
+                                                                    <i class="ri-delete-bin-line"></i>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div> <!-- END col-lg-9 -->
+
+                                        <!-- HISTORY PANEL HASIL LAIN -->
+                                        <div class="col-lg-3 col-md-12">
+                                            <div class="card h-100 border-start border-primary">
+                                                <div class="card-header bg-light py-2">
+                                                    <h6 class="card-title mb-0 small">
+                                                        <i class="ri-history-line me-2 text-primary"></i>History {{ $jenis_pemeriksaan }}
+                                                    </h6>
+                                                </div>
+                                                <div class="card-body p-0">
+                                                    <div class="p-2 border-bottom bg-primary bg-opacity-5"
+                                                        id="currentHoverInfo_{{ $slug }}">
+                                                        <div class="text-center">
+                                                            <div class="text-primary mb-1 small"
+                                                                id="hoverJenisPemeriksaan_{{ $slug }}">
+                                                                <i class="ri-cursor-line me-1"></i>
+                                                                <span>Pilih hasil</span>
+                                                            </div>
+                                                            <div class="small text-muted"
+                                                                id="hoverTypeInfo_{{ $slug }}">
+                                                                Klik pada kolom "Hasil"
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div class="p-2"
+                                                        id="historyPanelContent_{{ $slug }}"
+                                                        style="height: 300px; overflow-y: auto; font-size: 0.85rem;">
+                                                        <div class="text-center text-muted py-4">
+                                                            <i class="ri-file-list-3-line display-6 mb-3 opacity-50"></i>
+                                                            <p class="mb-1 small">History akan muncul di sini</p>
+                                                            <small class="text-muted">Klik pada hasil</small>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> <!-- END col-lg-3 -->
+                                    </div> <!-- END row -->
+                                </div> <!-- END pemeriksaan-lain-section -->
                             @endforeach
                             @endif
 
@@ -767,7 +979,7 @@
                                                 <label class="form-label">Pilih Jenis Pemeriksaan</label>
                                                 <select id="jenisPemeriksaanSelect" class="form-select">
                                                     <option value="">-- Pilih Jenis Pemeriksaan --</option>
-                                                    @foreach($jenis_pemeriksaan_1_list as $itemJenis) <!-- UBAH DI SINI -->
+                                                    @foreach($jenis_pemeriksaan_1_list as $itemJenis)
                                                     <option value="{{ $itemJenis->nama_pemeriksaan }}">{{ $itemJenis->nama_pemeriksaan }}</option>
                                                     @endforeach
                                                 </select>
@@ -781,7 +993,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> <!-- END card-body -->
 
                         <div class="card-footer border-top">
                             <div class="row align-items-center">
@@ -793,7 +1005,6 @@
                                         <div class="d-flex align-items-center">
                                             <select id="pemeriksaSelect" class="form-select form-select-sm"
                                                 style="max-width: 250px;">
-                                                <!-- HAPUS atribut disabled -->
                                                 <option value="">-- Pilih Pemeriksa --</option>
                                                 @if($pasien->pemeriksa)
                                                 <option value="{{ $pasien->id_pemeriksa }}" selected>
@@ -803,7 +1014,6 @@
                                             </select>
                                             <button id="savePemeriksaBtn"
                                                 class="btn btn-sm btn-outline-primary ms-2">
-                                                <!-- HAPUS atribut disabled -->
                                                 <i class="ri-save-line"></i>
                                             </button>
                                         </div>
@@ -817,7 +1027,6 @@
                                                 <small class="text-muted">
                                                     Pada: {{ $pasien->updated_at ?? '-' }}
                                                 </small>
-
                                             </small>
                                         </div>
                                         @else
@@ -858,116 +1067,80 @@
                 </div>
             </div>
         </div>
-        <!-- Row ends -->
-        @else
-        <div class="alert alert-danger">
-            <i class="ri-error-warning-line me-2"></i>Data pasien tidak ditemukan.
-        </div>
-        @endif
+        <!-- Content ends -->
+    @else
+    <div class="alert alert-danger">
+        <i class="ri-error-warning-line me-2"></i>Data pasien tidak ditemukan.
     </div>
-    <div id="globalSearchResults" class="dropdown-menu" style="display: none; position: fixed; z-index: 1060; border: 1px solid rgba(0,0,0,.15); border-radius: 0.375rem; background-color: white; box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);">
-        <!-- Hasil pencarian akan ditampilkan di sini -->
-    </div>
-    <!-- App body ends -->
-     <!-- Modal untuk memilih pemeriksaan -->
-    <div class="modal fade" id="pilihPemeriksaanModal" tabindex="-1" aria-labelledby="pilihPemeriksaanModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="pilihPemeriksaanModalLabel">
-                        <i class="ri-checkbox-multiple-line me-2"></i>
-                        Pilih Pemeriksaan
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Info jenis pemeriksaan -->
-                    <div class="alert alert-info mb-3">
-                        <div class="d-flex align-items-start">
-                            <i class="ri-information-line me-2 mt-1"></i>
-                            <div>
-                                <strong>Petunjuk:</strong>
-                                <ul class="mb-0 mt-1">
-                                    <li>Centang pemeriksaan yang ingin ditambahkan</li>
-                                    <li>Urutan akan mengikuti urutan centangan (yang pertama dicentang muncul pertama)</li>
-                                    <li>Gunakan tombol <strong>Terapkan ke Tabel</strong> untuk menambah ke tabel</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Filter pencarian -->
-                    <div class="row mb-3">
-                        <div class="col-md-12">
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="ri-search-line"></i></span>
-                                <input type="text" id="searchPemeriksaanInput" class="form-control" placeholder="Cari pemeriksaan...">
-                                <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
-                                    <i class="ri-close-line"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Selected counter -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <span class="badge bg-primary" id="selectedCount">0 dipilih</span>
-                        </div>
-                        <div>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" id="selectAllBtn">
-                                <i class="ri-checkbox-line me-1"></i>Centang Semua
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger ms-2" id="deselectAllBtn">
-                                <i class="ri-checkbox-blank-line me-1"></i>Hapus Semua
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Daftar pemeriksaan -->
-                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
-                        <table class="table table-hover table-sm">
-                            <thead class="sticky-top bg-light">
-                                <tr>
-                                    <th width="50px" class="text-center">
-                                        <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
-                                    </th>
-                                    <th width="100px">Kode</th>
-                                    <th>Nama Pemeriksaan</th>
-                                    <th width="80px">Satuan</th>
-                                    <th width="120px">Rujukan</th>
-                                </tr>
-                            </thead>
-                            <tbody id="pemeriksaanList">
-                                <!-- Data akan diisi oleh JavaScript -->
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- No results -->
-                    <div id="noResults" class="text-center py-4" style="display: none;">
-                        <i class="ri-search-line display-5 text-muted mb-2"></i>
-                        <p class="text-muted">Tidak ditemukan pemeriksaan</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <div class="me-auto">
-                        <small class="text-muted">
-                            <span id="selectedItemsPreview"></span>
-                        </small>
-                    </div>
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="ri-close-line me-1"></i>Batal
-                    </button>
-                    <button type="button" class="btn btn-primary" id="applyToTableBtn">
-                        <i class="ri-table-line me-1"></i>Terapkan ke Tabel
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+    @endif
 </div>
+<!-- App body ends -->
 
+<style>
+    /* History Panel Styling */
+    .card.border-start {
+        border-left-width: 3px !important;
+    }
+
+    #currentHoverInfo {
+        transition: all 0.3s ease;
+        min-height: 70px;
+    }
+
+    .history-item-card {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        transition: transform 0.2s ease;
+    }
+
+    .history-item-card:hover {
+        transform: translateX(-2px);
+        background-color: #e9ecef;
+    }
+
+    .history-date {
+        font-size: 0.75rem;
+        color: #6c757d;
+        display: block;
+    }
+
+    .history-result {
+        font-weight: 200;
+        color: #0d6efd;
+        font-size: 0.5rem;
+    }
+
+    .history-lab {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+
+    /* Scrollbar styling */
+    #historyPanelContent {
+        scrollbar-width: thin;
+        scrollbar-color: #c1c1c1 #f1f1f1;
+    }
+
+    #historyPanelContent::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #historyPanelContent::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 3px;
+    }
+
+    #historyPanelContent::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
+
+    #historyPanelContent::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+</style>
 
 <style>
     /* Custom Styles */
@@ -1090,7 +1263,7 @@
 
     .text-success {
         color: #198754 !important;
-        font-weight: bold;
+        /* font-weight: bold; */
     }
 
     .has-error {
@@ -1210,6 +1383,58 @@
         background: #a8a8a8;
     }
 
+    /* Style untuk dropdown penjamin dan ruangan */
+    .penjamin-option:hover, .ruangan-option:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+
+    .penjamin-option:active, .ruangan-option:active {
+        background-color: #e9ecef;
+    }
+
+    /* #penjaminInfo, #ruanganInfo {
+        margin-top: 5px;
+        padding: 5px;
+        background-color: rgba(25, 135, 84, 0.1);
+        border-radius: 4px;
+        border-left: 3px solid #198754;
+    } */
+
+    #penjaminDropdown, #ruanganDropdown {
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,.15);
+        border: 1px solid rgba(0,0,0,.15);
+    }
+
+    .dropdown-item {
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Style untuk input yang sedang aktif */
+    #penjaminInput:focus, #ruanganInput:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    /* Loading spinner */
+    .spinner-border {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        #penjaminDropdown, #ruanganDropdown {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
 </style>
 
 <!-- Toast Container -->
@@ -1260,17 +1485,18 @@
         };
 
         // Function untuk update keterangan display - GLOBAL SCOPE
+        // Function untuk update keterangan display - MODIFIED untuk CH dan CL
         window.updateKeteranganDisplay = function($display, keterangan) {
             // Reset semua kelas
             $display.removeClass('bg-danger bg-opacity-10 bg-primary bg-opacity-10 bg-success bg-opacity-10 text-danger text-primary text-success');
 
             // Tambahkan kelas sesuai nilai
-            if (keterangan === 'H') {
+            if (keterangan === 'CH' || keterangan === 'H') {
                 $display.addClass('bg-danger bg-opacity-10 text-danger')
-                    .html('<strong>H</strong>');
-            } else if (keterangan === 'L') {
+                    .html('<strong>' + (keterangan === 'CH' ? 'CH' : 'H') + '</strong>');
+            } else if (keterangan === 'CL' || keterangan === 'L') {
                 $display.addClass('bg-primary bg-opacity-10 text-primary')
-                    .html('<strong>L</strong>');
+                    .html('<strong>' + (keterangan === 'CL' ? 'CL' : 'L') + '</strong>');
             } else if (keterangan === '-' || keterangan === '') {
                 $display.addClass('bg-success bg-opacity-10 text-success')
                     .html('<strong>-</strong>');
@@ -1289,259 +1515,130 @@
             // Pastikan format konsisten
             const finalKeterangan = keterangan === '' || keterangan === null ? '-' : keterangan;
             $hiddenInput.val(finalKeterangan);
-
-            console.log('updateKeteranganDisplay - Keterangan:', finalKeterangan);
-            console.log('updateKeteranganDisplay - Hidden input updated to:', $hiddenInput.val());
         };
 
         // Function untuk update keterangan client-side (preview) - GLOBAL SCOPE
+        // Function untuk update keterangan client-side (preview) - GLOBAL SCOPE
+        // Function untuk update keterangan client-side dengan CH dan CL
+        // Function untuk update keterangan client-side dengan prioritas CH/CL
+        // Function untuk update keterangan client-side (preview)
         window.updateKeteranganClientSide = function($input) {
-            const hasil = $input.val();
-            const rujukan = $input.data('rujukan') || $input.attr('data-rujukan') || '';
+            const value = $input.val();
+
+            if (!value || value.trim() === '') {
+                // Clear jika kosong
+                const $row = $input.closest('tr');
+                const $keteranganDisplay = $row.find('.keterangan-display');
+                const $hiddenInput = $row.find('input[name*="[keterangan]"]');
+
+                updateKeteranganDisplay($keteranganDisplay, '');
+                $hiddenInput.val('');
+                return;
+            }
+
+            // Gunakan fungsi calculateKeterangan yang sama
+            const keterangan = calculateKeterangan(value, $input);
+
+            // Update display
             const $row = $input.closest('tr');
             const $keteranganDisplay = $row.find('.keterangan-display');
             const $hiddenInput = $row.find('input[name*="[keterangan]"]');
 
-            console.log('=== updateKeteranganClientSide ===');
-            console.log('Hasil:', hasil);
-            console.log('Rujukan:', rujukan);
-            console.log('Input ID:', $input.data('id'));
-            console.log('Hidden input sebelum:', $hiddenInput.val());
+            updateKeteranganDisplay($keteranganDisplay, keterangan);
+            $hiddenInput.val(keterangan);
 
-            // Clear jika kosong
-            if (!hasil || hasil.trim() === '') {
-                console.log('Hasil kosong, reset keterangan');
-                updateKeteranganDisplay($keteranganDisplay, '');
-                return;
+            console.log('updateKeteranganClientSide →', keterangan);
+        };
+        // Helper function untuk parse CH/CL value
+        window.parseCriticalValue = function(criticalStr) {
+            if (!criticalStr || criticalStr === '' || criticalStr === '-' || criticalStr === 'null') {
+                return null;
             }
 
-            if (!rujukan || rujukan.trim() === '' || rujukan.trim() === '-') {
-                console.log('Rujukan tidak tersedia atau "-"');
-                updateKeteranganDisplay($keteranganDisplay, '-');
-                return;
+            const str = criticalStr.toString().trim();
+
+            // Format: "> 170" atau ">170"
+            if (str.includes('>')) {
+                const value = str.replace('>', '').trim();
+                const num = parseFloat(value);
+                return !isNaN(num) ? { value: num, operator: '>' } : null;
             }
 
-            // Jika rujukan tidak ada
-            if (!rujukan || rujukan.trim() === '' || rujukan.trim() === '-') {
-                console.log('Rujukan tidak tersedia');
-                updateKeteranganDisplay($keteranganDisplay, '-');
-                return;
+            // Format: "< 90" atau "<90"
+            if (str.includes('<')) {
+                const value = str.replace('<', '').trim();
+                const num = parseFloat(value);
+                return !isNaN(num) ? { value: num, operator: '<' } : null;
             }
 
-            try {
-                const rujukanStr = rujukan.toString().trim();
-                const hasilStr = hasil.toString().trim();
-                const hasilNum = parseFloat(hasilStr.replace(',', '.'));
+            // Format: angka langsung "170"
+            const num = parseFloat(str);
+            return !isNaN(num) ? { value: num, operator: 'direct' } : null;
+        };
 
-                console.log('=== Data untuk perhitungan ===');
-                console.log('Rujukan string:', rujukanStr);
-                console.log('Hasil string:', hasilStr);
-                console.log('Hasil number:', hasilNum);
+        // Function untuk cek critical values
+        window.checkCriticalValues = function(hasilNum, chStr, clStr) {
+            const ch = parseCriticalValue(chStr);
+            const cl = parseCriticalValue(clStr);
 
-                // Jika bukan angka, cek kualitatif
-                if (isNaN(hasilNum)) {
-                    const hasilLower = hasilStr.toLowerCase();
-                    const rujukanLower = rujukanStr.toLowerCase();
-
-                    if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
-                        if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
-                            hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
-                            updateKeteranganDisplay($keteranganDisplay, '-');
-                        } else {
-                            updateKeteranganDisplay($keteranganDisplay, 'H');
-                        }
-                        return;
-                    } else if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
-                        if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
-                            hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
-                            updateKeteranganDisplay($keteranganDisplay, '-');
-                        } else {
-                            updateKeteranganDisplay($keteranganDisplay, 'L');
-                        }
-                        return;
-                    } else {
-                        updateKeteranganDisplay($keteranganDisplay, '-');
-                    }
-                    return;
+            if (ch) {
+                if (ch.operator === '>') {
+                    if (hasilNum > ch.value) return 'CH';
+                } else if (ch.operator === 'direct') {
+                    if (hasilNum > ch.value) return 'CH';
                 }
-
-                // ============================================
-                // LOGIKA BARU BERDASARKAN PENJELASAN ANDA
-                // ============================================
-
-                // 1. FORMAT RANGE: "1 - 90" atau "1-90"
-                if (rujukanStr.includes('-') && !rujukanStr.includes('<') && !rujukanStr.includes('>')) {
-                    const parts = rujukanStr.split('-');
-                    if (parts.length === 2) {
-                        const min = parseFloat(parts[0].trim());
-                        const max = parseFloat(parts[1].trim());
-
-                        if (!isNaN(min) && !isNaN(max)) {
-                            console.log('=== FORMAT RANGE ===');
-                            console.log('Min:', min, 'Max:', max, 'Hasil:', hasilNum);
-
-                            if (hasilNum < min) {
-                                console.log(`Hasil (${hasilNum}) < Min (${min}) → L`);
-                                updateKeteranganDisplay($keteranganDisplay, 'L');
-                            } else if (hasilNum > max) {
-                                console.log(`Hasil (${hasilNum}) > Max (${max}) → H`);
-                                updateKeteranganDisplay($keteranganDisplay, 'H');
-                            } else {
-                                console.log(`Hasil (${hasilNum}) dalam range ${min}-${max} → -`);
-                                updateKeteranganDisplay($keteranganDisplay, '-');
-                            }
-                            return;
-                        }
-                    }
-                }
-
-                // 2. FORMAT "< 90" (Normal di ATAS 90)
-                if (rujukanStr.startsWith('<')) {
-                    const batas = parseFloat(rujukanStr.replace('<', '').trim());
-                    if (!isNaN(batas)) {
-                        console.log('=== FORMAT "< batas" ===');
-                        console.log('Batas:', batas, 'Hasil:', hasilNum);
-                        console.log('Interpretasi: Normal jika ≥ batas, Low jika < batas');
-
-                        if (hasilNum >= batas) {
-                            console.log(`Hasil (${hasilNum}) ≥ Batas (${batas}) → - (Normal)`);
-                            updateKeteranganDisplay($keteranganDisplay, '-');
-                        } else {
-                            console.log(`Hasil (${hasilNum}) < Batas (${batas}) → L (Low)`);
-                            updateKeteranganDisplay($keteranganDisplay, 'L');
-                        }
-                        return;
-                    }
-                }
-
-                // Default: tidak ada pola yang cocok
-                console.log('=== Tidak ada pola yang cocok ===');
-                updateKeteranganDisplay($keteranganDisplay, '-');
-
-            } catch (e) {
-                console.error('Error:', e);
-                updateKeteranganDisplay($keteranganDisplay, '-');
             }
 
-            console.log('Hidden input sesudah:', $hiddenInput.val());
+            if (cl) {
+                if (cl.operator === '<') {
+                    if (hasilNum < cl.value) return 'CL';
+                } else if (cl.operator === 'direct') {
+                    if (hasilNum < cl.value) return 'CL';
+                }
+            }
+
+            return null;
         };
 
         // Function untuk menambah request ke queue
+        // Function untuk menambah request ke queue
+        // Function untuk menambah request ke queue dengan prioritas CH/CL
+        // Function untuk menambah request ke queue - MODIFIED untuk konsistensi
         function addToQueue(type, id, field, value, $element) {
-            if (!id) return;
+            if (!id) {
+                console.error('❌ addToQueue: ID tidak valid', id);
+                return;
+            }
 
             const $row = $element.closest('tr');
             const $keteranganDisplay = $row.find('.keterangan-display');
             const $hiddenInput = $row.find('input[name*="[keterangan]"]');
 
-            // Inisialisasi keterangan
-            let keterangan = $hiddenInput.val();
+            // Hitung keterangan
+            const keterangan = calculateKeterangan(value, $element);
 
-            // Jika kosong atau '-', cek dari display
-            if (!keterangan || keterangan === '' || keterangan === '-') {
-                keterangan = $keteranganDisplay.data('keterangan') || '-';
-            }
+            console.log('📝 addToQueue - Keterangan dihitung:', keterangan);
 
-            // Ambil rujukan dan hasil saat ini
-            const rujukan = $element.data('rujukan') || $element.attr('data-rujukan') || '';
-            const hasil = value;
+            // Update UI
+            updateKeteranganDisplay($keteranganDisplay, keterangan);
+            $hiddenInput.val(keterangan);
 
-            // HANYA hitung ulang jika rujukan valid dan keterangan masih '-'
-            if (keterangan === '-' && hasil && hasil.trim() !== '' &&
-                rujukan && rujukan.trim() !== '' && rujukan.trim() !== '-') {
+            console.log('📤 Kirim ke server:', {
+                type: type,
+                id: id,
+                field: field,
+                value: value,
+                keterangan: keterangan
+            });
 
-                console.log('addToQueue - Menghitung ulang keterangan karena rujukan valid');
-                console.log('Hasil:', hasil, 'Rujukan:', rujukan);
-
-                const hasilStr = hasil.toString().trim();
-                const rujukanStr = rujukan.toString().trim();
-                const hasilNum = parseFloat(hasilStr.replace(',', '.'));
-
-                // Hanya hitung jika hasil numerik dan rujukan tidak kosong
-                if (!isNaN(hasilNum) && rujukanStr) {
-                    // 1. FORMAT RANGE: "1 - 90" atau "1-90"
-                    if (rujukanStr.includes('-') && !rujukanStr.includes('<') && !rujukanStr.includes('>')) {
-                        const parts = rujukanStr.split('-');
-                        if (parts.length === 2) {
-                            const min = parseFloat(parts[0].trim());
-                            const max = parseFloat(parts[1].trim());
-
-                            if (!isNaN(min) && !isNaN(max)) {
-                                if (hasilNum < min) {
-                                    keterangan = 'L';
-                                    console.log(`Hasil (${hasilNum}) < Min (${min}) → L`);
-                                } else if (hasilNum > max) {
-                                    keterangan = 'H';
-                                    console.log(`Hasil (${hasilNum}) > Max (${max}) → H`);
-                                } else {
-                                    keterangan = '-';
-                                    console.log(`Hasil (${hasilNum}) dalam range ${min}-${max} → -`);
-                                }
-                            }
-                        }
-                    }
-                    // 2. FORMAT "< 90" (Normal jika ≥ batas, Low jika < batas)
-                    else if (rujukanStr.startsWith('<')) {
-                        const batas = parseFloat(rujukanStr.replace('<', '').trim());
-                        if (!isNaN(batas)) {
-                            if (hasilNum >= batas) {
-                                keterangan = '-';
-                                console.log(`Hasil (${hasilNum}) ≥ Batas (${batas}) → -`);
-                            } else {
-                                keterangan = 'L';
-                                console.log(`Hasil (${hasilNum}) < Batas (${batas}) → L`);
-                            }
-                        }
-                    }
-                    // Format lainnya, default ke '-'
-                    else {
-                        keterangan = '-';
-                        console.log('Format rujukan tidak dikenali, default ke "-"');
-                    }
-                } else {
-                    // Handle hasil non-numerik atau rujukan tidak valid
-                    const hasilLower = hasilStr.toLowerCase();
-                    const rujukanLower = rujukanStr.toLowerCase();
-
-                    if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
-                        if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
-                            hasilLower.includes('non-reactive') || hasilLower.includes('nonreactive')) {
-                            keterangan = '-';
-                        } else {
-                            keterangan = 'H';
-                        }
-                    } else if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
-                        if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
-                            hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
-                            keterangan = '-';
-                        } else {
-                            keterangan = 'L';
-                        }
-                    } else {
-                        keterangan = '-';
-                    }
-                }
-
-                // Update display di client untuk preview
-                updateKeteranganDisplay($keteranganDisplay, keterangan);
-            }
-
-            // Pastikan keterangan tidak kosong
-            if (!keterangan || keterangan === '') {
-                keterangan = '-';
-            }
-
-            console.log('addToQueue - Keterangan final:', keterangan,
-                'Hidden input:', $hiddenInput.val(),
-                'Display data:', $keteranganDisplay.data('keterangan'));
-
+            // Tambah ke queue
             ajaxQueue.push({
                 type: type,
                 id: id,
                 field: field,
                 value: value,
                 $element: $element,
-                keterangan: keterangan, // SELALU kirim keterangan
+                keterangan: keterangan, // PASTIKAN INI ADA
                 timestamp: Date.now()
             });
 
@@ -1549,7 +1646,163 @@
                 processQueue();
             }
         }
+        function calculateKeterangan(value, $element) {
+            const hasilStr = value.toString().trim();
+            const hasilNum = parseFloat(hasilStr.replace(',', '.'));
+            const rujukan = $element.data('rujukan') || $element.attr('data-rujukan') || '';
+            const ch = $element.data('ch') || $element.attr('data-ch') || '';
+            const cl = $element.data('cl') || $element.attr('data-cl') || '';
 
+            console.log('🔍 calculateKeterangan:', {
+                hasil: hasilStr,
+                rujukan: rujukan,
+                ch: ch,
+                cl: cl,
+                isNumeric: !isNaN(hasilNum)
+            });
+
+            // Clear jika kosong
+            if (!hasilStr || hasilStr === '') {
+                return '-';
+            }
+
+            // Jika numeric
+            if (!isNaN(hasilNum)) {
+                // 1. PRIORITAS: Cek CH (Critical High)
+                if (ch && ch !== '' && ch !== '-' && ch !== 'null') {
+                    const chNum = parseCriticalValue(ch);
+                    console.log('CH Check:', { ch, chNum, hasilNum });
+
+                    if (chNum !== null && hasilNum > chNum) {
+                        console.log('✅ CH terdeteksi:', hasilNum, '>', chNum);
+                        return 'CH';
+                    }
+                }
+
+                // 2. PRIORITAS: Cek CL (Critical Low)
+                if (cl && cl !== '' && cl !== '-' && cl !== 'null') {
+                    const clNum = parseCriticalValue(cl);
+                    console.log('CL Check:', { cl, clNum, hasilNum });
+
+                    if (clNum !== null && hasilNum < clNum) {
+                        console.log('✅ CL terdeteksi:', hasilNum, '<', clNum);
+                        return 'CL';
+                    }
+                }
+
+                // 3. PRIORITAS: Cek Rujukan (jika CH/CL tidak match)
+                console.log('CH/CL tidak match, cek rujukan...');
+                const rujukanResult = checkRujukanLogic(hasilNum, rujukan);
+                if (rujukanResult !== '-') {
+                    console.log('✅ Rujukan terdeteksi:', rujukanResult);
+                    return rujukanResult;
+                }
+
+                console.log('Tidak ada kondisi yang match, default ke -');
+                return '-';
+            }
+            // Jika non-numeric
+            else {
+                console.log('Non-numeric result, checking qualitative...');
+                const nonNumericResult = checkNonNumericLogic(hasilStr, rujukan);
+                return nonNumericResult;
+            }
+        }
+
+
+        function parseCriticalValue(criticalStr) {
+            if (!criticalStr || criticalStr === '' || criticalStr === '-' || criticalStr === 'null') {
+                return null;
+            }
+
+            const str = criticalStr.toString().trim();
+
+            // Format: "> 170" atau ">170"
+            if (str.includes('>')) {
+                const value = parseFloat(str.replace('>', '').trim());
+                return isNaN(value) ? null : value;
+            }
+
+            // Format: "< 90" atau "<90"
+            if (str.includes('<')) {
+                const value = parseFloat(str.replace('<', '').trim());
+                return isNaN(value) ? null : value;
+            }
+
+            // Format: angka langsung "170"
+            const value = parseFloat(str);
+            return isNaN(value) ? null : value;
+        }
+
+        function checkRujukanLogic(hasilNum, rujukanStr) {
+            if (!rujukanStr || rujukanStr === '' || rujukanStr === '-' || rujukanStr === 'null') {
+                return '-';
+            }
+
+            const rujukan = rujukanStr.toString().trim();
+
+            // 1. FORMAT RANGE: "13 - 50" atau "13-50"
+            if (rujukan.includes('-') && !rujukan.includes('<') && !rujukan.includes('>')) {
+                const parts = rujukan.split('-');
+                if (parts.length === 2) {
+                    const min = parseFloat(parts[0].trim());
+                    const max = parseFloat(parts[1].trim());
+
+                    if (!isNaN(min) && !isNaN(max)) {
+                        if (hasilNum < min) return 'L';
+                        if (hasilNum > max) return 'H';
+                        return '-';
+                    }
+                }
+            }
+
+            // 2. FORMAT "< X" (Normal jika < X, High jika ≥ X)
+            if (rujukan.startsWith('<')) {
+                const batas = parseFloat(rujukan.replace('<', '').trim());
+                if (!isNaN(batas)) {
+                    return hasilNum < batas ? '-' : 'H';
+                }
+            }
+
+            // 3. FORMAT "> X" (Normal jika > X, Low jika ≤ X)
+            if (rujukan.startsWith('>')) {
+                const batas = parseFloat(rujukan.replace('>', '').trim());
+                if (!isNaN(batas)) {
+                    return hasilNum > batas ? '-' : 'L';
+                }
+            }
+
+            return '-';
+        }
+
+        function checkNonNumericLogic(hasilStr, rujukanStr) {
+            if (!rujukanStr || rujukanStr === '' || rujukanStr === '-' || rujukanStr === 'null') {
+                return '-';
+            }
+
+            const hasilLower = hasilStr.toLowerCase();
+            const rujukanLower = rujukanStr.toLowerCase();
+
+            if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
+                if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
+                    hasilLower.includes('non-reactive') || hasilLower.includes('nonreactive')) {
+                    return '-';
+                } else {
+                    return 'H';
+                }
+            }
+
+            if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
+                if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
+                    hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
+                    return '-';
+                } else {
+                    return 'L';
+                }
+            }
+
+            return '-';
+        }
         // Function untuk memproses queue
         // Function untuk memproses queue
         function processQueue() {
@@ -1588,49 +1841,33 @@
                     request.$element.addClass('is-changing');
                 },
                 success: function(response) {
+                    console.log('✅ Response dari server:', response);
+
                     if (response.success) {
+                        // Pastikan keterangan di response sama dengan yang dikirim
+                        if (response.data.keterangan !== request.keterangan) {
+                            console.warn('⚠️ PERHATIAN: Keterangan di response berbeda!', {
+                                dikirim: request.keterangan,
+                                diterima: response.data.keterangan
+                            });
+                        }
+
+                        // Update UI dengan response dari server (harus sama)
                         request.$element.removeClass('is-changing').addClass('is-changed');
                         request.$element.data('original', request.value);
 
-                        // TIDAK PERLU update keterangan dari server response
-                        // Karena kita sudah menghitung dengan benar di client
-                        console.log('Server response:', response);
+                        // Log untuk debugging
+                        console.log('📝 Database menyimpan keterangan:', response.data.keterangan);
 
-                        // Hanya log jika berbeda, tapi JANGAN update
-                        if (response.data.keterangan && response.data.keterangan !== request.keterangan) {
-                            console.log('PERHATIAN: Server mengembalikan keterangan berbeda:',
-                                'Client:', request.keterangan,
-                                'Server:', response.data.keterangan,
-                                'Kami tetap menggunakan:', request.keterangan);
-
-                            // Tetap gunakan yang dari client, JANGAN update UI
-                            // updateKeteranganDisplay TIDAK dipanggil di sini
+                        // Tampilkan toast dengan info keterangan
+                        if (typeof window.showToast === 'function') {
+                            let msg = 'Data berhasil disimpan';
+                            if (response.data.keterangan === 'CH') msg += ' (Critical High)';
+                            else if (response.data.keterangan === 'CL') msg += ' (Critical Low)';
+                            else if (response.data.keterangan === 'H') msg += ' (High)';
+                            else if (response.data.keterangan === 'L') msg += ' (Low)';
+                            window.showToast('success', msg);
                         }
-
-                        if (response.data.updated_at) {
-                            $('#lastSaved').text(`Terakhir disimpan: ${response.data.updated_at}`);
-                        }
-
-                        pendingChanges = $('.is-changed').length > 0;
-                        updateSaveStatus();
-
-                        request.$element.closest('td').addClass('table-success');
-                        setTimeout(() => {
-                            request.$element.closest('td').removeClass('table-success');
-                        }, 1000);
-
-                        showToast('success', 'Data berhasil disimpan');
-
-                        // DEBUG: Tampilkan nilai akhir
-                        const $row = request.$element.closest('tr');
-                        const $hiddenInput = $row.find('input[name*="[keterangan]"]');
-                        const $display = $row.find('.keterangan-display');
-                        console.log('processQueue - Keterangan akhir:', {
-                            hidden: $hiddenInput.val(),
-                            display: $display.data('keterangan'),
-                            client: request.keterangan,
-                            server: response.data.keterangan
-                        });
                     }
                 },
                 error: function(xhr) {
@@ -2017,29 +2254,34 @@
         loadPemeriksaData();
 
         // INISIALISASI DATA RUJUKAN DARI data_pemeriksaan SAAT PAGE LOAD
-        // INISIALISASI DATA RUJUKAN DARI data_pemeriksaan SAAT PAGE LOAD
-        console.log('Initializing rujukan data from data_pemeriksaan...');
+        // INISIALISASI DATA RUJUKAN, CH, DAN CL SAAT PAGE LOAD
+        console.log('Initializing rujukan, CH, CL data from data_pemeriksaan...');
         $('.hasil-input').each(function() {
             const $input = $(this);
             const $row = $input.closest('tr');
+            const type = $input.data('type');
 
-            // Coba dari rujukan-display terlebih dahulu
+            // Ambil rujukan dari rujukan-display
             let rujukanDisplay = $row.find('.rujukan-display').text().trim();
+            let chDisplay = $row.find('.ch-cell').text().trim();
+            let clDisplay = $row.find('.cl-cell').text().trim();
 
-            // Jika rujukan display '-', kosong, atau tidak valid
-            if (!rujukanDisplay || rujukanDisplay === '-' || rujukanDisplay === '') {
-                rujukanDisplay = '';
-            }
-
-            // Set data-rujukan
+            // Set data attributes
             $input.data('rujukan', rujukanDisplay);
             $input.attr('data-rujukan', rujukanDisplay);
 
-            console.log('Initialized rujukan for input:', {
+            $input.data('ch', chDisplay);
+            $input.attr('data-ch', chDisplay);
+
+            $input.data('cl', clDisplay);
+            $input.attr('data-cl', clDisplay);
+
+            console.log('Initialized data for input:', {
                 id: $input.data('id'),
-                type: $input.data('type'),
+                type: type,
                 rujukan: rujukanDisplay,
-                isEmptyOrDash: (!rujukanDisplay || rujukanDisplay === '-')
+                ch: chDisplay,
+                cl: clDisplay
             });
         });
 
@@ -2077,13 +2319,13 @@
                              style="display: none; max-height: 200px; overflow-y: auto;">
                         </div>
                         <input type="hidden"
-                            name="kimia[${rowIndex}][kode_pemeriksaan]"
+                            name="kimia[${rowIndex}][id_data_pemeriksaan]"
                             class="kode-pemeriksaan-input"
                             value="${kode}">
 
                         <div class="mt-1 d-flex justify-content-between align-items-center">
                             <small class="text-success">
-                                <i class="ri-links-line me-1"></i>Telah dipetakan:
+                                <i class="ri-links-line me-1"></i>
                                 <span class="kode-display">${kode}</span>
                             </small>
                         </div>
@@ -2102,7 +2344,7 @@
                              style="display: none; max-height: 200px; overflow-y: auto;">
                         </div>
                         <input type="hidden"
-                            name="kimia[${rowIndex}][kode_pemeriksaan]"
+                            name="kimia[${rowIndex}][id_data_pemeriksaan]"
                             class="kode-pemeriksaan-input"
                             value="">
                         <div class="mt-1">
@@ -2202,12 +2444,13 @@
         }
 
         // Function untuk handle search kode
+        // Function untuk handle search kode pemeriksaan - MENGGUNAKAN id_data_pemeriksaan
         function handleKodeSearch($input) {
             const searchTerm = $input.val().trim();
             const $results = $input.next('.kode-search-results');
             const kimiaId = $input.data('kimia-id');
             const analysis = $input.data('analysis');
-            const currentKode = $input.data('current-kode');
+            const currentId = $input.data('current-id'); // UBAH DARI data-current-kode
 
             if (searchTerm.length < 2) {
                 $results.hide().empty();
@@ -2223,10 +2466,10 @@
                         _token: csrfToken,
                         search: searchTerm,
                         analysis: analysis,
-                        exclude_current: currentKode
+                        exclude_current: currentId // GUNAKAN ID, bukan kode
                     },
                     beforeSend: function() {
-                        $results.html('<div class="dropdown-item text-center py-2"><i class="ri-loader-4-line spin"></i> Mencari...</div>').show();
+                        $results.html('<div class="dropdown-item text-center py-2"><i class="ri-loader-4-line spin"></i> Mencari data pemeriksaan...</div>').show();
                     },
                     success: function(response) {
                         $results.empty();
@@ -2235,14 +2478,16 @@
                             response.data.forEach(function(item) {
                                 const $option = $(`
                                     <button type="button" class="dropdown-item kode-option"
-                                            data-kode="${item.kode_pemeriksaan}"
+                                            data-id="${item.id_data_pemeriksaan}"
                                             data-data-pemeriksaan="${item.data_pemeriksaan}"
                                             data-satuan="${item.satuan || ''}"
                                             data-rujukan="${item.rujukan || ''}"
+                                            data-ch="${item.ch || ''}"
+                                            data-cl="${item.cl || ''}"
                                             data-metode="${item.metode || ''}">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong>${item.kode_pemeriksaan}</strong>
+                                                <strong>${item.id_data_pemeriksaan}</strong> <!-- TAMPILKAN ID -->
                                                 <div class="small text-muted">${item.data_pemeriksaan}</div>
                                             </div>
                                             <i class="ri-arrow-right-s-line"></i>
@@ -2253,7 +2498,7 @@
                             });
 
                             // Tambahkan opsi "Clear mapping" jika sedang edit
-                            if (currentKode) {
+                            if (currentId) {
                                 const $clearOption = $(`
                                     <div class="dropdown-divider"></div>
                                     <button type="button" class="dropdown-item text-danger clear-option"
@@ -2265,7 +2510,7 @@
                                 $results.append($clearOption);
                             }
                         } else {
-                            $results.html('<div class="dropdown-item text-center py-2 text-muted">Tidak ditemukan</div>');
+                            $results.html('<div class="dropdown-item text-center py-2 text-muted">Tidak ditemukan data pemeriksaan</div>');
                         }
 
                         $results.show();
@@ -2283,16 +2528,18 @@
         });
 
         // Pilih kode pemeriksaan
+        // Pilih kode pemeriksaan - MENGGUNAKAN id_data_pemeriksaan
         $(document).on('click', '.kode-option', function() {
             const $option = $(this);
-            const kode = $option.data('kode');
+            const id = $option.data('id'); // AMBIL id_data_pemeriksaan
             const dataPemeriksaan = $option.data('data-pemeriksaan');
             const satuan = $option.data('satuan');
             const rujukan = $option.data('rujukan');
             const metode = $option.data('metode');
 
-            console.log('Kode option selected:', {
-                kode: kode,
+            console.log('Data pemeriksaan selected:', {
+                id: id,
+                data_pemeriksaan: dataPemeriksaan,
                 rujukan: rujukan,
                 satuan: satuan,
                 metode: metode
@@ -2308,14 +2555,14 @@
             $input.val(dataPemeriksaan);
             $results.hide().empty();
 
-            // Kirim ke server untuk update dan mapping
+            // Kirim ke server untuk update dan mapping - GUNAKAN id_data_pemeriksaan
             $.ajax({
                 url: '{{ route("kimia.update-kode-pemeriksaan") }}',
                 method: 'POST',
                 data: {
                     _token: csrfToken,
                     id_pemeriksaan_kimia: kimiaId,
-                    kode_pemeriksaan: kode,
+                    id_data_pemeriksaan: id, // GUNAKAN id_data_pemeriksaan
                     analysis: analysis,
                     method: metode,
                     satuan: satuan,
@@ -2328,15 +2575,16 @@
                     if (response.success) {
                         $row.removeClass('table-warning').addClass('table-success');
 
-                        // Update display dengan mode edit
-                        updateKodeDisplay($row, kode, dataPemeriksaan, true);
+                        // Update display dengan mode edit - TAMPILKAN ID dan NAMA
+                        const displayText = `${id} - ${dataPemeriksaan}`;
+                        updateKodeDisplay($row, id, dataPemeriksaan, true);
 
                         // Update satuan dan rujukan display
                         $row.find('.satuan-display').text(satuan || '-');
                         $row.find('.rujukan-display').text(rujukan || '-');
                         $row.find('.method-cell').text(metode || '-');
 
-                        // UPDATE PENTING: Set data-rujukan pada input hasil dari data_pemeriksaan
+                        // UPDATE data-rujukan pada input hasil
                         const $hasilInput = $row.find('.hasil-input');
                         $hasilInput.data('rujukan', rujukan);
                         $hasilInput.attr('data-rujukan', rujukan);
@@ -2370,16 +2618,15 @@
                                             keterangan: keterangan
                                         },
                                         success: function(resp) {
-                                            console.log('Keterangan updated after kode mapping:', resp);
+                                            console.log('Keterangan updated after data pemeriksaan mapping:', resp);
                                         }
                                     });
                                 }
                             }
                         }
 
-                        // Gunakan showToast dari global scope
                         if (typeof showToast === 'function') {
-                            showToast('success', 'Kode pemeriksaan berhasil dipetakan');
+                            showToast('success', 'Data pemeriksaan berhasil dipetakan');
                         }
 
                         setTimeout(() => {
@@ -2387,7 +2634,7 @@
                         }, 2000);
                     } else {
                         if (typeof showToast === 'function') {
-                            showToast('danger', response.message || 'Gagal memetakan kode pemeriksaan');
+                            showToast('danger', response.message || 'Gagal memetakan data pemeriksaan');
                         }
                         $row.removeClass('table-warning');
                         $input.val('');
@@ -2397,7 +2644,7 @@
                     console.error('Update error:', xhr);
                     $row.removeClass('table-warning');
 
-                    let errorMessage = 'Gagal memetakan kode pemeriksaan';
+                    let errorMessage = 'Gagal memetakan data pemeriksaan';
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMessage = xhr.responseJSON.message;
                     }
@@ -2449,6 +2696,7 @@
         });
     });
 </script>
+
 <script>
     $(document).ready(function() {
         const csrfToken = $('meta[name="csrf-token"]').attr('content') || $('#csrf_token').val();
@@ -2462,30 +2710,97 @@
         // Variabel untuk input aktif
         let activeSearchInput = null;
 
-        // Function untuk menambah request ke queue - KHUSUS HASIL LAIN
-        function addToQueueHasilPemeriksaanLain(type, id, field, value, $element) {
-            if (!id) {
-                console.error('addToQueueHasilPemeriksaanLain: ID tidak valid', id);
+        // ============================================
+        // FUNGSI BARU: Update row data dengan lengkap
+        // ============================================
+       // Di fungsi updateHasilLainRowData, tambahkan parameter ch dan cl:
+        function updateHasilLainRowData($row, kode, dataPemeriksaan, satuan, rujukan, metode, ch, cl) {
+            console.log('updateHasilLainRowData called:', {
+                kode,
+                dataPemeriksaan,
+                satuan,
+                rujukan,
+                metode,
+                ch,
+                cl
+            });
+
+            // Update display
+            $row.find('input[name*="[jenis_pengujian]"]').val(dataPemeriksaan);
+            $row.find('.satuan-display').text(satuan || '-');
+            $row.find('.rujukan-display').text(rujukan || '-');
+            $row.find('.ch-display').text(ch || '-');
+            $row.find('.cl-display').text(cl || '-');
+
+            // Update hidden inputs
+            $row.find('.ch-input').val(ch || '-');
+            $row.find('.cl-input').val(cl || '-');
+
+            // Update input hidden kode
+            $row.find('.kode-pemeriksaan-input').val(kode);
+
+            // Update data-rujukan, ch, cl pada input hasil
+            const $hasilInput = $row.find('.hasil-input-lain');
+            $hasilInput.data('rujukan', rujukan);
+            $hasilInput.attr('data-rujukan', rujukan);
+            $hasilInput.data('ch', ch);
+            $hasilInput.attr('data-ch', ch);
+            $hasilInput.data('cl', cl);
+            $hasilInput.attr('data-cl', cl);
+
+            // Update data-pemeriksaan pada input kode (untuk display)
+            const $kodeInput = $row.find('.kode-search-input-lain, .kode-edit-input-lain');
+            $kodeInput.val(dataPemeriksaan);
+            $kodeInput.data('current-kode', kode);
+
+            console.log('HasilLain UI updated - CH:', ch, 'CL:', cl);
+        }
+
+        // ============================================
+        // FUNGSI BARU: Ambil data pemeriksaan berdasarkan kode
+        // ============================================
+        function fetchPemeriksaanByKode(kodePemeriksaan, callback) {
+            if (!kodePemeriksaan) {
+                callback(null);
                 return;
             }
+
+            $.ajax({
+                url: '{{ route("hasil-lain.get-pemeriksaan-by-kode") }}',
+                method: 'GET',
+                data: {
+                    id_data_pemeriksaan: kodePemeriksaan
+                },
+                success: function(response) {
+                    if (response.success && response.data) {
+                        callback(response.data);
+                    } else {
+                        callback(null);
+                    }
+                },
+                error: function() {
+                    callback(null);
+                }
+            });
+        }
+
+        // Function untuk menambah request ke queue - KHUSUS HASIL LAIN
+        // Untuk Hasil Lain
+        function addToQueueHasilPemeriksaanLain(type, id, field, value, $element) {
+            if (!id) return;
 
             const $row = $element.closest('tr');
             const $keteranganDisplay = $row.find('.keterangan-display');
             const $hiddenInput = $row.find('input[name*="[keterangan]"]');
 
-            // Ambil keterangan dari display
-            let keterangan = $hiddenInput.val();
-            if (!keterangan || keterangan === '' || keterangan === '-') {
-                keterangan = $keteranganDisplay.data('keterangan') || '-';
-            }
+            // Gunakan fungsi calculateKeterangan yang sama
+            const keterangan = calculateKeterangan(value, $element);
 
-            console.log('addToQueueHasilPemeriksaanLain - Adding to queue:', {
-                type: type,
-                id: id,
-                field: field,
-                value: value,
-                keterangan: keterangan
-            });
+            // Update UI
+            updateKeteranganDisplay($keteranganDisplay, keterangan);
+            $hiddenInput.val(keterangan);
+
+            console.log('📤 Hasil Lain Queue - Keterangan:', keterangan);
 
             hasilLainQueue.push({
                 type: type,
@@ -2493,7 +2808,7 @@
                 field: field,
                 value: value,
                 $element: $element,
-                keterangan: keterangan,
+                keterangan: keterangan, // PASTIKAN ADA
                 timestamp: Date.now()
             });
 
@@ -2593,39 +2908,6 @@
             });
         }
 
-        // Function untuk update UI setelah pemilihan kode
-        function updateHasilLainUI($row, kode, dataPemeriksaan, satuan, rujukan) {
-            console.log('updateHasilLainUI called:', {
-                kode,
-                dataPemeriksaan,
-                satuan,
-                rujukan
-            });
-
-            // Update display
-            $row.find('input[name*="[jenis_pengujian]"]').val(dataPemeriksaan);
-            $row.find('.satuan-display').text(satuan || '-');
-            $row.find('.rujukan-display').text(rujukan || '-');
-
-            // Update input hidden
-            $row.find('.kode-pemeriksaan-input').val(kode);
-
-            // Update data-rujukan pada input hasil
-            const $hasilInput = $row.find('.hasil-input-lain');
-            $hasilInput.data('rujukan', rujukan);
-            $hasilInput.attr('data-rujukan', rujukan);
-
-            console.log('HasilLain UI updated - Rujukan:', rujukan);
-
-            // Jika ada nilai hasil, hitung ulang keterangan
-            if ($hasilInput.val()) {
-                if (typeof window.updateKeteranganClientSide === 'function') {
-                    console.log('Calling updateKeteranganClientSide for hasil input');
-                    window.updateKeteranganClientSide($hasilInput);
-                }
-            }
-        }
-
         // Function untuk memposisikan dropdown global
         function positionDropdown($input) {
             const inputRect = $input[0].getBoundingClientRect();
@@ -2643,18 +2925,20 @@
             });
         }
 
-        // Search kode pemeriksaan (hasil lain) dengan dropdown global
+        // ============================================
+        // PERBAIKAN: Search kode pemeriksaan (hasil lain)
+        // ============================================
         $(document).on('input', '.kode-search-input-lain, .kode-edit-input-lain', function() {
             const $input = $(this);
             const searchTerm = $input.val().trim();
             const $dropdown = $('#globalSearchResults');
             const jenisPemeriksaan = $input.data('jenis-pemeriksaan');
-            const currentKode = $input.data('current-kode');
+            const currentId = $input.data('current-id'); // UBAH DARI data-current-kode
 
             // Simpan referensi input aktif
             activeSearchInput = $input;
 
-            console.log('Search kode pemeriksaan:', {
+            console.log('Search data pemeriksaan:', {
                 searchTerm: searchTerm,
                 jenisPemeriksaan: jenisPemeriksaan
             });
@@ -2678,7 +2962,7 @@
                     beforeSend: function() {
                         $dropdown.html(
                             '<div class="dropdown-header">' +
-                            '<i class="ri-loader-4-line spin me-2"></i> Mencari...' +
+                            '<i class="ri-loader-4-line spin me-2"></i> Mencari data pemeriksaan...' +
                             '</div>'
                         ).show();
                         positionDropdown($input);
@@ -2692,59 +2976,62 @@
 
                             // Header dengan tombol close
                             const $header = $(`
-                            <div class="dropdown-header d-flex justify-content-between align-items-center">
-                                <div>
-                                    <strong>Hasil Pencarian</strong>
-                                    <div class="small text-muted">${response.data.length} hasil ditemukan</div>
+                                <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Hasil Pencarian Data Pemeriksaan</strong>
+                                        <div class="small text-muted">${response.data.length} hasil ditemukan</div>
+                                    </div>
+                                    <button type="button" class="btn-close" aria-label="Close"></button>
                                 </div>
-                                <button type="button" class="btn-close" aria-label="Close"></button>
-                            </div>
-                        `);
+                            `);
                             $dropdown.append($header);
 
                             // Hasil pencarian
                             response.data.forEach(function(item) {
                                 const $option = $(`
-                                <button type="button" class="kode-option-hasil-lain"
-                                        data-kode="${item.kode_pemeriksaan}"
-                                        data-data-pemeriksaan="${item.data_pemeriksaan}"
-                                        data-satuan="${item.satuan || ''}"
-                                        data-rujukan="${item.rujukan || ''}">
-                                    <div class="d-flex">
-                                        <div class="kode-badge">${item.kode_pemeriksaan}</div>
-                                        <div class="flex-grow-1 ms-2">
-                                            <div class="fw-bold">${item.data_pemeriksaan}</div>
-                                            <div class="small text-muted">${item.jenis_pemeriksaan || 'Umum'}</div>
+                                    <button type="button" class="kode-option-hasil-lain"
+                                            data-id="${item.id_data_pemeriksaan}"
+                                            data-data-pemeriksaan="${item.data_pemeriksaan}"
+                                            data-satuan="${item.satuan || ''}"
+                                            data-rujukan="${item.rujukan || ''}"
+                                            data-metode="${item.metode || ''}"
+                                            data-ch="${item.ch || ''}"
+                                            data-cl="${item.cl || ''}">
+                                        <div class="d-flex">
+                                            <div class="kode-badge">ID: ${item.id_data_pemeriksaan}</div> <!-- TAMPILKAN ID -->
+                                            <div class="flex-grow-1 ms-2">
+                                                <div class="fw-bold">${item.data_pemeriksaan}</div>
+                                                <div class="small text-muted">${item.jenis_pemeriksaan || 'Umum'}</div>
+                                            </div>
+                                            ${item.rujukan ? `<div class="rujukan-badge">${item.rujukan}</div>` : ''}
                                         </div>
-                                        ${item.rujukan ? `<div class="rujukan-badge">${item.rujukan}</div>` : ''}
-                                    </div>
-                                </button>
-                            `);
+                                    </button>
+                                `);
                                 $dropdown.append($option);
                             });
 
-                            // Opsi clear mapping jika ada current kode
-                            if (currentKode) {
+                            // Opsi clear mapping jika ada current id
+                            if (currentId) {
                                 const $clearOption = $(`
-                                <button type="button" class="kode-option-hasil-lain text-danger clear-mapping-option"
-                                        data-kimia-id="${$input.data('row-id')}">
-                                    <i class="ri-close-line me-2"></i>
-                                    Hapus mapping kode ini
-                                </button>
-                            `);
+                                    <button type="button" class="kode-option-hasil-lain text-danger clear-mapping-option"
+                                            data-kimia-id="${$input.data('row-id')}">
+                                        <i class="ri-close-line me-2"></i>
+                                        Hapus mapping data ini
+                                    </button>
+                                `);
                                 $dropdown.append($clearOption);
                             }
                         } else {
                             $dropdown.html(`
-                            <div class="dropdown-header">
-                                Tidak ditemukan
-                            </div>
-                            <div class="p-3 text-center text-muted">
-                                <i class="ri-search-line display-6 mb-2"></i>
-                                <div>Tidak ditemukan kode pemeriksaan</div>
-                                <small class="text-muted">Coba dengan kata kunci lain</small>
-                            </div>
-                        `);
+                                <div class="dropdown-header">
+                                    Tidak ditemukan
+                                </div>
+                                <div class="p-3 text-center text-muted">
+                                    <i class="ri-search-line display-6 mb-2"></i>
+                                    <div>Tidak ditemukan data pemeriksaan</div>
+                                    <small class="text-muted">Coba dengan kata kunci lain</small>
+                                </div>
+                            `);
                         }
 
                         $dropdown.show();
@@ -2756,90 +3043,94 @@
                             response: xhr.responseText
                         });
                         $dropdown.html(`
-                        <div class="dropdown-header text-danger">
-                            <i class="ri-error-warning-line me-2"></i>
-                            Error loading data
-                        </div>
-                    `).show();
+                            <div class="dropdown-header text-danger">
+                                <i class="ri-error-warning-line me-2"></i>
+                                Error loading data
+                            </div>
+                        `).show();
                     }
                 });
             }, 500));
         });
 
-        // Pilih kode pemeriksaan (hasil lain) dari dropdown global
+        // ============================================
+        // PERBAIKAN: Pilih kode pemeriksaan (hasil lain) dari dropdown
+        // ============================================
         $(document).on('click', '.kode-option-hasil-lain:not(.clear-mapping-option)', function() {
             if (!activeSearchInput) return;
 
             const $option = $(this);
-            const kode = $option.data('kode');
+            const id = $option.data('id'); // AMBIL id_data_pemeriksaan
             const dataPemeriksaan = $option.data('data-pemeriksaan');
-            const satuan = $option.data('satuan');
-            const rujukan = $option.data('rujukan');
+            const satuan = $option.data('satuan') || '-';
+            const rujukan = $option.data('rujukan') || '-';
+            const metode = $option.data('metode') || '-';
+            const ch = $option.data('ch') || '-';
+            const cl = $option.data('cl') || '-';
 
             const $input = activeSearchInput;
             const $row = $input.closest('tr');
 
-            console.log('Kode option selected:', {
-                kode,
-                dataPemeriksaan,
-                satuan,
-                rujukan
+            console.log('Data pemeriksaan selected dengan CH/CL:', {
+                id: id,
+                data_pemeriksaan: dataPemeriksaan,
+                satuan: satuan,
+                rujukan: rujukan,
+                ch: ch,
+                cl: cl
             });
 
             // Sembunyikan dropdown
             $('#globalSearchResults').hide().empty();
 
-            // Update input
-            $input.val(dataPemeriksaan);
-
-            // Update UI
-            updateHasilLainUI($row, kode, dataPemeriksaan, satuan, rujukan);
+            // Update UI dengan data lengkap termasuk CH dan CL
+            updateHasilLainRowData($row, id, dataPemeriksaan, satuan, rujukan, metode, ch, cl);
 
             // Simpan ke database
-            const id = $row.data('id');
+            const hasilId = $row.data('id');
             const hasilPengujian = $row.find('.hasil-input-lain').val();
 
-            console.log('Processing kode selection - Row ID:', id, 'Hasil:', hasilPengujian);
+            console.log('Processing data pemeriksaan selection - Row ID:', hasilId, 'Hasil:', hasilPengujian);
 
-            if (id && id !== '') {
+            if (hasilId && hasilId !== '') {
                 // Update existing
-                console.log('Updating existing record ID:', id);
+                console.log('Updating existing record ID:', hasilId);
                 $.ajax({
-                    url: '{{ url("hasil-lain") }}/' + id + '/update-kode',
+                    url: '{{ url("hasil-lain") }}/' + hasilId + '/update-kode',
                     method: 'POST',
                     data: {
                         _token: csrfToken,
-                        kode_pemeriksaan: kode,
+                        id_data_pemeriksaan: id, // GUNAKAN id_data_pemeriksaan
                         jenis_pengujian: dataPemeriksaan
                     },
                     success: function(response) {
-                        console.log('Update kode response:', response);
+                        console.log('Update id_data_pemeriksaan response:', response);
                         if (response.success) {
                             if (typeof window.showToast === 'function') {
-                                window.showToast('success', 'Kode pemeriksaan berhasil diperbarui');
+                                window.showToast('success', 'Data pemeriksaan berhasil diperbarui');
                             }
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('Update kode error:', {
+                        console.error('Update id_data_pemeriksaan error:', {
                             status: status,
                             error: error,
                             response: xhr.responseText
                         });
                         if (typeof window.showToast === 'function') {
-                            window.showToast('danger', 'Gagal memperbarui kode pemeriksaan');
+                            window.showToast('danger', 'Gagal memperbarui data pemeriksaan');
                         }
                     }
                 });
             } else if (hasilPengujian && hasilPengujian.trim() !== '') {
                 // Simpan baru jika sudah ada hasil
                 console.log('Saving new record with hasil');
-                simpanRowBaru($row, kode, dataPemeriksaan, satuan, rujukan);
+                simpanRowBaru($row, id, dataPemeriksaan, satuan, rujukan, metode);
             } else {
                 // Hanya update UI, tunggu user isi hasil
                 console.log('Only updating UI, waiting for hasil input');
                 if (typeof window.showToast === 'function') {
-                    window.showToast('info', 'Pilih kode berhasil. Silakan isi hasil pengujian.');
+                    window.showToast('info', 'Pilih data pemeriksaan berhasil. Silakan isi hasil pengujian.');
                 }
             }
 
@@ -2859,7 +3150,7 @@
                 $input.val('');
                 $input.removeData('current-kode');
                 $row.find('.kode-pemeriksaan-input').val('');
-                $row.find('.satuan-display').text('-');
+                $row.find('.satuan-display').text('-');zz
                 $row.find('.rujukan-display').text('-');
 
                 // Reset rujukan pada input hasil
@@ -2911,19 +3202,44 @@
             activeSearchInput = null;
         });
 
-        // Input hasil (hasil lain)
+        // ============================================
+        // PERBAIKAN BESAR: Input hasil (hasil lain)
+        // ============================================
         $(document).on('input', '.hasil-input-lain', function() {
             const $input = $(this);
             const $row = $input.closest('tr');
             const id = $input.data('id');
             const value = $input.val();
             const kodePemeriksaan = $row.find('.kode-pemeriksaan-input').val();
+            const satuan = $row.find('.satuan-display').text();
+            const rujukan = $row.find('.rujukan-display').text();
 
             console.log('Hasil input changed:', {
                 id: id,
                 value: value,
-                kodePemeriksaan: kodePemeriksaan
+                kodePemeriksaan: kodePemeriksaan,
+                satuan: satuan,
+                rujukan: rujukan
             });
+
+            // PERBAIKAN: Cek jika satuan hilang atau "-"
+            if ((!satuan || satuan === '-' || satuan === '') && kodePemeriksaan) {
+                console.log('Satuan missing, trying to recover from data...');
+
+                fetchPemeriksaanByKode(kodePemeriksaan, function(data) {
+                    if (data) {
+                        console.log('Found data for kode:', data);
+                        updateHasilLainRowData(
+                            $row,
+                            kodePemeriksaan,
+                            data.data_pemeriksaan || $row.find('input[name*="[jenis_pengujian]"]').val(),
+                            data.satuan || '-',
+                            data.rujukan || rujukan || '-',
+                            data.metode || '-'
+                        );
+                    }
+                });
+            }
 
             // Update keterangan client-side
             if (typeof window.updateKeteranganClientSide === 'function') {
@@ -2953,32 +3269,50 @@
             }, 800));
         });
 
-        // Simpan row baru
-        function simpanRowBaru($row, kode = null, dataPemeriksaan = null, satuan = null, rujukan = null) {
+        // ============================================
+        // PERBAIKAN: Simpan row baru
+        // ============================================
+        // Di fungsi simpanRowBaru, tambahkan CH dan CL:
+        // Di fungsi simpanRowBaru, gunakan id_data_pemeriksaan:
+        function simpanRowBaru($row, id = null, dataPemeriksaan = null, satuan = null, rujukan = null, metode = null, ch = null, cl = null) {
             console.log('simpanRowBaru called for row:', $row.data());
 
             // Gunakan parameter jika diberikan, jika tidak ambil dari form
-            const kodePemeriksaan = kode || $row.find('.kode-pemeriksaan-input').val();
+            const idDataPemeriksaan = id || $row.find('.kode-pemeriksaan-input').val(); // id_data_pemeriksaan
             const jenisPengujian = dataPemeriksaan || $row.find('input[name*="[jenis_pengujian]"]').val();
             const hasilPengujian = $row.find('.hasil-input-lain').val();
             const satuanValue = satuan || $row.find('.satuan-display').text();
             const rujukanValue = rujukan || $row.find('.rujukan-display').text();
+            const metodeValue = metode || '';
+            const chValue = ch || $row.find('.ch-display').text() || '-';
+            const clValue = cl || $row.find('.cl-display').text() || '-';
 
-            console.log('Data to save:', {
-                kodePemeriksaan,
-                jenisPengujian,
-                hasilPengujian,
-                satuanValue,
-                rujukanValue
+            // Lanjutkan penyimpanan
+            continueSimpanRowBaru($row, idDataPemeriksaan, {
+                data_pemeriksaan: jenisPengujian,
+                satuan: satuanValue,
+                rujukan: rujukanValue,
+                metode: metodeValue,
+                ch: chValue,
+                cl: clValue
             });
+        }
+        // ============================================
+        // FUNGSI BARU: Lanjutkan penyimpanan setelah data lengkap
+        // ============================================
+        function continueSimpanRowBaru($row, kodePemeriksaan, data) {
+            console.log('continueSimpanRowBaru called with data:', data);
 
             if (!kodePemeriksaan) {
                 console.warn('No kode pemeriksaan selected');
+                $row.removeClass('table-warning');
                 if (typeof window.showToast === 'function') {
                     window.showToast('warning', 'Pilih kode pemeriksaan terlebih dahulu');
                 }
                 return;
             }
+
+            const hasilPengujian = $row.find('.hasil-input-lain').val();
 
             // Tampilkan loading
             $row.addClass('table-warning');
@@ -2989,11 +3323,14 @@
                 data: {
                     _token: csrfToken,
                     no_lab: '{{ $pasien->no_lab }}',
-                    kode_pemeriksaan: kodePemeriksaan,
-                    jenis_pengujian: jenisPengujian,
+                    id_data_pemeriksaan: kodePemeriksaan,
+                    jenis_pengujian: data.data_pemeriksaan,
                     hasil_pengujian: hasilPengujian,
-                    satuan: satuanValue,
-                    rujukan: rujukanValue
+                    satuan: data.satuan,
+                    rujukan: data.rujukan,
+                    metode: data.metode,
+                    ch: data.ch,
+                    cl: data.cl
                 },
                 success: function(response) {
                     console.log('Store response:', response);
@@ -3007,9 +3344,17 @@
                         $row.find('input[name*="[id]"]').val(newId);
                         $row.find('.hasil-input-lain').data('id', newId);
 
-                        // Update UI
-                        $row.find('.satuan-display').text(response.data.satuan || '-');
-                        $row.find('.rujukan-display').text(response.data.rujukan || '-');
+                        // Update UI dengan data dari response
+                        updateHasilLainRowData(
+                            $row,
+                            kodePemeriksaan,
+                            response.data.jenis_pengujian || data.data_pemeriksaan,
+                            response.data.satuan || data.satuan || '-',
+                            response.data.rujukan || data.rujukan || '-',
+                            response.data.metode || data.metode || '-',
+                            response.data.ch || data.ch || '-',
+                            response.data.cl || data.cl || '-'
+                        );
 
                         // Update keterangan
                         const $keteranganDisplay = $row.find('.keterangan-display');
@@ -3019,11 +3364,6 @@
                         if (typeof window.updateKeteranganDisplay === 'function') {
                             window.updateKeteranganDisplay($keteranganDisplay, response.data.keterangan || '-');
                         }
-
-                        // Update data-rujukan
-                        const $hasilInput = $row.find('.hasil-input-lain');
-                        $hasilInput.data('rujukan', response.data.rujukan);
-                        $hasilInput.attr('data-rujukan', response.data.rujukan);
 
                         console.log('Row saved with ID:', newId);
 
@@ -3069,30 +3409,31 @@
             const rowCount = $section.find('tbody tr').length;
             const index = rowCount;
 
+            // Di bagian newRow template untuk hasil_lain, tambahkan kolom CH dan CL:
             const newRow = `
             <tr data-index="${index}" data-jenis-pemeriksaan="${jenisPemeriksaan}" data-is-new="true">
                 <td class="bg-light" hidden>
                     <strong class="jenis-pengujian-display">Belum dipilih</strong>
                     <input type="hidden"
-                           name="hasil_lain[${jenisPemeriksaan}][${index}][id]"
-                           value="">
+                        name="hasil_lain[${jenisPemeriksaan}][${index}][id]"
+                        value="">
                     <input type="hidden"
-                           name="hasil_lain[${jenisPemeriksaan}][${index}][jenis_pengujian]"
-                           value="">
+                        name="hasil_lain[${jenisPemeriksaan}][${index}][jenis_pengujian]"
+                        value="">
                 </td>
                 <td class="search-cell" style="position: relative;">
                     <div class="position-relative">
                         <input type="text"
-                               class="form-control form-control-sm kode-search-input-lain"
-                               placeholder="Cari kode pemeriksaan..."
-                               data-jenis-pemeriksaan="${jenisPemeriksaan}"
-                               data-index="${index}"
-                               data-row-id=""
-                               autocomplete="off">
+                            class="form-control form-control-sm kode-search-input-lain"
+                            placeholder="Cari kode pemeriksaan..."
+                            data-jenis-pemeriksaan="${jenisPemeriksaan}"
+                            data-index="${index}"
+                            data-row-id=""
+                            autocomplete="off">
                         <input type="hidden"
-                               name="hasil_lain[${jenisPemeriksaan}][${index}][kode_pemeriksaan]"
-                               class="kode-pemeriksaan-input"
-                               value="">
+                            name="hasil_lain[${jenisPemeriksaan}][${index}][id_data_pemeriksaan]"
+                            class="kode-pemeriksaan-input"
+                            value="">
                     </div>
                 </td>
                 <td class="bg-light satuan-cell" style="text-align:center;">
@@ -3101,26 +3442,42 @@
                 <td class="bg-light rujukan-cell" style="text-align:center;">
                     <span class="rujukan-display">-</span>
                 </td>
+                <td class="bg-light ch-cell" style="text-align:center;">
+                    <span class="ch-display">-</span>
+                    <input type="hidden"
+                        name="hasil_lain[${jenisPemeriksaan}][${index}][ch]"
+                        class="ch-input"
+                        value="-">
+                </td>
+                <td class="bg-light cl-cell" style="text-align:center;">
+                    <span class="cl-display">-</span>
+                    <input type="hidden"
+                        name="hasil_lain[${jenisPemeriksaan}][${index}][cl]"
+                        class="cl-input"
+                        value="-">
+                </td>
                 <td class="hasil-cell">
                     <input type="text"
-                           name="hasil_lain[${jenisPemeriksaan}][${index}][hasil_pengujian]"
-                           class="form-control form-control-sm excel-input hasil-input-lain"
-                           value=""
-                           placeholder="Hasil"
-                           data-original=""
-                           data-id=""
-                           data-type="hasil_lain"
-                           data-rujukan=""
-                           autocomplete="off">
+                        name="hasil_lain[${jenisPemeriksaan}][${index}][hasil_pengujian]"
+                        class="form-control form-control-sm excel-input hasil-input-lain"
+                        value=""
+                        placeholder="Hasil"
+                        data-original=""
+                        data-id=""
+                        data-type="hasil_lain"
+                        data-rujukan=""
+                        data-ch=""
+                        data-cl=""
+                        autocomplete="off">
                 </td>
                 <td class="keterangan-cell">
                     <div class="keterangan-display bg-success bg-opacity-10 text-success rounded py-1 px-2 text-center"
-                         data-keterangan="-">
+                        data-keterangan="-">
                         <strong>-</strong>
                     </div>
                     <input type="hidden"
-                           name="hasil_lain[${jenisPemeriksaan}][${index}][keterangan]"
-                           value="-">
+                        name="hasil_lain[${jenisPemeriksaan}][${index}][keterangan]"
+                        value="-">
                 </td>
                 <td>
                     <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn">
@@ -3128,7 +3485,7 @@
                     </button>
                 </td>
             </tr>
-        `;
+            `;
 
             $section.find('tbody').append(newRow);
 
@@ -3254,7 +3611,6 @@
         });
 
         // Tombol tambah tabel baru
-        // Handler untuk tombol "Tambah Tabel Pemeriksaan" yang baru
         $(document).on('click', '#tambahTabelBtn', function(e) {
             e.preventDefault();
             console.log('=== TAMBAH TABEL BARU CLICKED ===');
@@ -3378,18 +3734,76 @@
             }
         });
 
+        // PERBAIKAN: Inisialisasi CH dan CL untuk hasil_lain yang sudah ada
+        $(window).on('load', function() {
+            setTimeout(function() {
+                console.log('🔧 Initializing CH/CL for hasil_lain...');
+
+                $('.hasil-input-lain').each(function(index) {
+                    const $input = $(this);
+                    const $row = $input.closest('tr');
+
+                    // Ambil dari display cells
+                    const rujukanDisplay = $row.find('.rujukan-display').text().trim();
+                    const chDisplay = $row.find('.ch-display').text().trim();
+                    const clDisplay = $row.find('.cl-display').text().trim();
+
+                    // Set data attributes
+                    $input.data('rujukan', rujukanDisplay);
+                    $input.attr('data-rujukan', rujukanDisplay);
+                    $input.data('ch', chDisplay);
+                    $input.attr('data-ch', chDisplay);
+                    $input.data('cl', clDisplay);
+                    $input.attr('data-cl', clDisplay);
+
+                    console.log(`HasilLain Row ${index}:`, {
+                        rujukan: rujukanDisplay,
+                        ch: chDisplay,
+                        cl: clDisplay
+                    });
+
+                    // Hitung ulang keterangan jika ada hasil
+                    if ($input.val() && $input.val().trim() !== '') {
+                        if (typeof window.updateKeteranganClientSide === 'function') {
+                            window.updateKeteranganClientSide($input);
+                        }
+                    }
+                });
+            }, 1000);
+        });
+
         // Inisialisasi data rujukan untuk hasil_lain yang sudah ada
         $('.hasil-input-lain').each(function() {
             const $input = $(this);
             const $row = $input.closest('tr');
             const rujukan = $row.find('.rujukan-display').text().trim();
+            const satuan = $row.find('.satuan-display').text().trim();
+            const kodePemeriksaan = $row.find('.kode-pemeriksaan-input').val();
 
             if (rujukan && rujukan !== '-') {
                 $input.data('rujukan', rujukan);
                 $input.attr('data-rujukan', rujukan);
                 console.log('Initialized rujukan for input:', rujukan);
             }
+
+            // PERBAIKAN: Jika satuan hilang tapi ada kode, coba ambil data
+            if ((!satuan || satuan === '-' || satuan === '') && kodePemeriksaan) {
+                fetchPemeriksaanByKode(kodePemeriksaan, function(data) {
+                    if (data) {
+                        updateHasilLainRowData(
+                            $row,
+                            kodePemeriksaan,
+                            data.data_pemeriksaan || $row.find('input[name*="[jenis_pengujian]"]').val(),
+                            data.satuan || '-',
+                            data.rujukan || rujukan || '-',
+                            data.metode || '-'
+                        );
+                    }
+                });
+            }
         });
+
+
 
         // Log semua existing rows pada load
         console.log('Initializing existing rows:');
@@ -3399,6 +3813,8 @@
             console.log(`Row ${index}:`, {
                 id: $input.data('id'),
                 rujukan: $input.data('rujukan'),
+                satuan: $row.find('.satuan-display').text(),
+                kode: $row.find('.kode-pemeriksaan-input').val(),
                 value: $input.val(),
                 rowId: $row.data('id')
             });
@@ -3617,6 +4033,217 @@
             }
         };
 
+        // ============================================
+        // FUNGSI calculateKeterangan - LENGKAP
+        // ============================================
+
+        function calculateKeterangan(value, $element) {
+            console.log('=== calculateKeterangan START ===');
+
+            // Validasi input
+            if (!$element || !$element.length) {
+                console.error('Element tidak valid');
+                return '-';
+            }
+
+            const hasilStr = value ? value.toString().trim() : '';
+
+            // Jika hasil kosong
+            if (!hasilStr || hasilStr === '') {
+                console.log('Hasil kosong, return -');
+                return '-';
+            }
+
+            // Ambil data dari element
+            const rujukan = $element.data('rujukan') || $element.attr('data-rujukan') || '';
+            const ch = $element.data('ch') || $element.attr('data-ch') || '';
+            const cl = $element.data('cl') || $element.attr('data-cl') || '';
+
+            console.log('Input data:', {
+                hasil: hasilStr,
+                rujukan: rujukan,
+                ch: ch,
+                cl: cl
+            });
+
+            // Coba parse sebagai angka
+            const hasilNum = parseFloat(hasilStr.replace(',', '.'));
+            const isNumeric = !isNaN(hasilNum);
+
+            console.log('Parsed result:', {
+                hasilNum: hasilNum,
+                isNumeric: isNumeric
+            });
+
+            // ============================================
+            // PRIORITAS 1: CEK JIKA NUMERIC
+            // ============================================
+            if (isNumeric) {
+                console.log('Hasil numeric, checking CH/CL/Rujukan...');
+
+                // 1. CEK CRITICAL HIGH (CH)
+                if (ch && ch !== '' && ch !== '-' && ch !== 'null') {
+                    console.log('Checking CH:', ch);
+
+                    // Parse CH value
+                    let chNum;
+                    if (ch.includes('>')) {
+                        // Format: "> 170"
+                        chNum = parseFloat(ch.replace('>', '').trim());
+                        console.log('CH parsed (> format):', chNum);
+                    } else {
+                        // Format langsung: "170"
+                        chNum = parseFloat(ch);
+                        console.log('CH parsed (direct):', chNum);
+                    }
+
+                    if (!isNaN(chNum) && hasilNum > chNum) {
+                        console.log(`✅ CH DETECTED: ${hasilNum} > ${chNum}`);
+                        return 'CH';
+                    }
+
+                    console.log('CH not matched or invalid');
+                }
+
+                // 2. CEK CRITICAL LOW (CL)
+                if (cl && cl !== '' && cl !== '-' && cl !== 'null') {
+                    console.log('Checking CL:', cl);
+
+                    // Parse CL value
+                    let clNum;
+                    if (cl.includes('<')) {
+                        // Format: "< 90"
+                        clNum = parseFloat(cl.replace('<', '').trim());
+                        console.log('CL parsed (< format):', clNum);
+                    } else {
+                        // Format langsung: "90"
+                        clNum = parseFloat(cl);
+                        console.log('CL parsed (direct):', clNum);
+                    }
+
+                    if (!isNaN(clNum) && hasilNum < clNum) {
+                        console.log(`✅ CL DETECTED: ${hasilNum} < ${clNum}`);
+                        return 'CL';
+                    }
+
+                    console.log('CL not matched or invalid');
+                }
+
+                // 3. CEK RUJUKAN (jika CH/CL tidak match)
+                if (rujukan && rujukan !== '' && rujukan !== '-' && rujukan !== 'null') {
+                    console.log('Checking rujukan:', rujukan);
+
+                    // Format range: "13 - 50"
+                    if (rujukan.includes('-') && !rujukan.includes('<') && !rujukan.includes('>')) {
+                        const parts = rujukan.split('-');
+                        if (parts.length === 2) {
+                            const min = parseFloat(parts[0].trim());
+                            const max = parseFloat(parts[1].trim());
+
+                            if (!isNaN(min) && !isNaN(max)) {
+                                console.log('Range rujukan:', { min, max });
+
+                                if (hasilNum < min) {
+                                    console.log(`✅ L DETECTED: ${hasilNum} < ${min}`);
+                                    return 'L';
+                                } else if (hasilNum > max) {
+                                    console.log(`✅ H DETECTED: ${hasilNum} > ${max}`);
+                                    return 'H';
+                                } else {
+                                    console.log(`✅ NORMAL: ${hasilNum} dalam range ${min}-${max}`);
+                                    return '-';
+                                }
+                            }
+                        }
+                    }
+
+                    // Format: "< X" (Normal jika < X, High jika ≥ X)
+                    if (rujukan.startsWith('<')) {
+                        const batas = parseFloat(rujukan.replace('<', '').trim());
+                        if (!isNaN(batas)) {
+                            console.log('Rujukan < format, batas:', batas);
+
+                            if (hasilNum < batas) {
+                                console.log(`✅ NORMAL: ${hasilNum} < ${batas}`);
+                                return '-';
+                            } else {
+                                console.log(`✅ H DETECTED: ${hasilNum} ≥ ${batas}`);
+                                return 'H';
+                            }
+                        }
+                    }
+
+                    // Format: "> X" (Normal jika > X, Low jika ≤ X)
+                    if (rujukan.startsWith('>')) {
+                        const batas = parseFloat(rujukan.replace('>', '').trim());
+                        if (!isNaN(batas)) {
+                            console.log('Rujukan > format, batas:', batas);
+
+                            if (hasilNum > batas) {
+                                console.log(`✅ NORMAL: ${hasilNum} > ${batas}`);
+                                return '-';
+                            } else {
+                                console.log(`✅ L DETECTED: ${hasilNum} ≤ ${batas}`);
+                                return 'L';
+                            }
+                        }
+                    }
+
+                    console.log('Rujukan format not recognized');
+                }
+
+                console.log('No conditions matched for numeric, return -');
+                return '-';
+            }
+
+            // ============================================
+            // PRIORITAS 2: CEK JIKA NON-NUMERIC
+            // ============================================
+            else {
+                console.log('Hasil non-numeric, checking qualitative...');
+
+                if (!rujukan || rujukan === '' || rujukan === '-' || rujukan === 'null') {
+                    console.log('Rujukan tidak ada untuk non-numeric, return -');
+                    return '-';
+                }
+
+                const hasilLower = hasilStr.toLowerCase();
+                const rujukanLower = rujukan.toLowerCase();
+
+                console.log('Non-numeric comparison:', {
+                    hasil: hasilLower,
+                    rujukan: rujukanLower
+                });
+
+                // Cek untuk negative/positive
+                if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
+                    if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
+                        hasilLower.includes('non-reactive') || hasilLower.includes('nonreactive')) {
+                        console.log('✅ NORMAL: Negative result for negative reference');
+                        return '-';
+                    } else {
+                        console.log('✅ H DETECTED: Non-negative result for negative reference');
+                        return 'H';
+                    }
+                }
+
+                if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
+                    if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
+                        hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
+                        console.log('✅ NORMAL: Positive result for positive reference');
+                        return '-';
+                    } else {
+                        console.log('✅ L DETECTED: Non-positive result for positive reference');
+                        return 'L';
+                    }
+                }
+
+                console.log('No qualitative conditions matched, return -');
+                return '-';
+            }
+        }
+
+        // Function untuk menambah request ke queue Hematology
         // Function untuk menambah request ke queue Hematology
         function addToHematologyQueue(type, id, field, value, $element) {
             if (!id) {
@@ -3628,35 +4255,90 @@
             const $keteranganDisplay = $row.find('.keterangan-display');
             const $hiddenInput = $row.find('input[name*="[keterangan]"]');
 
-            // Ambil keterangan dari hidden input
-            let keterangan = $hiddenInput.val();
+            // Hitung keterangan
+            const keterangan = calculateKeterangan(value, $element);
 
-            // Jika kosong, ambil dari display
-            if (!keterangan || keterangan === '') {
-                keterangan = $keteranganDisplay.data('keterangan') || '-';
-            }
+            console.log('addToHematologyQueue - Keterangan:', keterangan);
 
-            console.log('addToHematologyQueue - Adding to queue:', {
-                type: type,
-                id: id,
-                field: field,
-                value: value,
-                keterangan: keterangan
-            });
+            // Update UI
+            updateKeteranganDisplay($keteranganDisplay, keterangan);
+            $hiddenInput.val(keterangan);
 
+            // Tambah ke queue
             hematologyQueue.push({
                 type: type,
                 id: id,
                 field: field,
                 value: value,
                 $element: $element,
-                keterangan: keterangan,
+                keterangan: keterangan, // PASTIKAN INI ADA
                 timestamp: Date.now()
             });
 
             if (!isProcessingHematologyQueue) {
                 processHematologyQueue();
             }
+        }
+
+        // Function untuk update keterangan display
+        function updateKeteranganDisplay($display, keterangan) {
+            if (!$display.length) {
+                console.error('Display element tidak ditemukan');
+                return;
+            }
+
+            // Reset semua kelas
+            $display.removeClass(
+                'bg-danger bg-opacity-10 ' +
+                'bg-primary bg-opacity-10 ' +
+                'bg-success bg-opacity-10 ' +
+                'text-danger text-primary text-success'
+            );
+
+            // Set kelas berdasarkan keterangan
+            let bgClass = '';
+            let textClass = '';
+            let displayText = '';
+
+            switch (keterangan) {
+                case 'CH':
+                case 'H':
+                    bgClass = 'bg-danger bg-opacity-10';
+                    textClass = 'text-danger';
+                    displayText = keterangan;
+                    break;
+
+                case 'CL':
+                case 'L':
+                    bgClass = 'bg-primary bg-opacity-10';
+                    textClass = 'text-primary';
+                    displayText = keterangan;
+                    break;
+
+                case '-':
+                    bgClass = 'bg-success bg-opacity-10';
+                    textClass = 'text-success';
+                    displayText = '-';
+                    break;
+
+                default:
+                    bgClass = 'bg-light';
+                    textClass = 'text-muted';
+                    displayText = '-';
+                    keterangan = '-'; // Normalize
+            }
+
+            // Apply classes
+            $display.addClass(bgClass + ' ' + textClass);
+            $display.html('<strong>' + displayText + '</strong>');
+            $display.data('keterangan', keterangan);
+
+            console.log('Display updated:', {
+                keterangan: keterangan,
+                displayText: displayText,
+                bgClass: bgClass,
+                textClass: textClass
+            });
         }
 
         // Function untuk memproses queue Hematology
@@ -3918,6 +4600,7 @@
         }
     });
 </script>
+
 <script>
     // ============================================
     // REALTIME UPDATE SYSTEM - SIMPLE VERSION
@@ -4566,34 +5249,37 @@
 
                         response.data.forEach((item, index) => {
                             // Cek apakah sudah ada di tabel
-                            const existingRow = currentTableSection.find(`.kode-pemeriksaan-input[value="${item.kode_pemeriksaan}"]`);
+                            const existingRow = currentTableSection.find(`.kode-pemeriksaan-input[value="${item.id_data_pemeriksaan}"]`);
                             const isDisabled = existingRow.length > 0;
 
                             console.log(`Item ${index}:`, {
-                                kode: item.kode_pemeriksaan,
+                                kode: item.id_data_pemeriksaan,
                                 nama: item.data_pemeriksaan,
                                 sudah_ada: isDisabled
                             });
 
+                            // Di bagian modal checkbox, update untuk tampilkan CH dan CL:
                             html += `
                                 <tr class="pemeriksaan-item ${isDisabled ? 'table-light' : ''}"
-                                    data-kode="${item.kode_pemeriksaan}"
+                                    data-kode="${item.id_data_pemeriksaan}"
                                     data-data-pemeriksaan="${item.data_pemeriksaan}"
                                     data-satuan="${item.satuan || ''}"
                                     data-rujukan="${item.rujukan || ''}"
-                                    data-metode="${item.metode || ''}">
+                                    data-metode="${item.metode || ''}"
+                                    data-ch="${item.ch || ''}"
+                                    data-cl="${item.cl || ''}">
                                     <td class="text-center">
                                         <div class="form-check">
                                             <input type="checkbox"
                                                 class="form-check-input pemeriksaan-checkbox"
                                                 id="pemeriksaan_${index}"
-                                                data-kode="${item.kode_pemeriksaan}"
+                                                data-kode="${item.id_data_pemeriksaan}"
                                                 ${isDisabled ? 'disabled' : ''}>
                                             <label class="form-check-label" for="pemeriksaan_${index}"></label>
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-light text-dark">${item.kode_pemeriksaan}</span>
+                                        <span class="badge bg-light text-dark">${item.id_data_pemeriksaan}</span>
                                     </td>
                                     <td>
                                         <div class="fw-medium">${item.data_pemeriksaan}</div>
@@ -4603,6 +5289,8 @@
                                     </td>
                                     <td class="text-muted">${item.satuan || '-'}</td>
                                     <td class="text-muted small">${item.rujukan || '-'}</td>
+                                    <td class="text-muted small">${item.ch || '-'}</td>
+                                    <td class="text-muted small">${item.cl || '-'}</td>
                                 </tr>
                             `;
                         });
@@ -4877,8 +5565,9 @@
             const rowCount = $section.find('tbody tr').length;
             const index = rowCount;
 
+            // Di bagian newRow template untuk hasil_lain, tambahkan kolom CH dan CL:
             const newRow = `
-            <tr data-index="${index}" data-jenis-pemeriksaan="${jenisPemeriksaan}" data-is-new="true">
+
                 <td class="bg-light" hidden>
                     <strong class="jenis-pengujian-display">Belum dipilih</strong>
                     <input type="hidden"
@@ -4898,7 +5587,7 @@
                             data-row-id=""
                             autocomplete="off">
                         <input type="hidden"
-                            name="hasil_lain[${jenisPemeriksaan}][${index}][kode_pemeriksaan]"
+                            name="hasil_lain[${jenisPemeriksaan}][${index}][id_data_pemeriksaan]"
                             class="kode-pemeriksaan-input"
                             value="">
                     </div>
@@ -4908,6 +5597,20 @@
                 </td>
                 <td class="bg-light rujukan-cell" style="text-align:center;">
                     <span class="rujukan-display">-</span>
+                </td>
+                <td class="bg-light ch-cell" style="text-align:center;">
+                    <span class="ch-display">-</span>
+                    <input type="hidden"
+                        name="hasil_lain[${jenisPemeriksaan}][${index}][ch]"
+                        class="ch-input"
+                        value="-">
+                </td>
+                <td class="bg-light cl-cell" style="text-align:center;">
+                    <span class="cl-display">-</span>
+                    <input type="hidden"
+                        name="hasil_lain[${jenisPemeriksaan}][${index}][cl]"
+                        class="cl-input"
+                        value="-">
                 </td>
                 <td class="hasil-cell">
                     <input type="text"
@@ -4919,6 +5622,8 @@
                         data-id=""
                         data-type="hasil_lain"
                         data-rujukan=""
+                        data-ch=""
+                        data-cl=""
                         autocomplete="off">
                 </td>
                 <td class="keterangan-cell">
@@ -4935,7 +5640,7 @@
                         <i class="ri-delete-bin-line"></i>
                     </button>
                 </td>
-            </tr>
+            </tr><tr data-index="${index}" data-jenis-pemeriksaan="${jenisPemeriksaan}" data-is-new="true">
             `;
 
             $section.find('tbody').append(newRow);
@@ -5012,6 +5717,7 @@
                     rujukan: item.rujukan
                 });
 
+                // Di bagian apply to table untuk hasil lain, update dengan CH dan CL:
                 const newRow = `
                     <tr data-index="${rowIndex}"
                         data-jenis-pemeriksaan="${currentJenisPemeriksaan}"
@@ -5037,7 +5743,7 @@
                                     data-current-kode="${item.kode}"
                                     autocomplete="off">
                                 <input type="hidden"
-                                    name="hasil_lain[${currentJenisPemeriksaan}][${rowIndex}][kode_pemeriksaan]"
+                                    name="hasil_lain[${currentJenisPemeriksaan}][${rowIndex}][id_data_pemeriksaan]"
                                     class="kode-pemeriksaan-input"
                                     value="${item.kode}">
                             </div>
@@ -5047,6 +5753,20 @@
                         </td>
                         <td class="bg-light rujukan-cell" style="text-align:center;">
                             <span class="rujukan-display">${item.rujukan || '-'}</span>
+                        </td>
+                        <td class="bg-light ch-cell" style="text-align:center;">
+                            <span class="ch-display">${item.ch || '-'}</span>
+                            <input type="hidden"
+                                name="hasil_lain[${currentJenisPemeriksaan}][${rowIndex}][ch]"
+                                class="ch-input"
+                                value="${item.ch || '-'}">
+                        </td>
+                        <td class="bg-light cl-cell" style="text-align:center;">
+                            <span class="cl-display">${item.cl || '-'}</span>
+                            <input type="hidden"
+                                name="hasil_lain[${currentJenisPemeriksaan}][${rowIndex}][cl]"
+                                class="cl-input"
+                                value="${item.cl || '-'}">
                         </td>
                         <td class="hasil-cell">
                             <input type="text"
@@ -5058,6 +5778,8 @@
                                 data-id=""
                                 data-type="hasil_lain"
                                 data-rujukan="${item.rujukan || ''}"
+                                data-ch="${item.ch || ''}"
+                                data-cl="${item.cl || ''}"
                                 autocomplete="off">
                         </td>
                         <td class="keterangan-cell">
@@ -5756,6 +6478,1524 @@
         });
 
         console.log('✅ Dokter autocomplete system loaded with Bootstrap dropdown');
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        console.log('=== INITIALIZE KETERANGAN FOR EXISTING RESULTS ===');
+
+        // Function untuk initialize keterangan untuk hasil_lain yang sudah ada
+        function initializeKeteranganHasilLain() {
+            console.log('🔄 Initializing keterangan for existing hasil_lain rows...');
+
+            $('.hasil-input-lain').each(function(index) {
+                const $input = $(this);
+                const value = $input.val();
+                const rujukan = $input.data('rujukan') || $input.attr('data-rujukan') || '';
+                const $row = $input.closest('tr');
+                const $hiddenInput = $row.find('input[name*="[keterangan]"]');
+                const currentKeterangan = $hiddenInput.val();
+
+                console.log(`Row ${index}:`, {
+                    value: value,
+                    rujukan: rujukan,
+                    currentKeterangan: currentKeterangan,
+                    hasRujukan: !!rujukan && rujukan !== '-'
+                });
+
+                // HANYA update jika ada hasil dan rujukan valid
+                if (value && value.trim() !== '' && rujukan && rujukan !== '-' && rujukan !== '') {
+                    // Jika keterangan sudah ada di database, tampilkan
+                    if (currentKeterangan && (currentKeterangan === 'H' || currentKeterangan === 'L' || currentKeterangan === '-')) {
+                        console.log(`Row ${index} already has keterangan:`, currentKeterangan);
+
+                        const $keteranganDisplay = $row.find('.keterangan-display');
+
+                        // Update display sesuai dengan keterangan yang ada
+                        if (typeof window.updateKeteranganDisplay === 'function') {
+                            window.updateKeteranganDisplay($keteranganDisplay, currentKeterangan);
+                        }
+                    } else {
+                        // Jika belum ada keterangan, hitung ulang
+                        console.log(`Row ${index} calculating new keterangan...`);
+
+                        if (typeof window.updateKeteranganClientSide === 'function') {
+                            window.updateKeteranganClientSide($input);
+                        }
+                    }
+                } else {
+                    // Reset keterangan jika tidak ada hasil atau rujukan tidak valid
+                    console.log(`Row ${index} resetting keterangan...`);
+
+                    const $keteranganDisplay = $row.find('.keterangan-display');
+                    if (typeof window.updateKeteranganDisplay === 'function') {
+                        window.updateKeteranganDisplay($keteranganDisplay, '-');
+                    }
+                    $hiddenInput.val('-');
+                }
+            });
+
+            console.log('✅ Keterangan initialization complete');
+        }
+
+        // Function untuk initialize rujukan data dari display
+        function initializeRujukanData() {
+            console.log('🔄 Initializing rujukan data for hasil_lain...');
+
+            $('.hasil-input-lain').each(function(index) {
+                const $input = $(this);
+                const $row = $input.closest('tr');
+                const rujukanDisplay = $row.find('.rujukan-display').text().trim();
+
+                // Jika rujukan display valid, set data-rujukan
+                if (rujukanDisplay && rujukanDisplay !== '-' && rujukanDisplay !== '') {
+                    $input.data('rujukan', rujukanDisplay);
+                    $input.attr('data-rujukan', rujukanDisplay);
+
+                    console.log(`Row ${index} rujukan set to:`, rujukanDisplay);
+                } else {
+                    // Coba dari data-pemeriksaan jika ada
+                    const $kodeInput = $row.find('.kode-pemeriksaan-input');
+                    const kodePemeriksaan = $kodeInput.val();
+
+                    if (kodePemeriksaan) {
+                        console.log(`Row ${index} fetching rujukan for kode:`, kodePemeriksaan);
+
+                        // AJAX untuk mendapatkan data rujukan berdasarkan kode
+                        $.ajax({
+                            url: '{{ route("hasil-lain.get-pemeriksaan-by-kode") }}',
+                            method: 'GET',
+                            data: { id_data_pemeriksaan: kodePemeriksaan },
+                            success: function(response) {
+                                if (response.success && response.data) {
+                                    const rujukan = response.data.rujukan || '-';
+                                    const satuan = response.data.satuan || '-';
+
+                                    // Update UI
+                                    $input.data('rujukan', rujukan);
+                                    $input.attr('data-rujukan', rujukan);
+                                    $row.find('.rujukan-display').text(rujukan);
+                                    $row.find('.satuan-display').text(satuan);
+
+                                    console.log(`Row ${index} rujukan updated via AJAX:`, rujukan);
+
+                                    // Hitung ulang keterangan setelah rujukan diperbarui
+                                    if (typeof window.updateKeteranganClientSide === 'function') {
+                                        window.updateKeteranganClientSide($input);
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+
+            console.log('✅ Rujukan initialization complete');
+        }
+
+        // Function untuk cek dan fix missing satuan/rujukan
+        function fixMissingData() {
+            console.log('🔧 Checking for missing data...');
+
+            $('.hasil-input-lain').each(function() {
+                const $input = $(this);
+                const $row = $input.closest('tr');
+                const satuan = $row.find('.satuan-display').text().trim();
+                const rujukan = $row.find('.rujukan-display').text().trim();
+                const kodePemeriksaan = $row.find('.kode-pemeriksaan-input').val();
+                const hasil = $input.val();
+
+                // Jika ada kode tapi satuan/rujukan kosong, coba fetch
+                if (kodePemeriksaan && (satuan === '-' || rujukan === '-') && hasil && hasil.trim() !== '') {
+                    console.log('Missing satuan/rujukan detected, fetching...');
+
+                    $.ajax({
+                        url: '{{ route("hasil-lain.get-pemeriksaan-by-kode") }}',
+                        method: 'GET',
+                        data: { id_data_pemeriksaan: kodePemeriksaan },
+                        success: function(response) {
+                            if (response.success && response.data) {
+                                // Update UI
+                                $row.find('.satuan-display').text(response.data.satuan || '-');
+                                $row.find('.rujukan-display').text(response.data.rujukan || '-');
+
+                                // Update input data
+                                $input.data('rujukan', response.data.rujukan || '-');
+                                $input.attr('data-rujukan', response.data.rujukan || '-');
+
+                                console.log('Missing data fixed for kode:', kodePemeriksaan);
+
+                                // Hitung ulang keterangan
+                                if (typeof window.updateKeteranganClientSide === 'function') {
+                                    window.updateKeteranganClientSide($input);
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        // Function utama untuk initialize semua data
+        function initializeAllData() {
+            console.log('=== COMPLETE DATA INITIALIZATION ===');
+
+            // Inisialisasi CH dan CL untuk hasil_lain yang sudah ada
+            $('.hasil-input-lain').each(function(index) {
+                const $input = $(this);
+                const $row = $input.closest('tr');
+                const rujukan = $row.find('.rujukan-display').text().trim();
+                const satuan = $row.find('.satuan-display').text().trim();
+                const ch = $row.find('.ch-display').text().trim();
+                const cl = $row.find('.cl-display').text().trim();
+                const kodePemeriksaan = $row.find('.kode-pemeriksaan-input').val();
+
+                // Set data attributes
+                $input.data('rujukan', rujukan);
+                $input.attr('data-rujukan', rujukan);
+                $input.data('ch', ch);
+                $input.attr('data-ch', ch);
+                $input.data('cl', cl);
+                $input.attr('data-cl', cl);
+
+                console.log(`HasilLain Row ${index} initialized:`, {
+                    rujukan,
+                    ch,
+                    cl
+                });
+            });
+
+            // 1. Inisialisasi rujukan data
+            initializeRujukanData();
+
+            // 2. Fix missing data
+            setTimeout(fixMissingData, 500);
+
+            // 3. Inisialisasi keterangan
+            setTimeout(initializeKeteranganHasilLain, 1000);
+
+            // 4. Log semua data untuk debugging
+            setTimeout(function() {
+                console.log('=== FINAL DATA CHECK ===');
+                $('.hasil-input-lain').each(function(index) {
+                    const $input = $(this);
+                    const $row = $input.closest('tr');
+                    const $keteranganDisplay = $row.find('.keterangan-display');
+                    const $hiddenInput = $row.find('input[name*="[keterangan]"]');
+
+                    console.log(`Final Row ${index}:`, {
+                        id: $input.data('id'),
+                        hasil: $input.val(),
+                        rujukan: $input.data('rujukan'),
+                        keteranganDisplay: $keteranganDisplay.data('keterangan'),
+                        keteranganHidden: $hiddenInput.val(),
+                        satuan: $row.find('.satuan-display').text(),
+                        kode: $row.find('.kode-pemeriksaan-input').val()
+                    });
+                });
+            }, 1500);
+        }
+
+        // Jalankan saat document ready
+        $(window).on('load', function() {
+            setTimeout(initializeAllData, 2000); // Tunggu 2 detik untuk semua script selesai load
+        });
+
+        // Juga jalankan saat modal pemeriksaan lain ditutup (jika ada penambahan baru)
+        $(document).on('hidden.bs.modal', '#pilihPemeriksaanModal', function() {
+            setTimeout(initializeKeteranganHasilLain, 500);
+        });
+
+        // Dan saat row baru ditambahkan
+        $(document).on('DOMNodeInserted', '.pemeriksaan-lain-table tbody tr', function() {
+            const $row = $(this);
+            const $input = $row.find('.hasil-input-lain');
+
+            // Beri waktu untuk element benar-benar ready
+            setTimeout(function() {
+                if (typeof window.updateKeteranganClientSide === 'function') {
+                    window.updateKeteranganClientSide($input);
+                }
+            }, 300);
+        });
+
+        console.log('🔄 Keterangan initialization system ready');
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        console.log('🔧 CH/CL Fix for Hasil Lain Loading...');
+
+        // Fungsi untuk perbaikan khusus hasil lain
+        function fixHasilLainCHCL() {
+            console.log('=== FIXING HASIL LAIN CH/CL ===');
+
+            // 1. Pastikan semua input hasil_lain memiliki data CH dan CL
+            $('.hasil-input-lain').each(function(index) {
+                const $input = $(this);
+                const $row = $input.closest('tr');
+
+                // Ambil dari kolom display
+                const chDisplay = $row.find('.ch-display').text().trim();
+                const clDisplay = $row.find('.cl-display').text().trim();
+                const rujukanDisplay = $row.find('.rujukan-display').text().trim();
+
+                // Set data attributes jika belum ada
+                if (!$input.attr('data-ch') || $input.attr('data-ch') === '') {
+                    $input.data('ch', chDisplay);
+                    $input.attr('data-ch', chDisplay);
+                    console.log(`Row ${index}: Set CH to "${chDisplay}"`);
+                }
+
+                if (!$input.attr('data-cl') || $input.attr('data-cl') === '') {
+                    $input.data('cl', clDisplay);
+                    $input.attr('data-cl', clDisplay);
+                    console.log(`Row ${index}: Set CL to "${clDisplay}"`);
+                }
+
+                if (!$input.attr('data-rujukan') || $input.attr('data-rujukan') === '') {
+                    $input.data('rujukan', rujukanDisplay);
+                    $input.attr('data-rujukan', rujukanDisplay);
+                }
+
+                // Hitung ulang keterangan jika ada nilai
+                if ($input.val() && $input.val().trim() !== '') {
+                    console.log(`Row ${index}: Recalculating keterangan...`);
+                    if (typeof window.updateKeteranganClientSide === 'function') {
+                        window.updateKeteranganClientSide($input);
+                    }
+                }
+            });
+
+            // 2. Update event handler untuk input hasil_lain
+            $(document).off('input', '.hasil-input-lain').on('input', '.hasil-input-lain', function() {
+                const $input = $(this);
+                const $row = $input.closest('tr');
+
+                // Ambil CH dan CL terbaru dari display (mungkin berubah)
+                const chDisplay = $row.find('.ch-display').text().trim();
+                const clDisplay = $row.find('.cl-display').text().trim();
+                const rujukanDisplay = $row.find('.rujukan-display').text().trim();
+
+                // Update data attributes
+                $input.data('ch', chDisplay);
+                $input.attr('data-ch', chDisplay);
+                $input.data('cl', clDisplay);
+                $input.attr('data-cl', clDisplay);
+                $input.data('rujukan', rujukanDisplay);
+                $input.attr('data-rujukan', rujukanDisplay);
+
+                console.log('HasilLain Input Changed:', {
+                    hasil: $input.val(),
+                    ch: chDisplay,
+                    cl: clDisplay,
+                    rujukan: rujukanDisplay
+                });
+
+                // Hitung keterangan
+                if (typeof window.updateKeteranganClientSide === 'function') {
+                    window.updateKeteranganClientSide($input);
+                }
+
+                // AJAX save (dari kode sebelumnya)
+                const id = $input.data('id');
+                const value = $input.val();
+
+                clearTimeout($input.data('timer'));
+                $input.data('timer', setTimeout(() => {
+                    if (id) {
+                        // Panggil fungsi addToQueueHasilPemeriksaanLain
+                        if (typeof addToQueueHasilPemeriksaanLain === 'function') {
+                            const $hiddenInput = $row.find('input[name*="[keterangan]"]');
+                            const keterangan = $hiddenInput.val() || '-';
+
+                            console.log('Saving to queue:', {
+                                id: id,
+                                hasil: value,
+                                keterangan: keterangan
+                            });
+
+                            addToQueueHasilPemeriksaanLain('hasil_lain', id, 'hasil_pengujian', value, $input);
+                        }
+                    }
+                }, 800));
+            });
+
+            console.log('✅ CH/CL fix applied to Hasil Lain');
+        }
+
+        // Jalankan perbaikan
+        setTimeout(fixHasilLainCHCL, 1500);
+
+        // Juga jalankan saat modal ditutup atau row baru ditambahkan
+        $(document).on('hidden.bs.modal', '#pilihPemeriksaanModal', function() {
+            setTimeout(fixHasilLainCHCL, 500);
+        });
+
+        $(document).on('DOMNodeInserted', '.pemeriksaan-lain-table tbody tr', function() {
+            setTimeout(function() {
+                const $row = $(this);
+                const $input = $row.find('.hasil-input-lain');
+
+                if ($input.length) {
+                    const chDisplay = $row.find('.ch-display').text().trim();
+                    const clDisplay = $row.find('.cl-display').text().trim();
+                    const rujukanDisplay = $row.find('.rujukan-display').text().trim();
+
+                    $input.data('ch', chDisplay);
+                    $input.attr('data-ch', chDisplay);
+                    $input.data('cl', clDisplay);
+                    $input.attr('data-cl', clDisplay);
+                    $input.data('rujukan', rujukanDisplay);
+                    $input.attr('data-rujukan', rujukanDisplay);
+
+                    console.log('New row initialized with CH/CL:', {
+                        ch: chDisplay,
+                        cl: clDisplay,
+                        rujukan: rujukanDisplay
+                    });
+                }
+            }, 300);
+        });
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        console.log('=== PENJAMIN & RUANGAN SYSTEM STARTING ===');
+        console.log('Timestamp:', new Date().toISOString());
+
+        const csrfToken = $('#csrf_token').val();
+        console.log('CSRF Token:', csrfToken ? 'Found (' + csrfToken.substring(0, 20) + '...)' : 'NOT FOUND');
+
+        // ============================================
+        // PENJAMIN AUTOSEARCH SYSTEM
+        // ============================================
+        console.log('=== INITIALIZING PENJAMIN SYSTEM ===');
+
+        let penjamins = [];
+        let selectedPenjamin = null;
+        let isProcessingPenjamin = false;
+        let penjaminSearchTimer = null;
+
+        // Cek elemen Penjamin
+        const penjaminInput = document.getElementById('penjaminInput');
+        console.log('Penjamin Input Element:', penjaminInput ? 'Found' : 'NOT FOUND');
+
+        if (!penjaminInput) {
+            console.error('❌ ERROR: #penjaminInput tidak ditemukan di DOM');
+            console.error('Elements with ID "penjaminInput":', document.querySelectorAll('#penjaminInput').length);
+        }
+
+        // Inisialisasi dropdown Bootstrap untuk Penjamin
+        let penjaminDropdown = null;
+        if (penjaminInput) {
+            try {
+                penjaminDropdown = new bootstrap.Dropdown(penjaminInput);
+                console.log('✅ Penjamin dropdown initialized');
+            } catch (error) {
+                console.error('❌ ERROR: Gagal inisialisasi dropdown penjamin:', error.message);
+                console.error('Stack trace:', error.stack);
+            }
+        }
+
+        // Function untuk update dropdown content Penjamin
+        function updatePenjaminDropdownContent(html) {
+            console.log('📝 updatePenjaminDropdownContent called');
+            const $dropdown = $('#penjaminDropdown');
+
+            if ($dropdown.length === 0) {
+                console.error('❌ ERROR: #penjaminDropdown tidak ditemukan di DOM');
+                return;
+            }
+
+            $dropdown.html(html);
+            console.log('Penjamin dropdown content updated');
+
+            if (html && !html.includes('Ketik minimal 2 karakter')) {
+                if (penjaminDropdown) {
+                    try {
+                        penjaminDropdown.show();
+                        console.log('Penjamin dropdown shown');
+                    } catch (error) {
+                        console.error('❌ ERROR: Gagal menampilkan dropdown penjamin:', error);
+                    }
+                }
+            }
+        }
+
+        // Debounce search untuk Penjamin
+        $('#penjaminInput').on('input', function() {
+            console.log('⌨️ Penjamin input event');
+            const searchTerm = $(this).val().trim();
+            console.log('Search term:', searchTerm);
+
+            clearTimeout(penjaminSearchTimer);
+
+            if (searchTerm.length < 2) {
+                console.log('Search term too short, resetting dropdown');
+                updatePenjaminDropdownContent(`
+                    <div class="dropdown-item text-muted py-2">
+                        <div class="d-flex align-items-center">
+                            <i class="ri-search-line me-2"></i>
+                            <span>Ketik minimal 2 karakter untuk mencari penjamin</span>
+                        </div>
+                    </div>
+                `);
+                resetPenjaminSelection();
+                return;
+            }
+
+            penjaminSearchTimer = setTimeout(() => {
+                console.log('🚀 Starting penjamin search for:', searchTerm);
+                searchPenjamin(searchTerm);
+            }, 500);
+        });
+
+        // Function search Penjamin
+        function searchPenjamin(term) {
+            console.log('🔍 searchPenjamin called with term:', term);
+
+            if (isProcessingPenjamin) {
+                console.log('⚠️ Penjamin search already in progress, skipping');
+                return;
+            }
+
+            isProcessingPenjamin = true;
+            console.log('🔄 Penjamin search started');
+
+            updatePenjaminDropdownContent(`
+                <div class="dropdown-item py-2">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                        <span class="text-muted">Mencari penjamin...</span>
+                    </div>
+                </div>
+            `);
+
+            // Log request details
+            console.log('📤 AJAX Request Details:', {
+                url: '{{ route("penjamin.search") }}',
+                method: 'GET',
+                data: { search: term },
+                timestamp: new Date().toISOString()
+            });
+
+            $.ajax({
+                url: '{{ route("penjamin.search") }}',
+                method: 'GET',
+                data: { search: term },
+                beforeSend: function(jqXHR, settings) {
+                    console.log('📤 AJAX Request Sent:', settings);
+                },
+                success: function(response, status, xhr) {
+                    console.log('✅ AJAX Response Received:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        response: response
+                    });
+
+                    if (response && response.success && response.data && Array.isArray(response.data)) {
+                        penjamins = response.data;
+                        console.log('📊 Penjamins found:', penjamins.length);
+
+                        if (penjamins.length > 0) {
+                            let html = '';
+                            penjamins.forEach((penjamin, index) => {
+                                if (!penjamin || !penjamin.nama_penjamin) {
+                                    console.warn('⚠️ Invalid penjamin data at index', index, ':', penjamin);
+                                    return;
+                                }
+
+                                console.log(`Penjamin ${index}:`, {
+                                    id: penjamin.id_penjamin,
+                                    name: penjamin.nama_penjamin,
+                                    kode: penjamin.kode_penjamin
+                                });
+
+                                html += `
+                                    <button type="button" class="dropdown-item penjamin-option text-start py-2"
+                                            data-id="${penjamin.id_penjamin || ''}"
+                                            data-name="${penjamin.nama_penjamin}"
+                                            data-kode="${penjamin.kode_penjamin || ''}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="me-3">
+                                                <strong class="d-block">${penjamin.nama_penjamin}</strong>
+                                                ${penjamin.kode_penjamin ? `<small class="text-muted">Kode: ${penjamin.kode_penjamin}</small>` : ''}
+                                            </div>
+                                            <i class="ri-arrow-right-s-line text-muted"></i>
+                                        </div>
+                                    </button>
+                                `;
+                            });
+
+                            console.log('Generated HTML for', penjamins.length, 'penjamins');
+                            updatePenjaminDropdownContent(html);
+                        } else {
+                            console.log('No penjamins found for search term:', term);
+                            updatePenjaminDropdownContent(`
+                                <div class="dropdown-item text-center py-2 text-muted">
+                                    <i class="ri-search-line me-2"></i>
+                                    <span>Tidak ditemukan penjamin</span>
+                                </div>
+                            `);
+                        }
+                    } else {
+                        console.error('❌ Invalid response format:', response);
+                        updatePenjaminDropdownContent(`
+                            <div class="dropdown-item text-center py-2 text-danger">
+                                <i class="ri-error-warning-line me-2"></i>
+                                <span>Data tidak valid dari server</span>
+                                <div class="small">Format response tidak sesuai</div>
+                            </div>
+                        `);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ AJAX Error:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        responseText: xhr.responseText,
+                        readyState: xhr.readyState
+                    });
+
+                    let errorMessage = 'Gagal memuat data penjamin';
+                    if (xhr.status === 404) {
+                        errorMessage = 'Endpoint tidak ditemukan (404)';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'Server error (500)';
+                    } else if (xhr.status === 0) {
+                        errorMessage = 'Koneksi terputus atau CORS error';
+                    }
+
+                    updatePenjaminDropdownContent(`
+                        <div class="dropdown-item text-center py-2 text-danger">
+                            <i class="ri-wifi-off-line me-2"></i>
+                            <div>${errorMessage}</div>
+                            <small class="text-muted">Status: ${xhr.status} - ${error}</small>
+                        </div>
+                    `);
+                },
+                complete: function() {
+                    console.log('✅ Penjamin search completed');
+                    isProcessingPenjamin = false;
+                }
+            });
+        }
+
+        // Pilih Penjamin dari dropdown
+        $(document).on('click', '.penjamin-option', function(e) {
+            console.log('🎯 Penjamin option clicked');
+            e.preventDefault();
+            e.stopPropagation();
+
+            const penjaminId = $(this).data('id') || null;
+            const penjaminName = $(this).data('name') || '';
+            const penjaminKode = $(this).data('kode') || '';
+
+            console.log('Selected Penjamin:', {
+                id: penjaminId,
+                name: penjaminName,
+                kode: penjaminKode
+            });
+
+            // Update input
+            $('#penjaminInput').val(penjaminName);
+            $('#id_penjamin').val(penjaminId);
+            selectedPenjamin = {
+                id: penjaminId,
+                name: penjaminName,
+                kode: penjaminKode
+            };
+
+            // Update display info
+            updatePenjaminInfo();
+
+            // Simpan ke database
+            savePenjamin(penjaminId, penjaminName);
+
+            // Update dropdown dengan pesan success
+            updatePenjaminDropdownContent(`
+                <div class="dropdown-item text-success py-2">
+                    <div class="d-flex align-items-center">
+                        <i class="ri-check-line me-2"></i>
+                        <span>${penjaminName} dipilih</span>
+                    </div>
+                </div>
+            `);
+
+            // Tutup dropdown setelah 1 detik
+            setTimeout(() => {
+                if (penjaminDropdown) {
+                    penjaminDropdown.hide();
+                    console.log('Penjamin dropdown hidden');
+                }
+            }, 1000);
+        });
+
+        // Function save Penjamin ke database
+        // Function save Penjamin ke database
+        function savePenjamin(penjaminId, penjaminName) {
+            console.log('💾 Saving penjamin to database:', { penjaminId, penjaminName });
+
+            const noLab = window.pasienNoLab || '{{ $pasien->no_lab }}';
+            console.log('No Lab:', noLab);
+
+            if (!noLab) {
+                console.error('❌ ERROR: No Lab tidak ditemukan');
+                return;
+            }
+
+            // Tampilkan saving status
+            const $status = $('#penjaminInput').closest('.position-relative').find('.save-status');
+            if ($status.length === 0) {
+                console.error('❌ ERROR: Save status element not found');
+            } else {
+                $status.html('<i class="fas fa-spinner fa-spin text-primary"></i>').show();
+                console.log('Save status shown');
+            }
+
+            // AJAX call untuk update penjamin - KIRIM no_lab dalam data POST
+            $.ajax({
+                url: '{{ route("pasien.update.penjamin") }}', // GUNAKAN ROUTE NAME
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                data: {
+                    no_lab: noLab,  // TAMBAHKAN INI
+                    nota: penjaminName
+                },
+                beforeSend: function() {
+                    console.log('📤 Sending penjamin update request:', {
+                        url: '{{ route("pasien.update.penjamin") }}',
+                        data: { no_lab: noLab, nota: penjaminName }
+                    });
+                },
+                success: function(response) {
+                    console.log('✅ Penjamin update success:', response);
+
+                    if (response && response.success) {
+                        $('#penjaminInput').removeClass('is-changed');
+                        if (typeof window.updateSaveStatus === 'function') {
+                            window.updateSaveStatus();
+                        }
+
+                        // Update status tersimpan
+                        setTimeout(() => {
+                            $status.html('<i class="fas fa-check text-success"></i>');
+                            setTimeout(() => $status.fadeOut(500), 1000);
+                            console.log('Save status updated to success');
+                        }, 1000);
+
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('success', 'Penjamin berhasil diperbarui');
+                        }
+                    } else {
+                        console.error('❌ Server response indicates failure:', response);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Penjamin update error:', {
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        error: error,
+                        responseText: xhr.responseText
+                    });
+
+                    $status.html('<i class="fas fa-times text-danger"></i>');
+                    setTimeout(() => $status.fadeOut(500), 2000);
+                    console.log('Save status updated to error');
+
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('danger', 'Gagal menyimpan penjamin');
+                    }
+                }
+            });
+        }
+
+        // Update info Penjamin yang dipilih
+        function updatePenjaminInfo() {
+            console.log('ℹ️ Updating penjamin info');
+            const $info = $('#penjaminInfo');
+
+            if ($info.length === 0) {
+                console.error('❌ ERROR: #penjaminInfo tidak ditemukan');
+                return;
+            }
+
+            if (selectedPenjamin && selectedPenjamin.name) {
+                $info.show();
+                $('#selectedPenjaminName').text(selectedPenjamin.name);
+
+                let detail = '';
+                if (selectedPenjamin.kode) {
+                    detail += detail ? ', ' : '';
+                    detail += `Kode: ${selectedPenjamin.kode}`;
+                }
+
+                $('#penjaminDetail').text(detail ? `(${detail})` : '');
+                console.log('Penjamin info updated:', selectedPenjamin);
+            } else {
+                $info.hide();
+                console.log('Penjamin info hidden (no selection)');
+            }
+        }
+
+        // Reset seleksi Penjamin
+        function resetPenjaminSelection() {
+            console.log('🔄 Resetting penjamin selection');
+            selectedPenjamin = null;
+            updatePenjaminInfo();
+        }
+
+        // ============================================
+        // RUANGAN AUTOSEARCH SYSTEM
+        // ============================================
+        console.log('=== INITIALIZING RUANGAN SYSTEM ===');
+
+        let ruangans = [];
+        let selectedRuangan = null;
+        let isProcessingRuangan = false;
+        let ruanganSearchTimer = null;
+
+        // Cek elemen Ruangan
+        const ruanganInput = document.getElementById('ruanganInput');
+        console.log('Ruangan Input Element:', ruanganInput ? 'Found' : 'NOT FOUND');
+
+        if (!ruanganInput) {
+            console.error('❌ ERROR: #ruanganInput tidak ditemukan di DOM');
+            console.error('Elements with ID "ruanganInput":', document.querySelectorAll('#ruanganInput').length);
+        }
+
+        // Inisialisasi dropdown Bootstrap untuk Ruangan
+        let ruanganDropdown = null;
+        if (ruanganInput) {
+            try {
+                ruanganDropdown = new bootstrap.Dropdown(ruanganInput);
+                console.log('✅ Ruangan dropdown initialized');
+            } catch (error) {
+                console.error('❌ ERROR: Gagal inisialisasi dropdown ruangan:', error.message);
+            }
+        }
+
+        // Function untuk update dropdown content Ruangan
+        function updateRuanganDropdownContent(html) {
+            console.log('📝 updateRuanganDropdownContent called');
+            const $dropdown = $('#ruanganDropdown');
+
+            if ($dropdown.length === 0) {
+                console.error('❌ ERROR: #ruanganDropdown tidak ditemukan di DOM');
+                return;
+            }
+
+            $dropdown.html(html);
+            console.log('Ruangan dropdown content updated');
+
+            if (html && !html.includes('Ketik minimal 2 karakter')) {
+                if (ruanganDropdown) {
+                    try {
+                        ruanganDropdown.show();
+                        console.log('Ruangan dropdown shown');
+                    } catch (error) {
+                        console.error('❌ ERROR: Gagal menampilkan dropdown ruangan:', error);
+                    }
+                }
+            }
+        }
+
+        // Debounce search untuk Ruangan
+        $('#ruanganInput').on('input', function() {
+            console.log('⌨️ Ruangan input event');
+            const searchTerm = $(this).val().trim();
+            console.log('Search term:', searchTerm);
+
+            clearTimeout(ruanganSearchTimer);
+
+            if (searchTerm.length < 2) {
+                console.log('Search term too short, resetting dropdown');
+                updateRuanganDropdownContent(`
+                    <div class="dropdown-item text-muted py-2">
+                        <div class="d-flex align-items-center">
+                            <i class="ri-search-line me-2"></i>
+                            <span>Ketik minimal 2 karakter untuk mencari ruangan</span>
+                        </div>
+                    </div>
+                `);
+                resetRuanganSelection();
+                return;
+            }
+
+            ruanganSearchTimer = setTimeout(() => {
+                console.log('🚀 Starting ruangan search for:', searchTerm);
+                searchRuangan(searchTerm);
+            }, 500);
+        });
+
+        // Function search Ruangan
+        function searchRuangan(term) {
+            console.log('🔍 searchRuangan called with term:', term);
+
+            if (isProcessingRuangan) {
+                console.log('⚠️ Ruangan search already in progress, skipping');
+                return;
+            }
+
+            isProcessingRuangan = true;
+            console.log('🔄 Ruangan search started');
+
+            updateRuanganDropdownContent(`
+                <div class="dropdown-item py-2">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                        <span class="text-muted">Mencari ruangan...</span>
+                    </div>
+                </div>
+            `);
+
+            $.ajax({
+                url: '{{ route("ruangan.search") }}',
+                method: 'GET',
+                data: { search: term },
+                beforeSend: function() {
+                    console.log('📤 AJAX Request Sent to ruangan.search');
+                },
+                success: function(response, status, xhr) {
+                    console.log('✅ AJAX Response Received from ruangan.search:', {
+                        status: xhr.status,
+                        response: response
+                    });
+
+                    if (response && response.success && response.data && Array.isArray(response.data)) {
+                        ruangans = response.data;
+                        console.log('📊 Ruangans found:', ruangans.length);
+
+                        if (ruangans.length > 0) {
+                            let html = '';
+                            ruangans.forEach((ruangan, index) => {
+                                if (!ruangan || !ruangan.nama_ruangan) {
+                                    console.warn('⚠️ Invalid ruangan data at index', index, ':', ruangan);
+                                    return;
+                                }
+
+                                html += `
+                                    <button type="button" class="dropdown-item ruangan-option text-start py-2"
+                                            data-id="${ruangan.id_ruangan || ''}"
+                                            data-name="${ruangan.nama_ruangan}"
+                                            data-kode="${ruangan.kode_ruangan || ''}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div class="me-3">
+                                                <strong class="d-block">${ruangan.nama_ruangan}</strong>
+                                                ${ruangan.kode_ruangan ? `<small class="text-muted">Kode: ${ruangan.kode_ruangan}</small>` : ''}
+                                            </div>
+                                            <i class="ri-arrow-right-s-line text-muted"></i>
+                                        </div>
+                                    </button>
+                                `;
+                            });
+
+                            updateRuanganDropdownContent(html);
+                        } else {
+                            console.log('No ruangans found for search term:', term);
+                            updateRuanganDropdownContent(`
+                                <div class="dropdown-item text-center py-2 text-muted">
+                                    <i class="ri-search-line me-2"></i>
+                                    <span>Tidak ditemukan ruangan</span>
+                                </div>
+                            `);
+                        }
+                    } else {
+                        console.error('❌ Invalid response format from ruangan.search:', response);
+                        updateRuanganDropdownContent(`
+                            <div class="dropdown-item text-center py-2 text-danger">
+                                <i class="ri-error-warning-line me-2"></i>
+                                <span>Data tidak valid dari server</span>
+                            </div>
+                        `);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ AJAX Error from ruangan.search:', {
+                        status: xhr.status,
+                        error: error,
+                        responseText: xhr.responseText
+                    });
+
+                    updateRuanganDropdownContent(`
+                        <div class="dropdown-item text-center py-2 text-danger">
+                            <i class="ri-wifi-off-line me-2"></i>
+                            <div>Gagal memuat data ruangan</div>
+                            <small class="text-muted">${xhr.status}: ${error}</small>
+                        </div>
+                    `);
+                },
+                complete: function() {
+                    console.log('✅ Ruangan search completed');
+                    isProcessingRuangan = false;
+                }
+            });
+        }
+
+        // Pilih Ruangan dari dropdown
+        $(document).on('click', '.ruangan-option', function(e) {
+            console.log('🎯 Ruangan option clicked');
+            e.preventDefault();
+            e.stopPropagation();
+
+            const ruanganId = $(this).data('id') || null;
+            const ruanganName = $(this).data('name') || '';
+            const ruanganKode = $(this).data('kode') || '';
+
+            console.log('Selected Ruangan:', {
+                id: ruanganId,
+                name: ruanganName,
+                kode: ruanganKode
+            });
+
+            // Update input
+            $('#ruanganInput').val(ruanganName);
+            $('#id_ruangan').val(ruanganId);
+            selectedRuangan = {
+                id: ruanganId,
+                name: ruanganName,
+                kode: ruanganKode
+            };
+
+            // Update display info
+            updateRuanganInfo();
+
+            // Simpan ke database
+            saveRuangan(ruanganId, ruanganName);
+
+            // Update dropdown dengan pesan success
+            updateRuanganDropdownContent(`
+                <div class="dropdown-item text-success py-2">
+                    <div class="d-flex align-items-center">
+                        <i class="ri-check-line me-2"></i>
+                        <span>${ruanganName} dipilih</span>
+                    </div>
+                </div>
+            `);
+
+            // Tutup dropdown setelah 1 detik
+            setTimeout(() => {
+                if (ruanganDropdown) {
+                    ruanganDropdown.hide();
+                    console.log('Ruangan dropdown hidden');
+                }
+            }, 1000);
+        });
+
+        // Function save Ruangan ke database
+        // Function save Ruangan ke database
+        function saveRuangan(ruanganId, ruanganName) {
+            console.log('💾 Saving ruangan to database:', { ruanganId, ruanganName });
+
+            const noLab = window.pasienNoLab || '{{ $pasien->no_lab }}';
+            console.log('No Lab:', noLab);
+
+            if (!noLab) {
+                console.error('❌ ERROR: No Lab tidak ditemukan');
+                return;
+            }
+
+            // Tampilkan saving status
+            const $status = $('#ruanganInput').closest('.input-group').find('.save-status');
+            if ($status.length === 0) {
+                console.error('❌ ERROR: Save status element not found for ruangan');
+            } else {
+                $status.html('<i class="fas fa-spinner fa-spin text-primary"></i>').show();
+                console.log('Ruangan save status shown');
+            }
+
+            // AJAX call untuk update ruangan - KIRIM no_lab dalam data POST
+            $.ajax({
+                url: '{{ route("pasien.update.ruangan") }}', // GUNAKAN ROUTE NAME
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                data: {
+                    no_lab: noLab,  // TAMBAHKAN INI
+                    id_ruangan: ruanganId,
+                    ket_klinik: ruanganName
+                },
+                beforeSend: function() {
+                    console.log('📤 Sending ruangan update request');
+                },
+                success: function(response) {
+                    console.log('✅ Ruangan update success:', response);
+
+                    if (response && response.success) {
+                        $('#ruanganInput').removeClass('is-changed');
+                        if (typeof window.updateSaveStatus === 'function') {
+                            window.updateSaveStatus();
+                        }
+
+                        // Update status tersimpan
+                        setTimeout(() => {
+                            $status.html('<i class="fas fa-check text-success"></i>');
+                            setTimeout(() => $status.fadeOut(500), 1000);
+                            console.log('Ruangan save status updated to success');
+                        }, 1000);
+
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('success', 'Asal kunjungan berhasil diperbarui');
+                        }
+                    } else {
+                        console.error('❌ Server response indicates failure:', response);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Ruangan update error:', {
+                        status: xhr.status,
+                        error: error,
+                        responseText: xhr.responseText
+                    });
+
+                    $status.html('<i class="fas fa-times text-danger"></i>');
+                    setTimeout(() => $status.fadeOut(500), 2000);
+                    console.log('Ruangan save status updated to error');
+
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('danger', 'Gagal menyimpan asal kunjungan');
+                    }
+                }
+            });
+        }
+        // Update info Ruangan yang dipilih
+        function updateRuanganInfo() {
+            console.log('ℹ️ Updating ruangan info');
+            const $info = $('#ruanganInfo');
+
+            if ($info.length === 0) {
+                console.error('❌ ERROR: #ruanganInfo tidak ditemukan');
+                return;
+            }
+
+            if (selectedRuangan && selectedRuangan.name) {
+                $info.show();
+                $('#selectedRuanganName').text(selectedRuangan.name);
+                console.log('Ruangan info updated:', selectedRuangan);
+            } else {
+                $info.hide();
+                console.log('Ruangan info hidden (no selection)');
+            }
+        }
+
+        // Reset seleksi Ruangan
+        function resetRuanganSelection() {
+            console.log('🔄 Resetting ruangan selection');
+            selectedRuangan = null;
+            updateRuanganInfo();
+        }
+
+        // ============================================
+        // INISIALISASI DATA SAAT PAGE LOAD
+        // ============================================
+        function initializePenjaminRuanganData() {
+            console.log('🔄 Initializing penjamin & ruangan data on page load');
+
+            // Inisialisasi Penjamin
+            const currentPenjamin = $('#penjaminInput').val();
+            const currentPenjaminId = $('#id_penjamin').val();
+
+            console.log('Current penjamin data:', {
+                value: currentPenjamin,
+                id: currentPenjaminId
+            });
+
+            if (currentPenjamin && currentPenjamin.trim() !== '') {
+                selectedPenjamin = {
+                    id: currentPenjaminId || null,
+                    name: currentPenjamin,
+                    kode: ''
+                };
+                updatePenjaminInfo();
+                console.log('Penjamin initialized from existing data');
+            } else {
+                console.log('No existing penjamin data found');
+            }
+
+            // Inisialisasi Ruangan
+            const currentRuangan = $('#ruanganInput').val();
+            const currentRuanganId = $('#id_ruangan').val();
+
+            console.log('Current ruangan data:', {
+                value: currentRuangan,
+                id: currentRuanganId
+            });
+
+            if (currentRuangan && currentRuangan.trim() !== '') {
+                selectedRuangan = {
+                    id: currentRuanganId || null,
+                    name: currentRuangan,
+                    kode: ''
+                };
+                updateRuanganInfo();
+                console.log('Ruangan initialized from existing data');
+            } else {
+                console.log('No existing ruangan data found');
+            }
+        }
+
+        // Initialize on page load
+        $(window).on('load', function() {
+            console.log('📄 Window load event fired');
+            setTimeout(initializePenjaminRuanganData, 1000);
+        });
+
+        // Juga inisialisasi saat document ready
+        setTimeout(initializePenjaminRuanganData, 500);
+
+        // Close dropdown saat klik di luar
+        $(document).on('click', function(e) {
+            // Untuk Penjamin
+            if (!$(e.target).closest('#penjaminInput').length &&
+                !$(e.target).closest('#penjaminDropdown').length) {
+                if (penjaminDropdown) {
+                    penjaminDropdown.hide();
+                    console.log('Penjamin dropdown closed (outside click)');
+                }
+            }
+
+            // Untuk Ruangan
+            if (!$(e.target).closest('#ruanganInput').length &&
+                !$(e.target).closest('#ruanganDropdown').length) {
+                if (ruanganDropdown) {
+                    ruanganDropdown.hide();
+                    console.log('Ruangan dropdown closed (outside click)');
+                }
+            }
+        });
+
+        // Test function untuk debugging
+        window.testPenjaminRuanganSystem = function() {
+            console.log('=== TESTING PENJAMIN & RUANGAN SYSTEM ===');
+            console.log('Selected Penjamin:', selectedPenjamin);
+            console.log('Selected Ruangan:', selectedRuangan);
+            console.log('Penjamins in memory:', penjamins.length);
+            console.log('Ruangans in memory:', ruangans.length);
+            console.log('CSRF Token exists:', !!csrfToken);
+            console.log('No Lab:', window.pasienNoLab);
+            console.log('Penjamin Input value:', $('#penjaminInput').val());
+            console.log('Ruangan Input value:', $('#ruanganInput').val());
+
+            // Test AJAX endpoints
+            console.log('Testing AJAX endpoints:');
+            console.log('- Penjamin search route: {{ route("penjamin.search") }}');
+            console.log('- Ruangan search route: {{ route("ruangan.search") }}');
+            console.log('- Update penjamin route: /pasien/update-penjamin');
+            console.log('- Update ruangan route: /pasien/update-ruangan');
+        };
+
+        console.log('✅ Penjamin & Ruangan autocomplete system loaded successfully');
+        console.log('=== SYSTEM READY ===');
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        console.log('✅ Multi-Panel History System Initializing...');
+
+        const csrfToken = $('#csrf_token').val();
+        let currentActiveElement = null;
+        let isHistoryLoading = false;
+
+        // Fungsi untuk membuat slug dari nama pemeriksaan
+        function createSlug(text) {
+            return text.toLowerCase()
+                .replace(/[^\w\s-]/g, '')
+                .replace(/\s+/g, '_')
+                .replace(/-+/g, '_');
+        }
+
+        // Fungsi untuk memuat history
+        function loadHistory(jenisPemeriksaan, type, rmPasien) {
+            if (!jenisPemeriksaan || !rmPasien) return;
+
+            // Tentukan panel mana yang akan di-update
+            const panelSuffix = getPanelSuffix(type, jenisPemeriksaan);
+
+            // Periksa apakah panel ada
+            if ($(`#hoverJenisPemeriksaan${panelSuffix}`).length === 0) {
+                console.warn(`Panel ${panelSuffix} tidak ditemukan`);
+                return;
+            }
+
+            // Update info panel
+            $(`#hoverJenisPemeriksaan${panelSuffix}`).html(`
+                <i class="ri-search-line me-1"></i>
+                <strong>${jenisPemeriksaan}</strong>
+            `);
+
+            // Set type info
+            const typeText = {
+                'hematology': 'Hematology',
+                'kimia': 'Kimia',
+                'hasil_lain': 'Pemeriksaan Lain'
+            }[type] || 'Unknown';
+            $(`#hoverTypeInfo${panelSuffix}`).text(typeText);
+
+            // Tampilkan loading
+            $(`#historyPanelContent${panelSuffix}`).html(`
+                <div class="text-center py-3">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                    <div class="mt-1 text-muted small">Memuat...</div>
+                </div>
+            `);
+
+            isHistoryLoading = true;
+
+            $.ajax({
+                url: '{{ route("hasil-lab.get-history-hover") }}',
+                method: 'POST',
+                data: {
+                    _token: csrfToken,
+                    jenis_pemeriksaan: jenisPemeriksaan,
+                    type: type,
+                    rm_pasien: rmPasien,
+                    current_no_lab: '{{ $pasien->no_lab }}'
+                },
+                success: function(response) {
+                    if (response.success && response.data) {
+                        displayHistoryData(response.data, panelSuffix);
+                    } else {
+                        showError('Tidak ada data', panelSuffix);
+                    }
+                },
+                error: function(xhr) {
+                    showError('Gagal memuat', panelSuffix);
+                },
+                complete: function() {
+                    isHistoryLoading = false;
+                }
+            });
+        }
+
+        // Helper: Mendapatkan suffix untuk ID panel
+        function getPanelSuffix(type, jenisPemeriksaan) {
+            switch(type) {
+                case 'hematology':
+                    return '_hematology';
+                case 'kimia':
+                    return '_kimia';
+                case 'hasil_lain':
+                    // Gunakan slug dari jenis pemeriksaan
+                    return '_' + createSlug(jenisPemeriksaan);
+                default:
+                    return '';
+            }
+        }
+
+        // Fungsi untuk menampilkan data history
+        function displayHistoryData(data, panelSuffix) {
+            const $panelContent = $(`#historyPanelContent${panelSuffix}`);
+
+            if (!data || data.length === 0) {
+                $panelContent.html(`
+                    <div class="text-center py-3 text-muted small">
+                        <i class="ri-inbox-line me-1"></i>
+                        Tidak ada history
+                    </div>
+                `);
+                return;
+            }
+
+            let html = '<div class="history-items">';
+
+            data.forEach((item) => {
+                const waktuValidasi = item.waktu_validasi;
+                const tanggalDisplay = waktuValidasi ? formatDateTimeSimple(waktuValidasi) : '-';
+                const hasil = item.hasil_pengujian || '-';
+                const isValidated = !!waktuValidasi;
+
+                html += `
+                    <div class="history-row py-1 border-bottom">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="small ${isValidated ? 'text-success' : 'text-muted'}">
+                                <i class="ri-calendar-line me-1"></i>${tanggalDisplay}
+                            </div>
+                            <div class="history-value fw-bold ${isValidated ? 'text-success' : 'text-primary'}">
+                                ${hasil}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            // Tambahkan summary
+            const totalValidated = data.filter(item => item.waktu_validasi).length;
+            const totalData = data.length;
+
+            html += `
+                <div class="mt-2 pt-2 border-top small text-muted">
+                    <div class="d-flex justify-content-between">
+                        <span>${totalData} data</span>
+                        <span>${totalValidated} divalidasi</span>
+                    </div>
+                </div>
+            `;
+
+            $panelContent.html(html);
+        }
+
+        // Format tanggal sederhana
+        function formatDateTimeSimple(dateString) {
+            if (!dateString) return '-';
+            try {
+                if (dateString.includes('.')) {
+                    dateString = dateString.split('.')[0];
+                }
+
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) return 'Invalid';
+
+                const day = date.getDate().toString().padStart(2, '0');
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const hours = date.getHours().toString().padStart(2, '0');
+                const minutes = date.getMinutes().toString().padStart(2, '0');
+
+                return `${day}/${month} ${hours}:${minutes}`;
+            } catch (e) {
+                return '-';
+            }
+        }
+
+        // Tampilkan error
+        function showError(message, panelSuffix) {
+            $(`#historyPanelContent${panelSuffix}`).html(`
+                <div class="text-center py-3 text-danger small">
+                    <i class="ri-error-warning-line me-1"></i>
+                    ${message}
+                </div>
+            `);
+        }
+
+        // Event handler untuk KLIK pada input hasil
+        $(document).on('click', '.hasil-input, .hasil-input-lain', function(e) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            if (isHistoryLoading) return;
+
+            const $this = $(this);
+            const jenis = $this.data('jenis') || $this.attr('data-jenis');
+            const type = $this.data('type') || $this.attr('data-type');
+            const rm = $this.data('rm') || $this.attr('data-rm') || '{{ $pasien->rm_pasien }}';
+
+            if (!jenis || !rm || !type) return;
+
+            // Hapus active class dari element sebelumnya
+            if (currentActiveElement && currentActiveElement[0] !== $this[0]) {
+                currentActiveElement.removeClass('click-active');
+            }
+
+            // Toggle active class
+            $this.toggleClass('click-active');
+
+            // Jika klik kedua pada element yang sama, reset panel yang sesuai
+            if ($this.hasClass('click-active') && currentActiveElement && currentActiveElement[0] === $this[0]) {
+                $this.removeClass('click-active');
+                resetHistoryPanel(getPanelSuffix(type, jenis));
+                currentActiveElement = null;
+                return;
+            }
+
+            // Set element aktif baru
+            currentActiveElement = $this;
+
+            // Load history
+            loadHistory(jenis, type, rm);
+        });
+
+        // Event handler untuk klik di luar element
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.hasil-input, .hasil-input-lain, .history-panel-card').length) {
+                if (currentActiveElement) {
+                    currentActiveElement.removeClass('click-active');
+                    currentActiveElement = null;
+                }
+                resetAllHistoryPanels();
+            }
+        });
+
+        // Event handler untuk ESC key
+        $(document).on('keydown', function(e) {
+            if (e.key === 'Escape') {
+                if (currentActiveElement) {
+                    currentActiveElement.removeClass('click-active');
+                    currentActiveElement = null;
+                }
+                resetAllHistoryPanels();
+            }
+        });
+
+        // Fungsi reset history panel tertentu
+        function resetHistoryPanel(panelSuffix) {
+            if ($(`#hoverJenisPemeriksaan${panelSuffix}`).length === 0) return;
+
+            $(`#hoverJenisPemeriksaan${panelSuffix}`).html(`
+                <i class="ri-history-line me-1"></i>
+                <span>History</span>
+            `);
+            $(`#hoverTypeInfo${panelSuffix}`).text('Klik pada hasil untuk melihat riwayat');
+            $(`#historyPanelContent${panelSuffix}`).html(`
+                <div class="text-center py-4 text-muted small">
+                    <i class="ri-arrow-up-line display-6 mb-2 opacity-25"></i>
+                    <div>Klik hasil untuk melihat riwayat</div>
+                </div>
+            `);
+        }
+
+        // Fungsi reset semua panel
+        function resetAllHistoryPanels() {
+            // Reset panel yang pasti ada
+            const fixedPanels = ['_hematology', '_kimia'];
+
+            fixedPanels.forEach(suffix => {
+                if ($(`#hoverJenisPemeriksaan${suffix}`).length > 0) {
+                    resetHistoryPanel(suffix);
+                }
+            });
+
+            // Reset panel pemeriksaan lain secara dinamis
+            $('[id^="hoverJenisPemeriksaan_"]').each(function() {
+                const id = $(this).attr('id');
+                const suffix = '_' + id.replace('hoverJenisPemeriksaan_', '');
+
+                // Skip panel tetap yang sudah direset
+                if (!fixedPanels.includes(suffix)) {
+                    resetHistoryPanel(suffix);
+                }
+            });
+        }
+
+        // Inisialisasi data attributes
+        $(window).on('load', function() {
+            const currentRm = '{{ $pasien->rm_pasien }}';
+
+            $('.hasil-input, .hasil-input-lain').each(function() {
+                const $this = $(this);
+                if (!$this.attr('data-rm')) {
+                    $this.attr('data-rm', currentRm);
+                }
+            });
+
+            // Tambahkan class untuk identifikasi
+            $('.card.h-100.border-start.border-primary').addClass('history-panel-card');
+        });
+
+        // Inisialisasi semua panel
+        resetAllHistoryPanels();
+        console.log('✅ Multi-Panel History System Ready');
     });
 </script>
 @endsection

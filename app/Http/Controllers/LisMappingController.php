@@ -14,11 +14,11 @@ class LisMappingController extends Controller
         $analysis = $request->input('analysis');
 
         $query = DB::table('data_pemeriksaan')
-            ->select('kode_pemeriksaan', 'data_pemeriksaan', 'satuan', 'rujukan', 'metode');
+            ->select('id_data_pemeriksaan', 'data_pemeriksaan', 'satuan', 'rujukan', 'metode');
 
         // Cari berdasarkan kode atau nama pemeriksaan
         $query->where(function ($q) use ($search) {
-            $q->where('kode_pemeriksaan', 'ILIKE', "%{$search}%")
+            $q->where('id_data_pemeriksaan', 'ILIKE', "%{$search}%")
                 ->orWhere('data_pemeriksaan', 'ILIKE', "%{$search}%");
         });
 
@@ -42,14 +42,14 @@ class LisMappingController extends Controller
 
         try {
             $idPemeriksaanKimia = $request->input('id_pemeriksaan_kimia');
-            $kodePemeriksaan = $request->input('kode_pemeriksaan');
+            $kodePemeriksaan = $request->input('id_data_pemeriksaan');
             $analysis = $request->input('analysis');
 
-            // 1. Update kode_pemeriksaan di tabel pemeriksaan_kimia
+            // 1. Update id_data_pemeriksaan di tabel pemeriksaan_kimia
             DB::table('pemeriksaan_kimia')
                 ->where('id_pemeriksaan_kimia', $idPemeriksaanKimia)
                 ->update([
-                    'kode_pemeriksaan' => $kodePemeriksaan,
+                    'id_data_pemeriksaan' => $kodePemeriksaan,
                     'updated_at' => now()
                 ]);
 
@@ -62,17 +62,17 @@ class LisMappingController extends Controller
             if (!$existingMapping) {
                 DB::table('lis_mapping')->insert([
                     'lis' => $analysis,
-                    'kode_pemeriksaan' => $kodePemeriksaan,
+                    'id_data_pemeriksaan' => $kodePemeriksaan,
                     'created_at' => now(),
                     'updated_at' => now()
                 ]);
             } else {
                 // Jika sudah ada, update jika kode berbeda
-                if ($existingMapping->kode_pemeriksaan !== $kodePemeriksaan) {
+                if ($existingMapping->id_data_pemeriksaan !== $kodePemeriksaan) {
                     DB::table('lis_mapping')
                         ->where('lis', $analysis)
                         ->update([
-                            'kode_pemeriksaan' => $kodePemeriksaan,
+                            'id_data_pemeriksaan' => $kodePemeriksaan,
                             'updated_at' => now()
                         ]);
                 }
@@ -115,11 +115,11 @@ class LisMappingController extends Controller
                 ], 404);
             }
 
-            // 2. Reset kode_pemeriksaan menjadi NULL
+            // 2. Reset id_data_pemeriksaan menjadi NULL
             DB::table('pemeriksaan_kimia')
                 ->where('id_pemeriksaan_kimia', $idPemeriksaanKimia)
                 ->update([
-                    'kode_pemeriksaan' => null,
+                    'id_data_pemeriksaan' => null,
                     'updated_at' => now()
                 ]);
 
@@ -135,7 +135,7 @@ class LisMappingController extends Controller
                 'reset_data' => [
                     'id_pemeriksaan_kimia' => $idPemeriksaanKimia,
                     'analysis' => $data->analysis,
-                    'previous_kode' => $data->kode_pemeriksaan
+                    'previous_kode' => $data->id_data_pemeriksaan
                 ]
             ]);
         } catch (\Exception $e) {

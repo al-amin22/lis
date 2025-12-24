@@ -20,9 +20,9 @@ class HasilPemeriksaanLain extends Model
         'satuan_hasil_pengujian',
         'rujukan',
         'keterangan',
-        'kode_pemeriksaan',
         'status_pemeriksaan',
         'id_jenis_pemeriksaan',
+        'id_data_pemeriksaan',
     ];
 
     // Relasi ke pasien
@@ -39,6 +39,6 @@ class HasilPemeriksaanLain extends Model
 
     public function dataPemeriksaan()
     {
-        return $this->belongsTo(DataPemeriksaan::class, 'kode_pemeriksaan', 'kode_pemeriksaan');
+        return $this->belongsTo(DataPemeriksaan::class, 'id_data_pemeriksaan', 'id_data_pemeriksaan');
     }
 }

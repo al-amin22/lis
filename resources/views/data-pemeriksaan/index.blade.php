@@ -65,6 +65,8 @@
                             <i class="ri-file-list-line me-1"></i> Tambah Data
                         </button>
 
+
+
                         <!-- Filter by Jenis Pemeriksaan -->
                         <select id="filterJenis" class="form-select form-select-sm" style="width: 200px;">
                             <option value="">Semua Jenis Pemeriksaan</option>
@@ -78,7 +80,7 @@
                     <!-- Table starts -->
                     <div class="table-outer">
                         <div class="table-responsive">
-                            <table class="table m-0 align-middle">
+                            <table class="table table-bordered align-middle text-nowrap">
                                 <thead>
                                     <tr>
                                         <th>No</th>
@@ -88,7 +90,10 @@
                                         <!-- <th>LIS</th> -->
                                         <th>Satuan</th>
                                         <th>Rujukan</th>
-                                        <th>Metode</th>
+                                        <!-- <th>Metode</th> -->
+                                        <th>Urutan</th>
+                                        <th>CH</th>
+                                        <th>CL</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -97,7 +102,7 @@
                                     <tr class="data-row" data-jenis="{{ $data->id_jenis_pemeriksaan_1 }}">
                                         <td>{{ $index + 1 }}</td>
                                         <td>
-                                            <span class="badge bg-warning">{{ $data->kode_pemeriksaan }}</span>
+                                            <span class="badge bg-warning">{{ $data->id_data_pemeriksaan }}</span>
                                         </td>
                                         <td>
                                             <span class="badge bg-primary">
@@ -108,22 +113,33 @@
                                         <!-- <td>{{ $data->lis ?? '-' }}</td> -->
                                         <td>{{ $data->satuan ?? '-' }}</td>
                                         <td>{{ $data->rujukan ?? '-' }}</td>
-                                        <td>{{ $data->metode ?? '-' }}</td>
+                                        <!-- <td>{{ $data->metode ?? '-' }}</td> -->
+                                        <td>{{ $data->urutan ?? '-' }}</td>
+                                        <td>{{ $data->ch ?? '-' }}</td>
+                                        <td>{{ $data->cl ?? '-' }}</td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-warning"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#editModal"
-                                                data-kode="{{ $data->kode_pemeriksaan }}"
+                                                data-kode="{{ $data->id_data_pemeriksaan }}"
                                                 data-jenis="{{ $data->id_jenis_pemeriksaan_1 }}"
                                                 data-nama="{{ $data->data_pemeriksaan }}"
                                                 data-lis="{{ $data->lis }}"
                                                 data-satuan="{{ $data->satuan }}"
                                                 data-rujukan="{{ $data->rujukan }}"
-                                                data-metode="{{ $data->metode }}">
+                                                data-metode="{{ $data->metode }}"
+                                                data-urutan="{{ $data->urutan }}"
+                                                data-ch="{{ $data->ch }}"
+                                                data-cl="{{ $data->cl }}">
                                                 <i class="ri-edit-line"></i> Edit
                                             </button>
+                                            <button class="btn btn-sm btn-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalBatchJenis{{ $data->id_jenis_pemeriksaan_1 }}">
+                                                Edit Batch
+                                            </button>
 
-                                            <form action="{{ route('pasien.destroy.data.pemeriksaan', $data->kode_pemeriksaan) }}"
+                                            <!-- <form action="{{ route('pasien.destroy.data.pemeriksaan', $data->id_data_pemeriksaan) }}"
                                                 method="POST"
                                                 class="d-inline"
                                                 onsubmit="return confirm('Apakah Anda yakin ingin menghapus data ini?')">
@@ -132,7 +148,7 @@
                                                 <button type="submit" class="btn btn-sm btn-danger">
                                                     <i class="ri-delete-bin-line"></i> Hapus
                                                 </button>
-                                            </form>
+                                            </form> -->
                                         </td>
                                     </tr>
                                     @empty
@@ -152,6 +168,106 @@
         </div>
     </div>
 </div>
+
+@foreach($jenisPemeriksaans as $jenis)
+<div class="modal fade" id="modalBatchJenis{{ $jenis->id_jenis_pemeriksaan_1 }}" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+
+            <form method="POST"
+                  action="{{ route('pasien.data-pemeriksaan.update-batch-jenis', $jenis->id_jenis_pemeriksaan_1) }}">
+                @csrf
+                @method('PUT')
+
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Update Batch – {{ $jenis->nama_pemeriksaan }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Kode</th>
+                                    <th>Nama Pemeriksaan</th>
+                                    <th>Satuan</th>
+                                    <th>Rujukan</th>
+                                    <th>Metode</th>
+                                    <th>Urutan</th>
+                                    <th>CH</th>
+                                    <th>CL</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($jenis->dataPemeriksaan as $i => $item)
+                                <tr>
+                                    <td>
+                                        {{ $item->id_data_pemeriksaan }}
+                                        <input type="hidden"
+                                            name="items[{{ $i }}][id_data_pemeriksaan]"
+                                            value="{{ $item->id_data_pemeriksaan }}">
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control"
+                                            name="items[{{ $i }}][data_pemeriksaan]"
+                                            value="{{ $item->data_pemeriksaan }}">
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control"
+                                            name="items[{{ $i }}][satuan]"
+                                            value="{{ $item->satuan }}">
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control"
+                                            name="items[{{ $i }}][rujukan]"
+                                            value="{{ $item->rujukan }}">
+                                    </td>
+
+                                    <td>
+                                        <input type="text" class="form-control"
+                                            name="items[{{ $i }}][metode]"
+                                            value="{{ $item->metode }}">
+                                    </td>
+
+                                    <td>
+                                        <input type="number" class="form-control"
+                                            name="items[{{ $i }}][urutan]"
+                                            value="{{ $item->urutan }}">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control"
+                                            name="items[{{ $i }}][ch]"
+                                            value="{{ $item->ch }}">
+                                    </td>
+                                    <td>
+                                        <input type="text" class="form-control"
+                                            name="items[{{ $i }}][cl]"
+                                            value="{{ $item->cl }}">
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-primary">Update Semua</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
+@endforeach
 
 <!-- Modal Tambah Single -->
 <div class="modal fade" id="tambahModal" tabindex="-1" aria-labelledby="tambahModalLabel" aria-hidden="true">
@@ -199,6 +315,21 @@
                             <input type="text" class="form-control" id="metode" name="metode"
                                 placeholder="Contoh: Cyanmethemoglobin">
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="urutan" class="form-label">Urutan</label>
+                            <input type="number" class="form-control" id="urutan" name="urutan"
+                                placeholder="Contoh: 1">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ch" class="form-label">CH</label>
+                            <input type="text" class="form-control" id="ch" name="ch"
+                                placeholder="Contoh: ">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cl" class="form-label">CL</label>
+                            <input type="text" class="form-control" id="cl" name="cl"
+                                placeholder="Contoh: ">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -243,6 +374,7 @@
                                     <th width="15%">Satuan</th>
                                     <th width="15%">Rujukan</th>
                                     <th width="15%">Metode</th>
+                                    <th width="15%">Urutan</th>
                                     <th width="5%">Aksi</th>
                                 </tr>
                             </thead>
@@ -317,6 +449,18 @@
                             <label for="edit_metode" class="form-label">Metode</label>
                             <input type="text" class="form-control" id="edit_metode" name="metode">
                         </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_urutan" class="form-label">Urutan</label>
+                            <input type="number" class="form-control" id="edit_urutan" name="urutan">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_ch" class="form-label">CH</label>
+                            <input type="text" class="form-control" id="edit_ch" name="ch">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_cl" class="form-label">CL</label>
+                            <input type="text" class="form-control" id="edit_cl" name="cl">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -329,20 +473,41 @@
 </div>
 <script>
     // Filter by Jenis Pemeriksaan
+    // Edit Modal Handler
     document.addEventListener('DOMContentLoaded', function() {
-        const filterSelect = document.getElementById('filterJenis');
-        const dataRows = document.querySelectorAll('.data-row');
+        const editModal = document.getElementById('editModal');
 
-        filterSelect.addEventListener('change', function() {
-            const selectedJenis = this.value;
+        editModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const kode = button.getAttribute('data-kode');
+            const jenis = button.getAttribute('data-jenis');
+            const nama = button.getAttribute('data-nama');
+            const lis = button.getAttribute('data-lis');
+            const satuan = button.getAttribute('data-satuan');
+            const rujukan = button.getAttribute('data-rujukan');
+            const metode = button.getAttribute('data-metode');
+            const urutan = button.getAttribute('data-urutan');
+            const ch = button.getAttribute('data-ch');
+            const cl = button.getAttribute('data-cl');
 
-            dataRows.forEach(row => {
-                if (selectedJenis === '' || row.getAttribute('data-jenis') === selectedJenis) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
+            // Update modal title
+            const modalTitle = editModal.querySelector('.modal-title');
+            modalTitle.textContent = 'Edit: ' + nama;
+
+            // Set form values
+            document.getElementById('edit_id_jenis_pemeriksaan_1').value = jenis;
+            document.getElementById('edit_data_pemeriksaan').value = nama;
+            document.getElementById('edit_lis').value = lis || '';
+            document.getElementById('edit_satuan').value = satuan || '';
+            document.getElementById('edit_rujukan').value = rujukan || '';
+            document.getElementById('edit_metode').value = metode || '';
+            document.getElementById('edit_urutan').value = urutan || '';
+            document.getElementById('edit_ch').value = ch || '';
+            document.getElementById('edit_cl').value = cl || '';
+
+            // Set form action
+            const form = editModal.querySelector('#editForm');
+            form.action = "{{ route('pasien.update.data.pemeriksaan', '') }}/" + kode;
         });
     });
 
@@ -359,6 +524,9 @@
             const satuan = button.getAttribute('data-satuan');
             const rujukan = button.getAttribute('data-rujukan');
             const metode = button.getAttribute('data-metode');
+            const urutan = button.getAttribute('data-urutan');
+            const ch = button.getAttribute('data-ch');
+            const cl = button.getAttribute('data-cl');
 
             // Update modal content
             const modalTitle = editModal.querySelector('.modal-title');
@@ -372,7 +540,11 @@
             document.getElementById('edit_lis').value = lis;
             document.getElementById('edit_satuan').value = satuan;
             document.getElementById('edit_rujukan').value = rujukan;
+            document.getElementById('edit_urutan').value = '';
             document.getElementById('edit_metode').value = metode;
+            document.getElementById('edit_urutan').value = urutan;
+            document.getElementById('edit_ch').value = ch;
+            document.getElementById('edit_cl').value = cl;
 
             // Set form action
             form.action = "{{ route('pasien.update.data.pemeriksaan', '') }}/" + kode;
@@ -425,6 +597,24 @@
                            name="metode[${rowIndex}]"
                            class="form-control form-control-sm"
                            placeholder="Metode">
+                </td>
+                <td>
+                    <input type="number"
+                           name="urutan[${rowIndex}]"
+                           class="form-control form-control-sm"
+                           placeholder="Urutan">
+                </td>
+                <td>
+                    <input type="number"
+                           name="ch[${rowIndex}]"
+                           class="form-control form-control-sm"
+                           placeholder="ch">
+                </td>
+                <td>
+                    <input type="number"
+                           name="cl[${rowIndex}]"
+                           class="form-control form-control-sm"
+                           placeholder="cl">
                 </td>
                 <td>
                     <button type="button" class="btn btn-sm btn-outline-danger remove-row" ${rowCount === 1 ? 'disabled' : ''}>

@@ -20,11 +20,11 @@ class PemeriksaanKimia extends Model
         'hasil_pengujian',
         'keterangan',
         'satuan_hasil_pengujian',
-        'kode_pemeriksaan',
         'rujukan',
         'id_jenis_pemeriksaan',
         'tanggal_input',
         'catatan',
+        'id_data_pemeriksaan'
     ];
 
     // Relasi ke pasien
@@ -42,6 +42,6 @@ class PemeriksaanKimia extends Model
     public function dataPemeriksaan()
 
     {
-        return $this->belongsTo(DataPemeriksaan::class, 'kode_pemeriksaan', 'kode_pemeriksaan');
+        return $this->belongsTo(DataPemeriksaan::class, 'id_data_pemeriksaan', 'id_data_pemeriksaan');
     }
 }

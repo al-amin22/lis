@@ -34,6 +34,14 @@ Route::prefix('hasil-lab')->group(function () {
     Route::post('/update-field-ajax', [PasienController::class, 'updateFieldAjax'])->name('hasil-lab.update-field-ajax');
     Route::post('/get-data-pemeriksaan', [PasienController::class, 'getDataPemeriksaan'])->name('hasil-lab.get-data-pemeriksaan');
 });
+
+Route::prefix('hasil-lab')->group(function () {
+    Route::get('/print/{no_lab}', [PasienController::class, 'cetakHasilLab'])
+    ->name('hasil-lab.print');
+
+    Route::get('/html-content/{no_lab}', [PasienController::class, 'getHtmlContent'])
+        ->name('hasil-lab.html-content');
+});
 // Route untuk hapus pemeriksaan lain
 // Hasil Lain Routes
 Route::prefix('hasil-lain')->group(function () {
@@ -44,7 +52,16 @@ Route::prefix('hasil-lain')->group(function () {
     Route::post('/destroy-multiple', [HasilLainController::class, 'destroyMultiple'])->name('hasil-lain.destroy-multiple');
     Route::get('/jenis-pemeriksaan', [HasilLainController::class, 'getJenisPemeriksaanList'])->name('hasil-lain.jenis-pemeriksaan');
     Route::get('/hasil-lain/get-pemeriksaan-by-jenis', [HasilLainController::class, 'getPemeriksaanByJenis'])->name('hasil-lain.get-pemeriksaan-by-jenis');
+    Route::get('/get-pemeriksaan-by-kode', [PasienController::class, 'getPemeriksaanByKode'])->name('hasil-lain.get-pemeriksaan-by-kode');
 });
+Route::post('/hasil-lab/history-hover-detailed', [PasienController::class, 'getHistoryHover'])->name('hasil-lab.get-history-hover');
+Route::post('/hasil-lab/update-keterangan-batch', [PasienController::class, 'updateKeteranganBatch'])->name('hasil-lab.update-keterangan-batch');
+// Routes untuk Penjamin
+Route::get('/penjamin/search', [PasienController::class, 'searchPenjamin'])->name('penjamin.search');
+Route::post('/pasien/update-penjamin', [PasienController::class, 'updatePenjamin'])->name('pasien.update.penjamin');
+Route::post('/pasien/update-ruangan', [PasienController::class, 'updateRuangan'])->name('pasien.update.ruangan');
+// Routes untuk Ruangan
+Route::get('/ruangan/search', [PasienController::class, 'searchRuangan'])->name('ruangan.search');
 
 Route::post('/pasien/update-realtime', [PasienController::class, 'updateRealtime'])->name('update.realtime');
 Route::get('/dokter/search', [DokterController::class, 'searchDokter'])->name('dokter.search');
@@ -126,11 +143,14 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/data/data-pemeriksaan/', [DataPemeriksaanController::class, 'index'])->name('index.data.pemeriksaan');
         Route::post('/data-pemeriksaan', [DataPemeriksaanController::class, 'store'])->name('store.data.pemeriksaan');
         Route::post('/data-pemeriksaan/store-batch', [DataPemeriksaanController::class, 'storeBatch'])->name('store.batch.data.pemeriksaan');
-        Route::put('/data-pemeriksaan/update/{kode_pemeriksaan}', [DataPemeriksaanController::class, 'update'])->name('update.data.pemeriksaan');
-        Route::delete('/data-pemeriksaan/destroy/{kode_pemeriksaan}', [DataPemeriksaanController::class, 'destroy'])->name('destroy.data.pemeriksaan');
+        Route::put('/data-pemeriksaan/update/{id_data_pemeriksaan}', [DataPemeriksaanController::class, 'update'])->name('update.data.pemeriksaan');
+        Route::put('/data-pemeriksaan/update-batch/jenis/{idJenis}',[DataPemeriksaanController::class, 'updateBatchByJenis'])->name('data-pemeriksaan.update-batch-jenis');
+        Route::delete('/data-pemeriksaan/destroy/{id_data_pemeriksaan}', [DataPemeriksaanController::class, 'destroy'])->name('destroy.data.pemeriksaan');
 
         Route::get('/pasien/history/{rm_pasien}', [PasienController::class, 'history'])->name('history');
+        Route::get('hasil-lab/html-content', [PasienController::class,''])->name('');
         Route::get('/print/{no_lab}', [PasienController::class, 'cetakHasilLab'])->name('print');
+        Route::get('/lab/download/{no_lab}', [PasienController::class, 'downloadLabPDF'])->name('lab.download');
         Route::get('/download-pdf/{no_lab}', [PasienController::class, 'downloadPdf'])->name('downloadPdf');
         Route::get('/generate-pdf/{no_lab}', [PasienController::class, 'generatePdf'])->name('generatePdf');
         Route::get('/laboratorium/print/{no_lab}', [PasienController::class, 'printLaboratorium'])->name('laboratorium.print');

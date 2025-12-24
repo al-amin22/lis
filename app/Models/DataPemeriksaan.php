@@ -10,7 +10,7 @@ class DataPemeriksaan extends Model
     use HasFactory;
 
     protected $table = 'data_pemeriksaan';
-    protected $primaryKey = 'kode_pemeriksaan';
+    protected $primaryKey = 'id_data_pemeriksaan';
     public $incrementing = false; // Karena kode digenerate otomatis
     protected $keyType = 'string'; // Kode berupa string
 
@@ -22,6 +22,9 @@ class DataPemeriksaan extends Model
         'id_jenis_pemeriksaan_1',
         'id_jenis_pemeriksaan_2',
         'metode',
+        'urutan',
+        'ch',
+        'cl',
     ];
 
     public function jenisPemeriksaan()
@@ -30,22 +33,22 @@ class DataPemeriksaan extends Model
     }
     public function hasilPemeriksaan()
     {
-        return $this->hasOne(HasilPemeriksaanLain::class, 'kode_pemeriksaan', 'kode_pemeriksaan');
+        return $this->hasOne(HasilPemeriksaanLain::class, 'id_data_pemeriksaan', 'id_data_pemeriksaan');
     }
 
     public function hematology()
     {
-        return $this->hasOne(PemeriksaanHematology::class, 'kode_pemeriksaan', 'kode_pemeriksaan');
+        return $this->hasOne(PemeriksaanHematology::class, 'id_data_pemeriksaan', 'id_data_pemeriksaan');
     }
 
     public function kimia()
     {
-        return $this->hasOne(PemeriksaanKimia::class, 'kode_pemeriksaan', 'kode_pemeriksaan');
+        return $this->hasOne(PemeriksaanKimia::class, 'id_data_pemeriksaan', 'id_data_pemeriksaan');
     }
 
     public function lisMappings()
     {
-        return $this->hasMany(LisMapping::class, 'kode_pemeriksaan', 'kode_pemeriksaan');
+        return $this->hasMany(LisMapping::class, 'id_data_pemeriksaan', 'id_data_pemeriksaan');
     }
 
     public function getAllLis()

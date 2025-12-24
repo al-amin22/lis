@@ -15,11 +15,12 @@ class LisMapping extends Model
     protected $fillable = [
         'lis',
         'kode_pemeriksaan',
+        'id_data_pemeriksaan',
     ];
 
     public function dataPemeriksaan()
     {
-        return $this->belongsTo(DataPemeriksaan::class, 'kode_pemeriksaan', 'kode_pemeriksaan');
+        return $this->belongsTo(DataPemeriksaan::class, 'id_data_pemeriksaan', 'id_data_pemeriksaan');
     }
 
     public function scopeSearchByLis($query, $lis)

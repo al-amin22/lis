@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Services\LogActivityService;
 use Illuminate\Container\Attributes\Log;
+use Illuminate\Support\Facades\DB;
 
 class DataPemeriksaanController extends Controller
 {
@@ -43,19 +44,25 @@ class DataPemeriksaanController extends Controller
             'satuan' => 'nullable|string|max:50',
             'rujukan' => 'nullable|string',
             'metode' => 'nullable|string|max:100',
+            'urutan' => 'nullable|integer',
+            'ch' => 'nullable|string|max:50',
+            'cl' => 'nullable|string|max:50',
         ]);
 
         // Generate kode otomatis
         $kode = $this->generateKodePemeriksaan($request->id_jenis_pemeriksaan_1);
 
         DataPemeriksaan::create([
-            'kode_pemeriksaan' => $kode,
+            'id_data_pemeriksaan' => $kode,
             'id_jenis_pemeriksaan_1' => $request->id_jenis_pemeriksaan_1,
             'data_pemeriksaan' => $request->data_pemeriksaan,
             'lis' => $request->lis,
             'satuan' => $request->satuan,
             'rujukan' => $request->rujukan,
             'metode' => $request->metode,
+            'urutan' => $request->urutan,
+            'ch' => $request->ch,
+            'cl' => $request->cl,
         ]);
 
         LogActivityService::log(
@@ -82,6 +89,12 @@ class DataPemeriksaanController extends Controller
             'rujukan.*' => 'nullable|string',
             'metode' => 'nullable|array',
             'metode.*' => 'nullable|string|max:100',
+            'urutan' => 'nullable|array',
+            'urutan.*' => 'nullable|integer',
+            'ch' => 'nullable|array',
+            'ch.*' => 'nullable|string|max:50',
+            'cl' => 'nullable|array',
+            'cl.*' => 'nullable|string|max:50',
         ]);
 
         $jenisPemeriksaanId = $request->id_jenis_pemeriksaan_1;
@@ -93,13 +106,16 @@ class DataPemeriksaanController extends Controller
                 $kode = $this->generateKodePemeriksaan($jenisPemeriksaanId);
 
                 DataPemeriksaan::create([
-                    'kode_pemeriksaan' => $kode,
+                    'id_data_pemeriksaan' => $kode,
                     'id_jenis_pemeriksaan_1' => $jenisPemeriksaanId,
                     'data_pemeriksaan' => trim($nama),
                     'lis' => $request->lis[$index] ?? null,
                     'satuan' => $request->satuan[$index] ?? null,
                     'rujukan' => $request->rujukan[$index] ?? null,
                     'metode' => $request->metode[$index] ?? null,
+                    'urutan' => $request->urutan[$index] ?? null,
+                    'ch' => $request->ch[$index] ?? null,
+                    'cl' => $request->cl[$index] ?? null,
                 ]);
 
                 LogActivityService::log(
@@ -122,9 +138,9 @@ class DataPemeriksaanController extends Controller
             ->with('success', "Berhasil menambahkan $createdCount data pemeriksaan.");
     }
 
-    public function update(Request $request, $kode_pemeriksaan)
+    public function update(Request $request, $id_data_pemeriksaan)
     {
-        $dataPemeriksaan = DataPemeriksaan::findOrFail($kode_pemeriksaan);
+        $dataPemeriksaan = DataPemeriksaan::findOrFail($id_data_pemeriksaan);
 
         $request->validate([
             'id_jenis_pemeriksaan_1' => 'required|exists:jenis_pemeriksaan_1,id_jenis_pemeriksaan_1',
@@ -133,24 +149,30 @@ class DataPemeriksaanController extends Controller
             'satuan' => 'nullable|string|max:50',
             'rujukan' => 'nullable|string',
             'metode' => 'nullable|string|max:100',
+            'urutan' => 'nullable|integer',
+            'ch' => 'nullable|string|max:50',
+            'cl' => 'nullable|string|max:50',
         ]);
 
         $oldData = $dataPemeriksaan->toArray();
 
         $dataPemeriksaan->update([
-            'kode_pemeriksaan' => $kode_pemeriksaan,
+            'id_data_pemeriksaan' => $id_data_pemeriksaan,
             'id_jenis_pemeriksaan_1' => $request->id_jenis_pemeriksaan_1,
             'data_pemeriksaan' => $request->data_pemeriksaan,
             'lis' => $request->lis,
             'satuan' => $request->satuan,
             'rujukan' => $request->rujukan,
             'metode' => $request->metode,
+            'urutan' => $request->urutan,
+            'ch' => $request->ch,
+            'cl' => $request->cl,
         ]);
 
         LogActivityService::log(
             action: 'UPDATE',
             module: 'Pemeriksaan',
-            description: 'Mengupdate data pemeriksaan dengan kode: ' . $kode_pemeriksaan,
+            description: 'Mengupdate data pemeriksaan dengan kode: ' . $id_data_pemeriksaan,
             oldData: $oldData,
             newData: $dataPemeriksaan->toArray()
         );
@@ -159,10 +181,54 @@ class DataPemeriksaanController extends Controller
             ->with('success', 'Data pemeriksaan berhasil diupdate.');
     }
 
-    public function destroy($kode_pemeriksaan)
+    public function updateBatchByJenis(Request $request, $idJenis)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.id_data_pemeriksaan' => 'required|exists:data_pemeriksaan,id_data_pemeriksaan',
+            'items.*.data_pemeriksaan' => 'required|string|max:100',
+            'items.*.satuan' => 'nullable|string|max:50',
+            'items.*.rujukan' => 'nullable|string|max:100',
+            'items.*.metode' => 'nullable|string|max:100',
+            'items.*.urutan' => 'nullable|integer',
+            'items.*.ch' => 'nullable|string|max:50',
+            'items.*.cl' => 'nullable|string|max:50',
+        ]);
+
+        DB::transaction(function () use ($request, $idJenis) {
+
+            foreach ($request->items as $item) {
+
+                DataPemeriksaan::where('id_data_pemeriksaan', $item['id_data_pemeriksaan'])
+                    ->where('id_jenis_pemeriksaan_1', $idJenis)
+                    ->update([
+                        'data_pemeriksaan' => $item['data_pemeriksaan'],
+                        'satuan' => $item['satuan'] ?? null,
+                        'rujukan' => $item['rujukan'] ?? null,
+                        'metode' => $item['metode'] ?? null,
+                        'urutan' => $item['urutan'] ?? null,
+                        'ch' => $item['ch'] ?? null,
+                        'cl' => $item['cl'] ?? null,
+                        'updated_at' => now(),
+                    ]);
+            }
+        });
+
+        // Log aktivitas (opsional tapi disarankan)
+        LogActivityService::log(
+            action: 'UPDATE_BATCH',
+            module: 'Data Pemeriksaan',
+            description: 'Update batch data pemeriksaan berdasarkan jenis ID: ' . $idJenis
+        );
+
+        return back()->with('success', 'Update batch data pemeriksaan berhasil.');
+    }
+
+
+    public function destroy($id_data_pemeriksaan)
     {
         try {
-            $dataPemeriksaan = DataPemeriksaan::findOrFail($kode_pemeriksaan);
+            $dataPemeriksaan = DataPemeriksaan::findOrFail($id_data_pemeriksaan);
             $oldData = $dataPemeriksaan->toArray();
 
             // Cek dulu apakah ada relasi yang masih mengikat
@@ -176,13 +242,18 @@ class DataPemeriksaanController extends Controller
                     ->with('error', 'Data pemeriksaan tidak dapat dihapus karena masih digunakan di tabel Kimia.');
             }
 
+            if ($dataPemeriksaan->hasilPemeriksaan()->exists()) {
+                return redirect()->route('pasien.index.data.pemeriksaan')
+                    ->with('error', 'Data pemeriksaan tidak dapat dihapus karena masih digunakan di tabel Hasil Pemeriksaan Lain.');
+            }
+
             // Jika aman, hapus
             $dataPemeriksaan->delete();
 
             LogActivityService::log(
                 action: 'DELETE',
                 module: 'Pemeriksaan',
-                description: 'Menghapus data pemeriksaan dengan kode: ' . $kode_pemeriksaan,
+                description: 'Menghapus data pemeriksaan dengan kode: ' . $id_data_pemeriksaan,
                 oldData: $oldData
             );
 
@@ -192,7 +263,7 @@ class DataPemeriksaanController extends Controller
             LogActivityService::log(
                 action: 'ERROR',
                 module: 'Pemeriksaan',
-                description: 'Gagal menghapus data pemeriksaan dengan kode: ' . $kode_pemeriksaan . '. Error: ' . $e->getMessage()
+                description: 'Gagal menghapus data pemeriksaan dengan kode: ' . $id_data_pemeriksaan . '. Error: ' . $e->getMessage()
             );
             // Tangani error foreign key atau error lainnya
             if ($e->getCode() == '23503') { // kode Postgres foreign key violation

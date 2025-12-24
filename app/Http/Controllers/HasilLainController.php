@@ -44,7 +44,7 @@ class HasilLainController extends Controller
             ->where('dp.id_jenis_pemeriksaan_1', $jenis->id_jenis_pemeriksaan_1)
             ->whereNull('dp.deleted_at')
             ->select(
-                'dp.kode_pemeriksaan',
+                'dp.id_data_pemeriksaan',
                 'dp.data_pemeriksaan',
                 'dp.satuan',
                 'dp.rujukan',
@@ -90,7 +90,7 @@ class HasilLainController extends Controller
             // Query dengan debugging
             $query = DB::table('data_pemeriksaan as dp')
                 ->select(
-                    'dp.kode_pemeriksaan',
+                    'dp.id_data_pemeriksaan',
                     'dp.data_pemeriksaan',
                     'dp.satuan',
                     'dp.rujukan',
@@ -112,14 +112,14 @@ class HasilLainController extends Controller
 
             // Exclude current kode jika ada
             if (!empty($excludeCurrent) && $excludeCurrent !== '') {
-                $query->where('dp.kode_pemeriksaan', '!=', $excludeCurrent);
+                $query->where('dp.id_data_pemeriksaan', '!=', $excludeCurrent);
             }
 
             // Search term jika ada
             if (!empty($search) && strlen($search) >= 2) {
                 $searchTerm = '%' . $search . '%';
                 $query->where(function ($q) use ($searchTerm) {
-                    $q->where('dp.kode_pemeriksaan', 'ILIKE', $searchTerm)
+                    $q->where('dp.id_data_pemeriksaan', 'ILIKE', $searchTerm)
                         ->orWhere('dp.data_pemeriksaan', 'ILIKE', $searchTerm)
                         ->orWhere('jp1.nama_pemeriksaan', 'ILIKE', $searchTerm);
                 });
@@ -172,7 +172,7 @@ class HasilLainController extends Controller
 
         $validator = Validator::make($request->all(), [
             'no_lab' => 'required|exists:pasien,no_lab',
-            'kode_pemeriksaan' => 'required|exists:data_pemeriksaan,kode_pemeriksaan',
+            'id_data_pemeriksaan' => 'required|exists:data_pemeriksaan,id_data_pemeriksaan',
             'jenis_pengujian' => 'required|string|max:100',
             'hasil_pengujian' => 'nullable|string|max:100',
             'satuan' => 'nullable|string|max:50',
@@ -203,7 +203,7 @@ class HasilLainController extends Controller
                 ->where('jenis_pengujian', $request->jenis_pengujian)
                 ->first();
 
-            $dataPemeriksaan = DataPemeriksaan::where('kode_pemeriksaan', $request->kode_pemeriksaan)
+            $dataPemeriksaan = DataPemeriksaan::where('id_data_pemeriksaan', $request->id_data_pemeriksaan)
                 ->whereNull('deleted_at')
                 ->firstOrFail();
 
@@ -218,7 +218,7 @@ class HasilLainController extends Controller
 
                 $existing->restore();
                 $existing->update([
-                    'kode_pemeriksaan' => $request->kode_pemeriksaan,
+                    'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
                     'jenis_pengujian' => $request->jenis_pengujian,
                     'hasil_pengujian' => $request->hasil_pengujian,
                     'satuan_hasil_pengujian' => $request->satuan ?? $dataPemeriksaan->satuan,
@@ -253,7 +253,7 @@ class HasilLainController extends Controller
                 $oldData = $existing->toArray();
 
                 $existing->update([
-                    'kode_pemeriksaan' => $request->kode_pemeriksaan,
+                    'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
                     'jenis_pengujian' => $request->jenis_pengujian,
                     'hasil_pengujian' => $request->hasil_pengujian,
                     'satuan_hasil_pengujian' => $request->satuan ?? $dataPemeriksaan->satuan,
@@ -286,7 +286,7 @@ class HasilLainController extends Controller
             $hasilLain = HasilPemeriksaanLain::create([
                 'no_lab' => $request->no_lab,
                 'jenis_pengujian' => $request->jenis_pengujian,
-                'kode_pemeriksaan' => $request->kode_pemeriksaan,
+                'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
                 'hasil_pengujian' => $request->hasil_pengujian,
                 'satuan_hasil_pengujian' => $request->satuan ?? $dataPemeriksaan->satuan,
                 'rujukan' => $request->rujukan ?? $dataPemeriksaan->rujukan,
@@ -330,7 +330,7 @@ class HasilLainController extends Controller
     public function updateKodePemeriksaan(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'kode_pemeriksaan' => 'required|exists:data_pemeriksaan,kode_pemeriksaan',
+            'id_data_pemeriksaan' => 'required|exists:data_pemeriksaan,id_data_pemeriksaan',
             'jenis_pengujian' => 'nullable|string|max:100'
         ]);
 
@@ -348,7 +348,7 @@ class HasilLainController extends Controller
             $hasilLain = HasilPemeriksaanLain::findOrFail($id);
 
             // Ambil data dari data_pemeriksaan
-            $dataPemeriksaan = DataPemeriksaan::where('kode_pemeriksaan', $request->kode_pemeriksaan)
+            $dataPemeriksaan = DataPemeriksaan::where('id_data_pemeriksaan', $request->id_data_pemeriksaan)
                 ->whereNull('deleted_at')
                 ->first();
 
@@ -363,7 +363,7 @@ class HasilLainController extends Controller
 
             // Update record
             $hasilLain->update([
-                'kode_pemeriksaan' => $request->kode_pemeriksaan,
+                'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
                 'jenis_pengujian' => $request->jenis_pengujian ?? $dataPemeriksaan->data_pemeriksaan,
                 'satuan_hasil_pengujian' => $dataPemeriksaan->satuan,
                 'rujukan' => $dataPemeriksaan->rujukan
@@ -405,7 +405,7 @@ class HasilLainController extends Controller
                 'data' => [
                     'id_hasil_lain' => $hasilLain->id_hasil_lain,
                     'jenis_pengujian' => $hasilLain->jenis_pengujian,
-                    'kode_pemeriksaan' => $hasilLain->kode_pemeriksaan,
+                    'id_data_pemeriksaan' => $hasilLain->id_data_pemeriksaan,
                     'satuan' => $hasilLain->satuan_hasil_pengujian,
                     'rujukan' => $hasilLain->rujukan,
                     'keterangan' => $hasilLain->keterangan

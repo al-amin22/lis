@@ -127,7 +127,43 @@ class JenisPemeriksaanController extends Controller
             ->with('success', 'Jenis pemeriksaan berhasil diperbarui.');
     }
 
+    public function updateBatch(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*.id' => 'required|integer',
+            'items.*.nama_pemeriksaan' => 'required|string|max:100',
+        ]);
 
+        $updated = 0;
+
+        foreach ($request->items as $item) {
+
+            $jenis = JenisPemeriksaan::find($item['id']);
+            if (!$jenis) continue;
+
+            // Cegah duplikasi nama
+            $exists = JenisPemeriksaan::where('nama_pemeriksaan', $item['nama_pemeriksaan'])
+                ->where('id_jenis_pemeriksaan_1', '!=', $item['id'])
+                ->exists();
+
+            if ($exists) continue;
+
+            $jenis->update([
+                'nama_pemeriksaan' => $item['nama_pemeriksaan']
+            ]);
+
+            $updated++;
+        }
+
+        LogActivityService::log(
+            action: 'UPDATE_BATCH',
+            module: 'Jenis Pemeriksaan',
+            description: "Update batch {$updated} jenis pemeriksaan"
+        );
+
+        return back()->with('success', "Berhasil update {$updated} data.");
+    }
 
     public function destroy($id)
     {

@@ -35,28 +35,8 @@
 
 <body>
     <!-- Loading starts -->
-    <div>
-        <div class="spin-wrapper">
-            <div class="spin">
-                <div class="inner"></div>
-            </div>
-            <div class="spin">
-                <div class="inner"></div>
-            </div>
-            <div class="spin">
-                <div class="inner"></div>
-            </div>
-            <div class="spin">
-                <div class="inner"></div>
-            </div>
-            <div class="spin">
-                <div class="inner"></div>
-            </div>
-            <div class="spin">
-                <div class="inner"></div>
-            </div>
-        </div>
-    </div>
+
+
     <!-- Loading ends -->
 
     <!-- Page wrapper starts -->
