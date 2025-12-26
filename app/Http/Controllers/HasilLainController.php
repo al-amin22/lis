@@ -48,6 +48,8 @@ class HasilLainController extends Controller
                 'dp.data_pemeriksaan',
                 'dp.satuan',
                 'dp.rujukan',
+                'dp.ch',
+                'dp.cl',
                 'dp.metode'
             )
             ->orderBy('dp.data_pemeriksaan')
@@ -58,7 +60,6 @@ class HasilLainController extends Controller
             module: 'Hasil Pemeriksaan Lain',
             description: 'User mengambil data pemeriksaan untuk jenis: ' . $jenisPemeriksaan
         );
-
 
         return response()->json([
             'success' => true,
@@ -425,14 +426,13 @@ class HasilLainController extends Controller
         DB::beginTransaction();
 
         try {
-            $hasilLain = HasilPemeriksaanLain::findOrFail($id);
+            $hasilLain = HasilPemeriksaanLain::where('id_hasil_lain', $id)->firstOrFail();
             $no_lab = $hasilLain->no_lab;
 
             $oldData = $hasilLain->toArray();
 
-            // Soft delete
-            $hasilLain->deleted_at = now();
-            $hasilLain->save();
+            // HARD DELETE (benar-benar hapus dari DB)
+            $hasilLain->forceDelete();
 
             // Update timestamp pasien
             Pasien::where('no_lab', $no_lab)->update(['updated_at' => now()]);
@@ -442,19 +442,19 @@ class HasilLainController extends Controller
             LogActivityService::log(
                 action: 'DELETE',
                 module: 'Hasil Pemeriksaan Lain',
-                description: 'Menghapus hasil pemeriksaan lain dengan ID: ' . $id,
+                description: 'Force delete hasil pemeriksaan lain ID: ' . $id,
                 oldData: $oldData
             );
 
             return response()->json([
                 'success' => true,
-                'message' => 'Pemeriksaan berhasil dihapus'
+                'message' => 'Data berhasil dihapus permanen'
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => $e->getMessage()
             ], 500);
         }
     }
@@ -462,47 +462,63 @@ class HasilLainController extends Controller
     public function destroyMultiple(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'ids' => 'required|array',
-            'ids.*' => 'required|integer|exists:hasil_pemeriksaan_lain,id_hasil_lain'
+            'ids'   => 'required|array',
+            'ids.*' => 'required|integer'
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validasi gagal',
-                'errors' => $validator->errors()
+                'errors'  => $validator->errors()
             ], 422);
         }
-
-        $oldData = HasilPemeriksaanLain::whereIn('id_hasil_lain', $request->ids)->get()->toArray();
 
         DB::beginTransaction();
 
         try {
-            $deletedCount = HasilPemeriksaanLain::whereIn('id_hasil_lain', $request->ids)->delete();
+            // Ambil data lama untuk log
+            $data = HasilPemeriksaanLain::whereIn('id_hasil_lain', $request->ids)->get();
+
+            if ($data->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data sudah tidak ada',
+                    'deleted_count' => 0
+                ]);
+            }
+
+            $oldData = $data->toArray();
+
+            // 🔥 FORCE DELETE (HARD DELETE)
+            $deletedCount = HasilPemeriksaanLain::whereIn('id_hasil_lain', $request->ids)
+                ->forceDelete();
+
+            DB::commit();
 
             LogActivityService::log(
                 action: 'DELETE_MULTIPLE',
                 module: 'Hasil Pemeriksaan Lain',
-                description: 'Menghapus multiple hasil pemeriksaan lain dengan IDs: ' . implode(', ', $request->ids),
+                description: 'Force delete multiple hasil pemeriksaan lain',
                 oldData: $oldData
             );
 
-            DB::commit();
-
             return response()->json([
                 'success' => true,
-                'message' => 'Berhasil menghapus ' . $deletedCount . ' pemeriksaan',
+                'message' => "Berhasil menghapus {$deletedCount} data secara permanen",
                 'deleted_count' => $deletedCount
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }
+
+
 
     private function determineKeterangan($hasil, $rujukan)
     {
@@ -579,7 +595,6 @@ class HasilLainController extends Controller
 
         return '-';
     }
-
     public function getJenisPemeriksaanList()
     {
         try {
@@ -599,4 +614,225 @@ class HasilLainController extends Controller
             ], 500);
         }
     }
+
+    public function storeManual(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'no_lab' => 'required|exists:pasien,no_lab',
+            'jenis_pemeriksaan' => 'required|string|max:100',
+            'id_data_pemeriksaan' => 'required|exists:data_pemeriksaan,id_data_pemeriksaan'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $dataPemeriksaan = DataPemeriksaan::findOrFail($request->id_data_pemeriksaan);
+
+            $hasilLain = HasilPemeriksaanLain::create([
+                'no_lab' => $request->no_lab,
+                'jenis_pengujian' => $dataPemeriksaan->data_pemeriksaan,
+                'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
+                'hasil_pengujian' => $request->hasil_pengujian,
+                'satuan_hasil_pengujian' => $dataPemeriksaan->satuan,
+                'rujukan' => $dataPemeriksaan->rujukan,
+                'keterangan' => $request->hasil_pengujian ?
+                    $this->determineKeterangan($request->hasil_pengujian, $dataPemeriksaan->rujukan) : '-',
+                'status_pemeriksaan' => 'selesai'
+            ]);
+
+            Pasien::where('no_lab', $request->no_lab)
+                ->update(['updated_at' => now()->timezone('Asia/Jakarta')]);
+
+            DB::commit();
+
+            LogActivityService::log(
+                action: 'CREATE',
+                module: 'Hasil Pemeriksaan Lain',
+                description: 'Tambah hasil pemeriksaan lain manual dengan no_lab: ' . $request->no_lab,
+                newData: $hasilLain->toArray()
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data pemeriksaan berhasil ditambahkan',
+                'data' => $hasilLain
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function searchDataPemeriksaan(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'search' => 'nullable|string|max:100',
+                'jenis_pemeriksaan' => 'nullable|string|max:100'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $search = $request->input('search', '');
+            $jenisPemeriksaan = $request->input('jenis_pemeriksaan', '');
+
+            $query = DB::table('data_pemeriksaan as dp')
+                ->select(
+                    'dp.id_data_pemeriksaan',
+                    'dp.data_pemeriksaan',
+                    'dp.satuan',
+                    'dp.rujukan',
+                    'dp.ch',
+                    'dp.cl',
+                    'dp.metode',
+                    'jp1.nama_pemeriksaan as jenis_pemeriksaan'
+                )
+                ->leftJoin('jenis_pemeriksaan_1 as jp1', 'dp.id_jenis_pemeriksaan_1', '=', 'jp1.id_jenis_pemeriksaan_1')
+                ->whereNull('dp.deleted_at')
+                ->whereNull('jp1.deleted_at');
+
+            // Filter by jenis pemeriksaan jika ada
+            if (!empty($jenisPemeriksaan)) {
+                $query->where('jp1.nama_pemeriksaan', '=', $jenisPemeriksaan);
+            }
+
+            // Search term jika ada
+            if (!empty($search) && strlen($search) >= 2) {
+                $searchTerm = '%' . $search . '%';
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('dp.data_pemeriksaan', 'ILIKE', $searchTerm)
+                      ->orWhere('dp.id_data_pemeriksaan', 'ILIKE', $searchTerm)
+                      ->orWhere('dp.rujukan', 'ILIKE', $searchTerm);
+                });
+            }
+
+            $results = $query->orderBy('dp.data_pemeriksaan')
+                            ->limit(20)
+                            ->get();
+
+            LogActivityService::log(
+                action: 'READ',
+                module: 'Hasil Pemeriksaan Lain',
+                description: 'User melakukan pencarian data pemeriksaan'
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil ditemukan',
+                'data' => $results
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getPemeriksaanByKode(Request $request)
+    {
+        $request->validate([
+            'id_data_pemeriksaan' => 'required|string'
+        ]);
+
+        $dataPemeriksaan = DB::table('data_pemeriksaan as dp')
+            ->where('dp.id_data_pemeriksaan', $request->id_data_pemeriksaan)
+            ->whereNull('dp.deleted_at')
+            ->select(
+                'dp.id_data_pemeriksaan',
+                'dp.data_pemeriksaan',
+                'dp.satuan',
+                'dp.rujukan',
+                'dp.ch',
+                'dp.cl'
+            )
+            ->first();
+
+        if (!$dataPemeriksaan) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data pemeriksaan tidak ditemukan'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $dataPemeriksaan
+        ]);
+    }
+
+    public function updateHasilPengujian(Request $request, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'hasil_pengujian' => 'nullable|string|max:100',
+            'keterangan' => 'nullable|string|max:10'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $hasilLain = HasilPemeriksaanLain::findOrFail($id);
+
+            $oldData = $hasilLain->toArray();
+
+            $hasilLain->update([
+                'hasil_pengujian' => $request->hasil_pengujian,
+                'keterangan' => $request->keterangan ?? '-',
+                'updated_at' => now()->timezone('Asia/Jakarta')
+            ]);
+
+            Pasien::where('no_lab', $hasilLain->no_lab)
+                ->update(['updated_at' => now()->timezone('Asia/Jakarta')]);
+
+            DB::commit();
+
+            LogActivityService::log(
+                action: 'UPDATE',
+                module: 'Hasil Pemeriksaan Lain',
+                description: 'Update hasil pengujian lain dengan ID: ' . $id,
+                oldData: $oldData,
+                newData: $hasilLain->toArray()
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hasil pengujian berhasil diperbarui',
+                'data' => $hasilLain
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
 }

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class HasilPemeriksaanLain extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory;
 
     protected $table = 'hasil_pemeriksaan_lain';
     protected $primaryKey = 'id_hasil_lain';
@@ -23,6 +23,9 @@ class HasilPemeriksaanLain extends Model
         'status_pemeriksaan',
         'id_jenis_pemeriksaan',
         'id_data_pemeriksaan',
+        'created_at', // TAMBAHKAN
+        'updated_at', // TAMBAHKAN
+        'deleted_at'  // TAMBAHKAN
     ];
 
     // Relasi ke pasien

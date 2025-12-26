@@ -93,7 +93,7 @@
                                                 Edit
                                             </button>
 
-                                            <form action="{{ route('pasien.destroy.jenis.pemeriksaan', $jenis->id_jenis_pemeriksaan_1) }}"
+                                            <!-- <form action="{{ route('pasien.destroy.jenis.pemeriksaan', $jenis->id_jenis_pemeriksaan_1) }}"
                                                 method="POST"
                                                 class="d-inline"
                                                 onsubmit="return confirm('Apakah Anda yakin ingin menghapus jenis pemeriksaan ini?')">
@@ -103,7 +103,7 @@
                                                 <button type="submit" class="btn btn-sm btn-danger">
                                                     <i class="ri-delete-bin-line"></i> Hapus
                                                 </button>
-                                            </form>
+                                            </form> -->
 
                                         </td>
                                     </tr>

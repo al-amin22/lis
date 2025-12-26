@@ -290,6 +290,7 @@
                                     </div>
                                 </div>
                             </div>
+
                             <div class="col-xxl-3 col-lg-4 col-sm-6">
                                 <div class="mb-3">
                                     <label class="form-label">Waktu Validasi</label>
@@ -422,6 +423,7 @@
                                                                 data-ch="{{ $ch_value }}"
                                                                 data-cl="{{ $cl_value }}"
                                                                 data-jenis="{{ $jenis }}"
+                                                                data-jenis="{{ $item->dataPemeriksaan->data_pemeriksaan }}"
                                                                 data-rm="{{ $pasien->rm_pasien }}"
                                                                 autocomplete="off">
                                                             @else
@@ -635,6 +637,7 @@
                                                                 data-original="{{ $item->hasil_pengujian ?? '' }}"
                                                                 data-id="{{ $item->id_pemeriksaan_kimia }}"
                                                                 data-type="kimia"
+                                                                data-jenis="{{ $item->dataPemeriksaan->data_pemeriksaan ?? '' }}"
                                                                 data-rujukan="{{ $item->rujukan ?? '' }}"
                                                                 data-ch="{{ $ch_value }}"
                                                                 data-cl="{{ $cl_value }}"
@@ -714,259 +717,209 @@
                             @endif
 
                             <!-- HASIL LAIN SECTION -->
+                            <!-- HASIL LAIN SECTION -->
                             @if($hasil_lain->count() > 0)
-                            @foreach($hasil_lain_grouped as $jenis_pemeriksaan => $items)
-                                @php
-                                    $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $jenis_pemeriksaan));
-                                @endphp
+                                @foreach($hasil_lain_grouped as $jenis_pemeriksaan => $items)
+                                    @php
+                                        $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $jenis_pemeriksaan));
+                                    @endphp
 
-                                <div class="mt-4 pemeriksaan-lain-section" data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
-                                    <div class="row">
-                                        <!-- TABEL PEMERIKSAAN LAIN -->
-                                        <div class="col-lg-9 col-md-12">
-                                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                                <h6 class="mb-0 border-bottom pb-2">
-                                                    <i class="ri-list-check me-2"></i>{{ $jenis_pemeriksaan }}
-                                                </h6>
-                                                <div>
-                                                    <button type="button" class="btn btn-sm btn-outline-primary tambah-row-btn"
-                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
-                                                        <i class="ri-add-line me-1"></i>Tambah Row
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-success tambah-modal-btn ms-2"
-                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
-                                                        <i class="ri-checkbox-multiple-line me-1"></i>Pilih dari Daftar
-                                                    </button>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn ms-2"
-                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
-                                                        <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            <div class="table-responsive">
-                                                <table class="table table-bordered table-sm pemeriksaan-lain-table">
-                                                    <thead class="table-light">
-                                                        <tr>
-                                                            <th width="20%" class="bg-light" style="text-align:center;" hidden>Jenis Pengujian</th>
-                                                            <th width="20%" class="bg-light" style="text-align:center;">Pilih Jenis Pemeriksaan</th>
-                                                            <th width="10%" class="bg-light" style="text-align:center;">Satuan</th>
-                                                            <th width="10%" class="bg-light" style="text-align:center;">Rujukan</th>
-                                                            <th width="5%" class="bg-light" style="text-align:center;">CH</th>
-                                                            <th width="5%" class="bg-light" style="text-align:center;">CL</th>
-                                                            <th width="10%" style="text-align:center;">Hasil Pengujian</th>
-                                                            <th width="20%" style="text-align:center;">Keterangan</th>
-                                                            <th width="5%" style="text-align:center;">Aksi</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        @foreach($items as $index => $item)
-                                                        @php
-                                                        // Ambil data dari object hasil query
-                                                        $jenis_pemeriksaan_id = $item->jenis_pemeriksaan_id ?? '';
-                                                        $data_pemeriksaan = $item->data_pemeriksaan ?? $item->jenis_pengujian ?? '';
-                                                        $satuan = $item->satuan ?? $item->satuan_hasil_pengujian ?? '-';
-                                                        $rujukan = $item->rujukan ?? $item->rujukan ?? '-';
-                                                        $keterangan = $item->Keterangan ?? '';
-
-                                                        // Ambil CH dan CL dari data_pemeriksaan
-                                                        $ch_value = $item->ch ?? '-';
-                                                        $cl_value = $item->cl ?? '-';
-
-                                                        // Tentukan warna untuk keterangan
-                                                        if ($keterangan === 'CH' || $keterangan === 'H') {
-                                                        $bgColor = 'bg-danger bg-opacity-10';
-                                                        $textColor = 'text-danger';
-                                                        $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
-                                                        } elseif ($keterangan === 'CL' || $keterangan === 'L') {
-                                                        $bgColor = 'bg-primary bg-opacity-10';
-                                                        $textColor = 'text-primary';
-                                                        $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
-                                                        } else {
-                                                        $bgColor = 'bg-success bg-opacity-10';
-                                                        $textColor = 'text-success';
-                                                        $textDisplay = '-';
-                                                        }
-                                                        @endphp
-
-                                                        <tr data-index="{{ $index }}"
-                                                            data-id="{{ $item->id_hasil_lain ?? '' }}"
-                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
-                                                            data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}">
-                                                            <td class="bg-light" hidden>
-                                                                <strong>{{ $item->jenis_pengujian ?? 'Belum dipilih' }}</strong>
-                                                                <input type="hidden"
-                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id]"
-                                                                    value="{{ $item->id_hasil_lain ?? '' }}">
-                                                                <input type="hidden"
-                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][jenis_pengujian]"
-                                                                    value="{{ $item->jenis_pengujian ?? '' }}">
-                                                            </td>
-
-                                                            <td class="search-cell">
-                                                                @if(!$item->id_data_pemeriksaan)
-                                                                <div class="position-relative">
-                                                                    <input type="text"
-                                                                        class="form-control form-control-sm kode-search-input-lain"
-                                                                        placeholder="Cari data pemeriksaan..."
-                                                                        data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
-                                                                        data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}"
-                                                                        data-index="{{ $index }}"
-                                                                        data-row-id="{{ $item->id_hasil_lain ?? '' }}"
-                                                                        autocomplete="off">
-                                                                    <div class="kode-search-results dropdown-menu w-100"
-                                                                        style="display: none; max-height: 200px; overflow-y: auto;">
-                                                                    </div>
-                                                                    <input type="hidden"
-                                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id_data_pemeriksaan]"
-                                                                        class="kode-pemeriksaan-input"
-                                                                        value="">
-                                                                </div>
-                                                                @else
-                                                                <div class="position-relative">
-                                                                    <input type="text"
-                                                                        class="form-control form-control-sm kode-edit-input-lain"
-                                                                        placeholder="Cari data pemeriksaan..."
-                                                                        value="{{ $data_pemeriksaan }}"
-                                                                        data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
-                                                                        data-jenis-pemeriksaan-id="{{ $jenis_pemeriksaan_id }}"
-                                                                        data-index="{{ $index }}"
-                                                                        data-row-id="{{ $item->id_hasil_lain ?? '' }}"
-                                                                        data-current-id="{{ $item->id_data_pemeriksaan }}"
-                                                                        autocomplete="off">
-                                                                    <div class="kode-search-results dropdown-menu w-100"
-                                                                        style="display: none; max-height: 200px; overflow-y: auto;">
-                                                                    </div>
-                                                                    <input type="hidden"
-                                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id_data_pemeriksaan]"
-                                                                        class="kode-pemeriksaan-input"
-                                                                        value="{{ $item->id_data_pemeriksaan }}">
-                                                                    <div class="mt-1">
-                                                                        <small class="text-success">
-                                                                            <i class="ri-links-line me-1"></i>
-                                                                            {{ $item->id_data_pemeriksaan }}
-                                                                        </small>
-                                                                    </div>
-                                                                </div>
-                                                                @endif
-                                                            </td>
-
-                                                            <td class="bg-light satuan-cell" style="text-align:center;">
-                                                                <span class="satuan-display">
-                                                                    {{ $satuan }}
-                                                                </span>
-                                                            </td>
-
-                                                            <td class="bg-light rujukan-cell" style="text-align:center;">
-                                                                <span class="rujukan-display">
-                                                                    {{ $rujukan }}
-                                                                </span>
-                                                            </td>
-
-                                                            <!-- TAMBAHKAN KOLOM CH -->
-                                                            <td class="bg-light ch-cell" style="text-align:center;">
-                                                                <span class="ch-display">
-                                                                    {{ $ch_value }}
-                                                                </span>
-                                                                <input type="hidden"
-                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][ch]"
-                                                                    class="ch-input"
-                                                                    value="{{ $ch_value }}">
-                                                            </td>
-
-                                                            <!-- TAMBAHKAN KOLOM CL -->
-                                                            <td class="bg-light cl-cell" style="text-align:center;">
-                                                                <span class="cl-display">
-                                                                    {{ $cl_value }}
-                                                                </span>
-                                                                <input type="hidden"
-                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][cl]"
-                                                                    class="cl-input"
-                                                                    value="{{ $cl_value }}">
-                                                            </td>
-
-                                                            <td class="hasil-cell">
-                                                                <input type="text"
-                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][hasil_pengujian]"
-                                                                    class="form-control form-control-sm excel-input hasil-input-lain"
-                                                                    value="{{ $item->hasil_pengujian ?? '' }}"
-                                                                    placeholder="Hasil"
-                                                                    data-original="{{ $item->hasil_pengujian ?? '' }}"
-                                                                    data-id="{{ $item->id_hasil_lain }}"
-                                                                    data-type="hasil_lain"
-                                                                    data-rujukan="{{ $rujukan }}"
-                                                                    data-ch="{{ $ch_value }}"
-                                                                    data-cl="{{ $cl_value }}"
-                                                                    data-jenis="{{ $data_pemeriksaan }}"
-                                                                    data-rm="{{ $pasien->rm_pasien }}"
-                                                                    autocomplete="off">
-                                                            </td>
-
-                                                            <td class="keterangan-cell">
-                                                                <div class="keterangan-display {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
-                                                                    data-keterangan="{{ $keterangan }}">
-                                                                    <strong>{{ $textDisplay }}</strong>
-                                                                </div>
-                                                                <input type="hidden"
-                                                                    name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][keterangan]"
-                                                                    value="{{ $keterangan }}">
-                                                            </td>
-
-                                                            <td>
-                                                                <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn">
-                                                                    <i class="ri-delete-bin-line"></i>
-                                                                </button>
-                                                            </td>
-                                                        </tr>
-                                                        @endforeach
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div> <!-- END col-lg-9 -->
-
-                                        <!-- HISTORY PANEL HASIL LAIN -->
-                                        <div class="col-lg-3 col-md-12">
-                                            <div class="card h-100 border-start border-primary">
-                                                <div class="card-header bg-light py-2">
-                                                    <h6 class="card-title mb-0 small">
-                                                        <i class="ri-history-line me-2 text-primary"></i>History {{ $jenis_pemeriksaan }}
+                                   <div class="pt-3 border-top pemeriksaan-lain-section" data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                        <div class="row">
+                                            <!-- TABEL PEMERIKSAAN LAIN -->
+                                            <div class="col-lg-9 col-md-12">
+                                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                                    <h6 class="mb-0 border-bottom pb-2">
+                                                        <i class="ri-list-check me-2"></i>{{ $jenis_pemeriksaan }}
                                                     </h6>
+                                                    <div>
+                                                        <!-- Tombol Tambah Row (Manual) -->
+                                                        <button type="button" class="btn btn-sm btn-outline-primary tambah-row-btn-hasil-lain"
+                                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                                            <i class="ri-add-line me-1"></i>Tambah Row
+                                                        </button>
+                                                        <!-- Tombol Modal (Checkbox Multiple) -->
+                                                        <button type="button" class="btn btn-sm btn-outline-success modal-hasil-lain-btn ms-2"
+                                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                                            <i class="ri-list-check me-1"></i>Pilih dari Daftar
+                                                        </button>
+                                                        <!-- Tombol Hapus Tabel -->
+                                                        <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn-hasil-lain ms-2"
+                                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                                            <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div class="card-body p-0">
-                                                    <div class="p-2 border-bottom bg-primary bg-opacity-5"
-                                                        id="currentHoverInfo_{{ $slug }}">
-                                                        <div class="text-center">
-                                                            <div class="text-primary mb-1 small"
-                                                                id="hoverJenisPemeriksaan_{{ $slug }}">
-                                                                <i class="ri-cursor-line me-1"></i>
-                                                                <span>Pilih hasil</span>
-                                                            </div>
-                                                            <div class="small text-muted"
-                                                                id="hoverTypeInfo_{{ $slug }}">
-                                                                Klik pada kolom "Hasil"
+
+                                                <div class="table-responsive">
+                                                    <table class="table table-bordered table-sm pemeriksaan-lain-table" id="tabel_{{ $slug }}">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th width="20%" class="bg-light">Pilih Jenis Pemeriksaan</th>
+                                                                <th width="10%" class="bg-light">Satuan</th>
+                                                                <th width="15%" class="bg-light">Rujukan</th>
+                                                                <th width="5%" class="bg-light">CH</th>
+                                                                <th width="5%" class="bg-light">CL</th>
+                                                                <th width="15%">Hasil Pengujian</th>
+                                                                <th width="10%">Keterangan</th>
+                                                                <th width="5%">Aksi</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            @foreach($items as $index => $item)
+                                                            @php
+                                                                $keterangan = $item->keterangan ?? '-';
+                                                                $ch_value = $item->ch ?? '-';
+                                                                $cl_value = $item->cl ?? '-';
+
+                                                                // Tentukan warna untuk keterangan
+                                                                if ($keterangan === 'CH' || $keterangan === 'H') {
+                                                                    $bgColor = 'bg-danger bg-opacity-10';
+                                                                    $textColor = 'text-danger';
+                                                                    $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
+                                                                } elseif ($keterangan === 'CL' || $keterangan === 'L') {
+                                                                    $bgColor = 'bg-primary bg-opacity-10';
+                                                                    $textColor = 'text-primary';
+                                                                    $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
+                                                                } else {
+                                                                    $bgColor = 'bg-success bg-opacity-10';
+                                                                    $textColor = 'text-success';
+                                                                    $textDisplay = '-';
+                                                                }
+                                                            @endphp
+
+                                                            <tr data-index="{{ $index }}"
+                                                                data-id="{{ $item->id_hasil_lain ?? '' }}"
+                                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                                                <!-- Kolom Search Data Pemeriksaan -->
+                                                                <td class="search-cell-hasil-lain">
+                                                                    <div class="position-relative">
+                                                                        <input type="text"
+                                                                            class="form-control form-control-sm search-data-pemeriksaan-hasil-lain"
+                                                                            placeholder="Cari data pemeriksaan..."
+                                                                            value="{{ $item->data_pemeriksaan ?? $item->jenis_pengujian ?? '' }}"
+                                                                            data-row-id="{{ $item->id_hasil_lain ?? '' }}"
+                                                                            data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
+                                                                            data-index="{{ $index }}"
+                                                                            autocomplete="off">
+
+                                                                        <!-- Dropdown hasil pencarian -->
+                                                                        <div class="search-results-hasil-lain dropdown-menu w-100"
+                                                                            style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">
+                                                                        </div>
+
+                                                                        <!-- Hidden inputs -->
+                                                                        <input type="hidden"
+                                                                            name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id]"
+                                                                            value="{{ $item->id_hasil_lain ?? '' }}">
+                                                                        <input type="hidden"
+                                                                            name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][id_data_pemeriksaan]"
+                                                                            class="id-data-pemeriksaan-input"
+                                                                            value="{{ $item->id_data_pemeriksaan ?? '' }}">
+                                                                        <input type="hidden"
+                                                                            name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][jenis_pengujian]"
+                                                                            class="jenis-pengujian-input"
+                                                                            value="{{ $item->jenis_pengujian ?? '' }}">
+                                                                    </div>
+                                                                </td>
+
+                                                                <!-- Kolom Satuan -->
+                                                                <td class="bg-light satuan-cell-hasil-lain">
+                                                                    <span class="satuan-display-hasil-lain">{{ $item->satuan ?? '-' }}</span>
+                                                                </td>
+
+                                                                <!-- Kolom Rujukan -->
+                                                                <td class="bg-light rujukan-cell-hasil-lain">
+                                                                    <span class="rujukan-display-hasil-lain">{{ $item->rujukan ?? '-' }}</span>
+                                                                </td>
+
+                                                                <!-- Kolom CH -->
+                                                                <td class="bg-light ch-cell-hasil-lain">
+                                                                    <span class="ch-display-hasil-lain">{{ $ch_value }}</span>
+                                                                    <input type="hidden" class="ch-input-hasil-lain" value="{{ $ch_value }}">
+                                                                </td>
+
+                                                                <!-- Kolom CL -->
+                                                                <td class="bg-light cl-cell-hasil-lain">
+                                                                    <span class="cl-display-hasil-lain">{{ $cl_value }}</span>
+                                                                    <input type="hidden" class="cl-input-hasil-lain" value="{{ $cl_value }}">
+                                                                </td>
+
+                                                                <!-- Kolom Hasil Pengujian -->
+                                                                <td class="hasil-cell-hasil-lain">
+                                                                    <input type="text"
+                                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][hasil_pengujian]"
+                                                                        class="form-control form-control-sm hasil-input-hasil-lain"
+                                                                        value="{{ $item->hasil_pengujian ?? '' }}"
+                                                                        placeholder="Hasil"
+                                                                        data-id="{{ $item->id_hasil_lain ?? '' }}"
+                                                                        data-type="hasil_lain"
+                                                                        autocomplete="off">
+                                                                </td>
+
+                                                                <!-- Kolom Keterangan -->
+                                                                <td class="keterangan-cell-hasil-lain">
+                                                                    <div class="keterangan-display-hasil-lain {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
+                                                                        data-keterangan="{{ $keterangan }}">
+                                                                        <strong>{{ $textDisplay }}</strong>
+                                                                    </div>
+                                                                    <input type="hidden"
+                                                                        name="hasil_lain[{{ $jenis_pemeriksaan }}][{{ $index }}][keterangan]"
+                                                                        class="keterangan-input-hasil-lain"
+                                                                        value="{{ $keterangan }}">
+                                                                </td>
+
+                                                                <!-- Kolom Aksi -->
+                                                                <td>
+                                                                    <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn-hasil-lain">
+                                                                        <i class="ri-delete-bin-line"></i>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                            @endforeach
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+
+                                            <!-- HISTORY PANEL (Sesuai kode existing) -->
+                                            <div class="col-lg-3 col-md-12">
+                                                <div class="card h-100 border-start border-primary history-panel-card">
+                                                    <div class="card-header bg-light py-2">
+                                                        <h6 class="card-title mb-0 small">
+                                                            <i class="ri-history-line me-2 text-primary"></i>History {{ $jenis_pemeriksaan }}
+                                                        </h6>
+                                                    </div>
+                                                    <div class="card-body p-0">
+                                                        <div class="p-2 border-bottom bg-primary bg-opacity-5"
+                                                            id="currentHoverInfo_{{ $slug }}">
+                                                            <div class="text-center">
+                                                                <div class="text-primary mb-1 small"
+                                                                    id="hoverJenisPemeriksaan_{{ $slug }}">
+                                                                    <i class="ri-history-line me-1"></i>
+                                                                    <span>History Pemeriksaan</span>
+                                                                </div>
+                                                                <div class="small text-muted"
+                                                                    id="hoverTypeInfo_{{ $slug }}">
+                                                                    Klik pada kolom "Hasil"
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-
-                                                    <div class="p-2"
-                                                        id="historyPanelContent_{{ $slug }}"
-                                                        style="height: 300px; overflow-y: auto; font-size: 0.85rem;">
-                                                        <div class="text-center text-muted py-4">
-                                                            <i class="ri-file-list-3-line display-6 mb-3 opacity-50"></i>
-                                                            <p class="mb-1 small">History akan muncul di sini</p>
-                                                            <small class="text-muted">Klik pada hasil</small>
+                                                        <div class="p-2 history-panel-content"
+                                                            id="historyPanelContent_{{ $slug }}"
+                                                            style="overflow-y: auto; font-size: 0.85rem;">
+                                                            <!-- Content akan diisi oleh JavaScript -->
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div> <!-- END col-lg-3 -->
-                                    </div> <!-- END row -->
-                                </div> <!-- END pemeriksaan-lain-section -->
-                            @endforeach
+                                        </div>
+                                    </div>
+                                @endforeach
                             @endif
 
                             <!-- Tombol untuk tambah tabel pemeriksaan baru -->
-                            <div class="mt-4">
+                            <div class="mt-3">
                                 <div class="card">
                                     <div class="card-header">
                                         <h6 class="mb-0">
@@ -993,6 +946,101 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Modal untuk Pilih Data Pemeriksaan (Checkbox Multiple) -->
+
+                            <div class="modal fade" id="modalPilihDataPemeriksaan" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">
+                                                <i class="ri-list-check me-2"></i>
+                                                <span id="modalTitleJenisPemeriksaan">Pilih Data Pemeriksaan</span>
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <!-- Search Bar -->
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text"
+                                                        class="form-control"
+                                                        id="searchModalDataPemeriksaan"
+                                                        placeholder="Cari data pemeriksaan...">
+                                                    <button class="btn btn-outline-secondary" type="button" id="clearSearchModal">
+                                                        <i class="ri-close-line"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <!-- Checkbox Select All -->
+                                            <div class="mb-3 d-flex align-items-center">
+                                                <div class="form-check me-3">
+                                                    <input class="form-check-input" type="checkbox" id="selectAllModal">
+                                                    <label class="form-check-label" for="selectAllModal">
+                                                        Pilih Semua
+                                                    </label>
+                                                </div>
+                                                <div class="text-muted small" id="selectedCountModal">
+                                                    0 item dipilih
+                                                </div>
+                                            </div>
+
+                                            <!-- Table Data Pemeriksaan -->
+                                            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                                <table class="table table-sm table-hover">
+                                                    <thead class="table-light sticky-top">
+                                                        <tr>
+                                                            <th width="5%">#</th>
+                                                            <th width="15%">Kode</th>
+                                                            <th width="40%">Nama Pemeriksaan</th>
+                                                            <th width="15%">Satuan</th>
+                                                            <th width="25%">Rujukan</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="modalDataPemeriksaanList">
+                                                        <!-- Data akan diisi oleh JavaScript -->
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                            <button type="button" class="btn btn-primary" id="tambahDataPemeriksaanBtn">
+                                                <i class="ri-add-line me-1"></i>Tambah ke Tabel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modal Konfirmasi Hapus Tabel -->
+                            <div class="modal fade" id="modalKonfirmasiHapusTabel" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title text-danger">
+                                                <i class="ri-delete-bin-line me-2"></i>
+                                                Konfirmasi Hapus Tabel
+                                            </h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p>Apakah Anda yakin ingin menghapus tabel <strong id="modalNamaTabel"></strong>?</p>
+                                            <p class="text-muted small">Semua data dalam tabel ini akan dihapus.</p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                            <button type="button" class="btn btn-danger" id="konfirmasiHapusTabelBtn">
+                                                <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Toast Container -->
+                            <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
                         </div> <!-- END card-body -->
 
                         <div class="card-footer border-top">
@@ -1073,10 +1121,68 @@
         <i class="ri-error-warning-line me-2"></i>Data pasien tidak ditemukan.
     </div>
     @endif
+
 </div>
 <!-- App body ends -->
 
+
 <style>
+    /* Simple Modal Styles */
+    #simplePilihPemeriksaanModal .modal-dialog {
+        max-width: 800px;
+    }
+
+    #simplePilihPemeriksaanModal .modal-body {
+        max-height: 70vh;
+    }
+
+    .simple-pemeriksaan-item {
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .simple-pemeriksaan-item:hover {
+        background-color: rgba(0, 0, 0, 0.03);
+    }
+
+    .simple-pemeriksaan-item.table-primary {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+
+    .simple-pemeriksaan-item.table-light {
+        opacity: 0.6;
+    }
+
+    .simple-checkbox {
+        margin-top: 0.25rem;
+    }
+
+    .btn-add-single {
+        padding: 0.15rem 0.35rem;
+        font-size: 0.75rem;
+    }
+
+    /* Sticky header */
+    #simplePemeriksaanModal .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: white;
+    }
+
+    /* Scrollbar styling */
+    #simplePemeriksaanModal .table-responsive::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #simplePemeriksaanModal .table-responsive::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    #simplePemeriksaanModal .table-responsive::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 3px;
+    }
     /* History Panel Styling */
     .card.border-start {
         border-left-width: 3px !important;
@@ -1143,6 +1249,67 @@
 </style>
 
 <style>
+
+    /* Dropdown Hasil Lain Styles - Like Kimia */
+    .kode-search-results {
+        position: absolute;
+        z-index: 1050;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.175);
+        padding: 0;
+        margin: 2px 0 0;
+        overflow: hidden;
+    }
+
+    .kode-search-results .dropdown-header {
+        padding: 0.5rem 1rem;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .kode-search-results .dropdown-item {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #f8f9fa;
+        cursor: pointer;
+        white-space: normal;
+        word-wrap: break-word;
+        transition: background-color 0.15s;
+    }
+
+    .kode-search-results .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    .kode-search-results .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .kode-search-results .dropdown-item:active {
+        background-color: #e9ecef;
+    }
+
+    .kode-search-results .dropdown-item.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background-color: #f8f9fa;
+    }
+
+    /* Loading indicator */
+    .kode-search-results .spinner-border {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.2em;
+    }
+
+    /* Badge styles */
+    .kode-search-results .badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.4rem;
+    }
     /* Custom Styles */
 
     /* Global Search Dropdown Styles */
@@ -1435,14 +1602,123 @@
             max-width: 100% !important;
         }
     }
+
+    /* Toast Container */
+    .toast-container {
+        z-index: 9999;
+    }
+
+    /* Checkbox Modal */
+    #checkboxModal .modal-body {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+
+    #checkboxModal .checkbox-item {
+        padding: 5px;
+        border-radius: 4px;
+        transition: background-color 0.2s;
+    }
+
+    #checkboxModal .checkbox-item:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+
+    /* Search Results Dropdown */
+    .kode-search-results {
+        z-index: 1050;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .kode-search-results .dropdown-item {
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .kode-search-results .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Loading Modal */
+    #loadingModal .modal-content {
+        background: transparent;
+        box-shadow: none;
+        border: none;
+    }
+
+    #loadingModal .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
 </style>
+
+<style>
+    .search-results-hasil-lain {
+        position: absolute !important;
+        z-index: 9999;
+        max-height: 250px;
+        overflow-y: auto;
+    }
+    /* WAJIB: biar dropdown tidak kepotong */
+    .table-responsive,
+    .card-body,
+    .card {
+        overflow: visible !important;
+    }
+
+    /* Dropdown search harus absolute & melayang */
+    .search-results-hasil-lain {
+        position: absolute !important;
+        top: 100% !important;
+        left: 0;
+        right: 0;
+        z-index: 99999 !important;
+        max-height: 250px;
+        overflow-y: auto;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+    }
+
+</style>
+
 
 <!-- Toast Container -->
 <div class="toast-container"></div>
 
+
 @endsection
 
 @section('scripts')
+<script>
+    function syncHistoryHeight() {
+        document.querySelectorAll('.pemeriksaan-lain-section').forEach(section => {
+            const tableWrapper = section.querySelector('.table-responsive');
+            const historyContent = section.querySelector('.history-panel-content');
+
+            if (tableWrapper && historyContent) {
+                historyContent.style.height = tableWrapper.offsetHeight + 'px';
+            }
+        });
+    }
+
+    // Saat halaman load
+    document.addEventListener('DOMContentLoaded', syncHistoryHeight);
+
+    // Jika tabel berubah (tambah/hapus row)
+    document.addEventListener('click', function (e) {
+        if (
+            e.target.closest('.tambah-row-btn-hasil-lain') ||
+            e.target.closest('.hapus-row-btn-hasil-lain') ||
+            e.target.closest('.hapus-tabel-btn-hasil-lain')
+        ) {
+            setTimeout(syncHistoryHeight, 100);
+        }
+    });
+</script>
+
 <script>
     $(document).ready(function() {
         // Setup CSRF token untuk AJAX
@@ -2694,1147 +2970,6 @@
                 resetKodeMapping(kimiaId);
             }
         });
-    });
-</script>
-
-<script>
-    $(document).ready(function() {
-        const csrfToken = $('meta[name="csrf-token"]').attr('content') || $('#csrf_token').val();
-
-        console.log('HasilLain script initialized, CSRF:', csrfToken ? 'Found' : 'Not found');
-
-        // Queue system khusus untuk hasil pemeriksaan lain
-        let hasilLainQueue = [];
-        let isProcessingHasilLainQueue = false;
-
-        // Variabel untuk input aktif
-        let activeSearchInput = null;
-
-        // ============================================
-        // FUNGSI BARU: Update row data dengan lengkap
-        // ============================================
-       // Di fungsi updateHasilLainRowData, tambahkan parameter ch dan cl:
-        function updateHasilLainRowData($row, kode, dataPemeriksaan, satuan, rujukan, metode, ch, cl) {
-            console.log('updateHasilLainRowData called:', {
-                kode,
-                dataPemeriksaan,
-                satuan,
-                rujukan,
-                metode,
-                ch,
-                cl
-            });
-
-            // Update display
-            $row.find('input[name*="[jenis_pengujian]"]').val(dataPemeriksaan);
-            $row.find('.satuan-display').text(satuan || '-');
-            $row.find('.rujukan-display').text(rujukan || '-');
-            $row.find('.ch-display').text(ch || '-');
-            $row.find('.cl-display').text(cl || '-');
-
-            // Update hidden inputs
-            $row.find('.ch-input').val(ch || '-');
-            $row.find('.cl-input').val(cl || '-');
-
-            // Update input hidden kode
-            $row.find('.kode-pemeriksaan-input').val(kode);
-
-            // Update data-rujukan, ch, cl pada input hasil
-            const $hasilInput = $row.find('.hasil-input-lain');
-            $hasilInput.data('rujukan', rujukan);
-            $hasilInput.attr('data-rujukan', rujukan);
-            $hasilInput.data('ch', ch);
-            $hasilInput.attr('data-ch', ch);
-            $hasilInput.data('cl', cl);
-            $hasilInput.attr('data-cl', cl);
-
-            // Update data-pemeriksaan pada input kode (untuk display)
-            const $kodeInput = $row.find('.kode-search-input-lain, .kode-edit-input-lain');
-            $kodeInput.val(dataPemeriksaan);
-            $kodeInput.data('current-kode', kode);
-
-            console.log('HasilLain UI updated - CH:', ch, 'CL:', cl);
-        }
-
-        // ============================================
-        // FUNGSI BARU: Ambil data pemeriksaan berdasarkan kode
-        // ============================================
-        function fetchPemeriksaanByKode(kodePemeriksaan, callback) {
-            if (!kodePemeriksaan) {
-                callback(null);
-                return;
-            }
-
-            $.ajax({
-                url: '{{ route("hasil-lain.get-pemeriksaan-by-kode") }}',
-                method: 'GET',
-                data: {
-                    id_data_pemeriksaan: kodePemeriksaan
-                },
-                success: function(response) {
-                    if (response.success && response.data) {
-                        callback(response.data);
-                    } else {
-                        callback(null);
-                    }
-                },
-                error: function() {
-                    callback(null);
-                }
-            });
-        }
-
-        // Function untuk menambah request ke queue - KHUSUS HASIL LAIN
-        // Untuk Hasil Lain
-        function addToQueueHasilPemeriksaanLain(type, id, field, value, $element) {
-            if (!id) return;
-
-            const $row = $element.closest('tr');
-            const $keteranganDisplay = $row.find('.keterangan-display');
-            const $hiddenInput = $row.find('input[name*="[keterangan]"]');
-
-            // Gunakan fungsi calculateKeterangan yang sama
-            const keterangan = calculateKeterangan(value, $element);
-
-            // Update UI
-            updateKeteranganDisplay($keteranganDisplay, keterangan);
-            $hiddenInput.val(keterangan);
-
-            console.log('📤 Hasil Lain Queue - Keterangan:', keterangan);
-
-            hasilLainQueue.push({
-                type: type,
-                id: id,
-                field: field,
-                value: value,
-                $element: $element,
-                keterangan: keterangan, // PASTIKAN ADA
-                timestamp: Date.now()
-            });
-
-            if (!isProcessingHasilLainQueue) {
-                processHasilLainQueue();
-            }
-        }
-
-        // Function untuk memproses queue - KHUSUS HASIL LAIN
-        function processHasilLainQueue() {
-            if (hasilLainQueue.length === 0 || isProcessingHasilLainQueue) {
-                return;
-            }
-
-            isProcessingHasilLainQueue = true;
-            const request = hasilLainQueue.shift();
-
-            if (!request.$element || !request.$element.length) {
-                isProcessingHasilLainQueue = false;
-                processHasilLainQueue();
-                return;
-            }
-
-            console.log('processHasilLainQueue - Processing:', {
-                id: request.id,
-                field: request.field,
-                value: request.value,
-                keterangan: request.keterangan
-            });
-
-            const postData = {
-                _token: csrfToken,
-                type: request.type,
-                id: request.id,
-                field: request.field,
-                value: request.value,
-                keterangan: request.keterangan
-            };
-
-            $.ajax({
-                url: '{{ route("hasil-lab.update-field-ajax") }}',
-                method: 'POST',
-                data: postData,
-                beforeSend: function() {
-                    request.$element.addClass('is-changing');
-                },
-                success: function(response) {
-                    console.log('processHasilLainQueue - Success:', response);
-                    if (response.success) {
-                        request.$element.removeClass('is-changing').addClass('is-changed');
-                        request.$element.data('original', request.value);
-
-                        // Update save status jika ada
-                        if (typeof updateSaveStatus === 'function') {
-                            updateSaveStatus();
-                        }
-
-                        if (response.data.updated_at) {
-                            $('#lastSaved').text(`Terakhir disimpan: ${response.data.updated_at}`);
-                        }
-
-                        request.$element.closest('td').addClass('table-success');
-                        setTimeout(() => {
-                            request.$element.closest('td').removeClass('table-success');
-                        }, 1000);
-
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('success', 'Data berhasil disimpan');
-                        }
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('processHasilLainQueue - Error:', {
-                        status: status,
-                        error: error,
-                        response: xhr.responseText
-                    });
-                    request.$element.removeClass('is-changing').addClass('has-error');
-
-                    let errorMessage = 'Gagal menyimpan perubahan';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-
-                    if (xhr.status === 419) {
-                        errorMessage = 'Session expired. Silakan refresh halaman.';
-                    }
-
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('danger', errorMessage);
-                    }
-                },
-                complete: function() {
-                    isProcessingHasilLainQueue = false;
-                    setTimeout(processHasilLainQueue, 100);
-                }
-            });
-        }
-
-        // Function untuk memposisikan dropdown global
-        function positionDropdown($input) {
-            const inputRect = $input[0].getBoundingClientRect();
-            const $dropdown = $('#globalSearchResults');
-
-            // Atur posisi dropdown di bawah input
-            const top = inputRect.bottom + 5;
-            const left = inputRect.left;
-            const width = Math.max(inputRect.width, 500);
-
-            $dropdown.css({
-                'top': top + 'px',
-                'left': left + 'px',
-                'width': width + 'px'
-            });
-        }
-
-        // ============================================
-        // PERBAIKAN: Search kode pemeriksaan (hasil lain)
-        // ============================================
-        $(document).on('input', '.kode-search-input-lain, .kode-edit-input-lain', function() {
-            const $input = $(this);
-            const searchTerm = $input.val().trim();
-            const $dropdown = $('#globalSearchResults');
-            const jenisPemeriksaan = $input.data('jenis-pemeriksaan');
-            const currentId = $input.data('current-id'); // UBAH DARI data-current-kode
-
-            // Simpan referensi input aktif
-            activeSearchInput = $input;
-
-            console.log('Search data pemeriksaan:', {
-                searchTerm: searchTerm,
-                jenisPemeriksaan: jenisPemeriksaan
-            });
-
-            if (searchTerm.length < 2) {
-                $dropdown.hide().empty();
-                return;
-            }
-
-            clearTimeout($input.data('searchTimer'));
-            $input.data('searchTimer', setTimeout(() => {
-                console.log('Sending AJAX search request');
-                $.ajax({
-                    url: '{{ route("hasil-lain.search-kode-pemeriksaan") }}',
-                    method: 'POST',
-                    data: {
-                        _token: csrfToken,
-                        search: searchTerm,
-                        jenis_pemeriksaan: jenisPemeriksaan
-                    },
-                    beforeSend: function() {
-                        $dropdown.html(
-                            '<div class="dropdown-header">' +
-                            '<i class="ri-loader-4-line spin me-2"></i> Mencari data pemeriksaan...' +
-                            '</div>'
-                        ).show();
-                        positionDropdown($input);
-                    },
-                    success: function(response) {
-                        console.log('Search response received:', response);
-                        $dropdown.empty();
-
-                        if (response.success && response.data && response.data.length > 0) {
-                            console.log('Found', response.data.length, 'results');
-
-                            // Header dengan tombol close
-                            const $header = $(`
-                                <div class="dropdown-header d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <strong>Hasil Pencarian Data Pemeriksaan</strong>
-                                        <div class="small text-muted">${response.data.length} hasil ditemukan</div>
-                                    </div>
-                                    <button type="button" class="btn-close" aria-label="Close"></button>
-                                </div>
-                            `);
-                            $dropdown.append($header);
-
-                            // Hasil pencarian
-                            response.data.forEach(function(item) {
-                                const $option = $(`
-                                    <button type="button" class="kode-option-hasil-lain"
-                                            data-id="${item.id_data_pemeriksaan}"
-                                            data-data-pemeriksaan="${item.data_pemeriksaan}"
-                                            data-satuan="${item.satuan || ''}"
-                                            data-rujukan="${item.rujukan || ''}"
-                                            data-metode="${item.metode || ''}"
-                                            data-ch="${item.ch || ''}"
-                                            data-cl="${item.cl || ''}">
-                                        <div class="d-flex">
-                                            <div class="kode-badge">ID: ${item.id_data_pemeriksaan}</div> <!-- TAMPILKAN ID -->
-                                            <div class="flex-grow-1 ms-2">
-                                                <div class="fw-bold">${item.data_pemeriksaan}</div>
-                                                <div class="small text-muted">${item.jenis_pemeriksaan || 'Umum'}</div>
-                                            </div>
-                                            ${item.rujukan ? `<div class="rujukan-badge">${item.rujukan}</div>` : ''}
-                                        </div>
-                                    </button>
-                                `);
-                                $dropdown.append($option);
-                            });
-
-                            // Opsi clear mapping jika ada current id
-                            if (currentId) {
-                                const $clearOption = $(`
-                                    <button type="button" class="kode-option-hasil-lain text-danger clear-mapping-option"
-                                            data-kimia-id="${$input.data('row-id')}">
-                                        <i class="ri-close-line me-2"></i>
-                                        Hapus mapping data ini
-                                    </button>
-                                `);
-                                $dropdown.append($clearOption);
-                            }
-                        } else {
-                            $dropdown.html(`
-                                <div class="dropdown-header">
-                                    Tidak ditemukan
-                                </div>
-                                <div class="p-3 text-center text-muted">
-                                    <i class="ri-search-line display-6 mb-2"></i>
-                                    <div>Tidak ditemukan data pemeriksaan</div>
-                                    <small class="text-muted">Coba dengan kata kunci lain</small>
-                                </div>
-                            `);
-                        }
-
-                        $dropdown.show();
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Search AJAX error:', {
-                            status: status,
-                            error: error,
-                            response: xhr.responseText
-                        });
-                        $dropdown.html(`
-                            <div class="dropdown-header text-danger">
-                                <i class="ri-error-warning-line me-2"></i>
-                                Error loading data
-                            </div>
-                        `).show();
-                    }
-                });
-            }, 500));
-        });
-
-        // ============================================
-        // PERBAIKAN: Pilih kode pemeriksaan (hasil lain) dari dropdown
-        // ============================================
-        $(document).on('click', '.kode-option-hasil-lain:not(.clear-mapping-option)', function() {
-            if (!activeSearchInput) return;
-
-            const $option = $(this);
-            const id = $option.data('id'); // AMBIL id_data_pemeriksaan
-            const dataPemeriksaan = $option.data('data-pemeriksaan');
-            const satuan = $option.data('satuan') || '-';
-            const rujukan = $option.data('rujukan') || '-';
-            const metode = $option.data('metode') || '-';
-            const ch = $option.data('ch') || '-';
-            const cl = $option.data('cl') || '-';
-
-            const $input = activeSearchInput;
-            const $row = $input.closest('tr');
-
-            console.log('Data pemeriksaan selected dengan CH/CL:', {
-                id: id,
-                data_pemeriksaan: dataPemeriksaan,
-                satuan: satuan,
-                rujukan: rujukan,
-                ch: ch,
-                cl: cl
-            });
-
-            // Sembunyikan dropdown
-            $('#globalSearchResults').hide().empty();
-
-            // Update UI dengan data lengkap termasuk CH dan CL
-            updateHasilLainRowData($row, id, dataPemeriksaan, satuan, rujukan, metode, ch, cl);
-
-            // Simpan ke database
-            const hasilId = $row.data('id');
-            const hasilPengujian = $row.find('.hasil-input-lain').val();
-
-            console.log('Processing data pemeriksaan selection - Row ID:', hasilId, 'Hasil:', hasilPengujian);
-
-            if (hasilId && hasilId !== '') {
-                // Update existing
-                console.log('Updating existing record ID:', hasilId);
-                $.ajax({
-                    url: '{{ url("hasil-lain") }}/' + hasilId + '/update-kode',
-                    method: 'POST',
-                    data: {
-                        _token: csrfToken,
-                        id_data_pemeriksaan: id, // GUNAKAN id_data_pemeriksaan
-                        jenis_pengujian: dataPemeriksaan
-                    },
-                    success: function(response) {
-                        console.log('Update id_data_pemeriksaan response:', response);
-                        if (response.success) {
-                            if (typeof window.showToast === 'function') {
-                                window.showToast('success', 'Data pemeriksaan berhasil diperbarui');
-                            }
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Update id_data_pemeriksaan error:', {
-                            status: status,
-                            error: error,
-                            response: xhr.responseText
-                        });
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('danger', 'Gagal memperbarui data pemeriksaan');
-                        }
-                    }
-                });
-            } else if (hasilPengujian && hasilPengujian.trim() !== '') {
-                // Simpan baru jika sudah ada hasil
-                console.log('Saving new record with hasil');
-                simpanRowBaru($row, id, dataPemeriksaan, satuan, rujukan, metode);
-            } else {
-                // Hanya update UI, tunggu user isi hasil
-                console.log('Only updating UI, waiting for hasil input');
-                if (typeof window.showToast === 'function') {
-                    window.showToast('info', 'Pilih data pemeriksaan berhasil. Silakan isi hasil pengujian.');
-                }
-            }
-
-            activeSearchInput = null;
-        });
-
-        // Clear mapping option
-        $(document).on('click', '.clear-mapping-option', function() {
-            if (!activeSearchInput) return;
-
-            const kimiaId = $(this).data('kimia-id');
-            const $input = activeSearchInput;
-            const $row = $input.closest('tr');
-
-            if (confirm('Yakin ingin menghapus mapping kode ini?')) {
-                // Reset UI
-                $input.val('');
-                $input.removeData('current-kode');
-                $row.find('.kode-pemeriksaan-input').val('');
-                $row.find('.satuan-display').text('-');zz
-                $row.find('.rujukan-display').text('-');
-
-                // Reset rujukan pada input hasil
-                $row.find('.hasil-input-lain')
-                    .removeData('rujukan')
-                    .removeAttr('data-rujukan');
-
-                // Update keterangan
-                const $keteranganDisplay = $row.find('.keterangan-display');
-                const $keteranganHidden = $row.find('input[name*="[keterangan]"]');
-                $keteranganHidden.val('-');
-
-                if (typeof window.updateKeteranganDisplay === 'function') {
-                    window.updateKeteranganDisplay($keteranganDisplay, '-');
-                }
-
-                // Kirim ke server jika ada ID
-                const id = $row.data('id');
-                if (id) {
-                    $.ajax({
-                        url: '{{ url("hasil-lain") }}/' + id + '/reset-kode',
-                        method: 'POST',
-                        data: {
-                            _token: csrfToken
-                        },
-                        success: function(response) {
-                            console.log('Reset kode response:', response);
-                            if (response.success && typeof window.showToast === 'function') {
-                                window.showToast('success', 'Mapping berhasil direset');
-                            }
-                        },
-                        error: function(xhr) {
-                            console.error('Reset kode error:', xhr.responseText);
-                            if (typeof window.showToast === 'function') {
-                                window.showToast('danger', 'Gagal mereset mapping');
-                            }
-                        }
-                    });
-                }
-
-                $('#globalSearchResults').hide();
-                activeSearchInput = null;
-            }
-        });
-
-        // Tombol close di header dropdown
-        $(document).on('click', '#globalSearchResults .btn-close', function() {
-            $('#globalSearchResults').hide();
-            activeSearchInput = null;
-        });
-
-        // ============================================
-        // PERBAIKAN BESAR: Input hasil (hasil lain)
-        // ============================================
-        $(document).on('input', '.hasil-input-lain', function() {
-            const $input = $(this);
-            const $row = $input.closest('tr');
-            const id = $input.data('id');
-            const value = $input.val();
-            const kodePemeriksaan = $row.find('.kode-pemeriksaan-input').val();
-            const satuan = $row.find('.satuan-display').text();
-            const rujukan = $row.find('.rujukan-display').text();
-
-            console.log('Hasil input changed:', {
-                id: id,
-                value: value,
-                kodePemeriksaan: kodePemeriksaan,
-                satuan: satuan,
-                rujukan: rujukan
-            });
-
-            // PERBAIKAN: Cek jika satuan hilang atau "-"
-            if ((!satuan || satuan === '-' || satuan === '') && kodePemeriksaan) {
-                console.log('Satuan missing, trying to recover from data...');
-
-                fetchPemeriksaanByKode(kodePemeriksaan, function(data) {
-                    if (data) {
-                        console.log('Found data for kode:', data);
-                        updateHasilLainRowData(
-                            $row,
-                            kodePemeriksaan,
-                            data.data_pemeriksaan || $row.find('input[name*="[jenis_pengujian]"]').val(),
-                            data.satuan || '-',
-                            data.rujukan || rujukan || '-',
-                            data.metode || '-'
-                        );
-                    }
-                });
-            }
-
-            // Update keterangan client-side
-            if (typeof window.updateKeteranganClientSide === 'function') {
-                console.log('Calling updateKeteranganClientSide');
-                window.updateKeteranganClientSide($input);
-            }
-
-            // Debounce untuk AJAX call
-            clearTimeout($input.data('timer'));
-            $input.data('timer', setTimeout(() => {
-                if (id) {
-                    // Sudah ada di database → UPDATE via QUEUE KHUSUS
-                    console.log('Row has ID, calling addToQueueHasilPemeriksaanLain for update');
-                    addToQueueHasilPemeriksaanLain('hasil_lain', id, 'hasil_pengujian', value, $input);
-                } else if (value && value.trim() !== '' && kodePemeriksaan) {
-                    // Belum ada di database tapi sudah ada kode → STORE
-                    console.log('New row with kode, saving');
-                    simpanRowBaru($row);
-                } else if (value && value.trim() !== '' && !kodePemeriksaan) {
-                    // Sudah ada hasil tapi belum pilih kode
-                    console.log('Has hasil but no kode, asking for kode');
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('warning', 'Pilih kode pemeriksaan terlebih dahulu');
-                    }
-                    $row.find('.kode-search-input-lain').focus();
-                }
-            }, 800));
-        });
-
-        // ============================================
-        // PERBAIKAN: Simpan row baru
-        // ============================================
-        // Di fungsi simpanRowBaru, tambahkan CH dan CL:
-        // Di fungsi simpanRowBaru, gunakan id_data_pemeriksaan:
-        function simpanRowBaru($row, id = null, dataPemeriksaan = null, satuan = null, rujukan = null, metode = null, ch = null, cl = null) {
-            console.log('simpanRowBaru called for row:', $row.data());
-
-            // Gunakan parameter jika diberikan, jika tidak ambil dari form
-            const idDataPemeriksaan = id || $row.find('.kode-pemeriksaan-input').val(); // id_data_pemeriksaan
-            const jenisPengujian = dataPemeriksaan || $row.find('input[name*="[jenis_pengujian]"]').val();
-            const hasilPengujian = $row.find('.hasil-input-lain').val();
-            const satuanValue = satuan || $row.find('.satuan-display').text();
-            const rujukanValue = rujukan || $row.find('.rujukan-display').text();
-            const metodeValue = metode || '';
-            const chValue = ch || $row.find('.ch-display').text() || '-';
-            const clValue = cl || $row.find('.cl-display').text() || '-';
-
-            // Lanjutkan penyimpanan
-            continueSimpanRowBaru($row, idDataPemeriksaan, {
-                data_pemeriksaan: jenisPengujian,
-                satuan: satuanValue,
-                rujukan: rujukanValue,
-                metode: metodeValue,
-                ch: chValue,
-                cl: clValue
-            });
-        }
-        // ============================================
-        // FUNGSI BARU: Lanjutkan penyimpanan setelah data lengkap
-        // ============================================
-        function continueSimpanRowBaru($row, kodePemeriksaan, data) {
-            console.log('continueSimpanRowBaru called with data:', data);
-
-            if (!kodePemeriksaan) {
-                console.warn('No kode pemeriksaan selected');
-                $row.removeClass('table-warning');
-                if (typeof window.showToast === 'function') {
-                    window.showToast('warning', 'Pilih kode pemeriksaan terlebih dahulu');
-                }
-                return;
-            }
-
-            const hasilPengujian = $row.find('.hasil-input-lain').val();
-
-            // Tampilkan loading
-            $row.addClass('table-warning');
-
-            $.ajax({
-                url: '{{ route("hasil-lain.store") }}',
-                method: 'POST',
-                data: {
-                    _token: csrfToken,
-                    no_lab: '{{ $pasien->no_lab }}',
-                    id_data_pemeriksaan: kodePemeriksaan,
-                    jenis_pengujian: data.data_pemeriksaan,
-                    hasil_pengujian: hasilPengujian,
-                    satuan: data.satuan,
-                    rujukan: data.rujukan,
-                    metode: data.metode,
-                    ch: data.ch,
-                    cl: data.cl
-                },
-                success: function(response) {
-                    console.log('Store response:', response);
-                    $row.removeClass('table-warning');
-
-                    if (response.success) {
-                        // Update row dengan ID baru
-                        const newId = response.data.id_hasil_lain;
-                        $row.data('id', newId);
-                        $row.attr('data-id', newId);
-                        $row.find('input[name*="[id]"]').val(newId);
-                        $row.find('.hasil-input-lain').data('id', newId);
-
-                        // Update UI dengan data dari response
-                        updateHasilLainRowData(
-                            $row,
-                            kodePemeriksaan,
-                            response.data.jenis_pengujian || data.data_pemeriksaan,
-                            response.data.satuan || data.satuan || '-',
-                            response.data.rujukan || data.rujukan || '-',
-                            response.data.metode || data.metode || '-',
-                            response.data.ch || data.ch || '-',
-                            response.data.cl || data.cl || '-'
-                        );
-
-                        // Update keterangan
-                        const $keteranganDisplay = $row.find('.keterangan-display');
-                        const $keteranganHidden = $row.find('input[name*="[keterangan]"]');
-                        $keteranganHidden.val(response.data.keterangan || '-');
-
-                        if (typeof window.updateKeteranganDisplay === 'function') {
-                            window.updateKeteranganDisplay($keteranganDisplay, response.data.keterangan || '-');
-                        }
-
-                        console.log('Row saved with ID:', newId);
-
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('success', 'Pemeriksaan berhasil disimpan');
-                        }
-                    } else {
-                        console.error('Store failed:', response.message);
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('danger', response.message || 'Gagal menyimpan');
-                        }
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('Store AJAX error:', {
-                        status: status,
-                        error: error,
-                        response: xhr.responseText
-                    });
-                    $row.removeClass('table-warning');
-
-                    let errorMessage = 'Gagal menyimpan pemeriksaan';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('danger', errorMessage);
-                    }
-                }
-            });
-        }
-
-        // Tombol tambah row
-        $(document).on('click', '.tambah-row-btn', function(e) {
-            e.preventDefault();
-            const jenisPemeriksaan = $(this).data('jenis-pemeriksaan');
-            const $section = $(`.pemeriksaan-lain-section[data-jenis-pemeriksaan="${jenisPemeriksaan}"]`);
-
-            console.log('Adding new row for jenis:', jenisPemeriksaan);
-
-            // Hitung row index
-            const rowCount = $section.find('tbody tr').length;
-            const index = rowCount;
-
-            // Di bagian newRow template untuk hasil_lain, tambahkan kolom CH dan CL:
-            const newRow = `
-            <tr data-index="${index}" data-jenis-pemeriksaan="${jenisPemeriksaan}" data-is-new="true">
-                <td class="bg-light" hidden>
-                    <strong class="jenis-pengujian-display">Belum dipilih</strong>
-                    <input type="hidden"
-                        name="hasil_lain[${jenisPemeriksaan}][${index}][id]"
-                        value="">
-                    <input type="hidden"
-                        name="hasil_lain[${jenisPemeriksaan}][${index}][jenis_pengujian]"
-                        value="">
-                </td>
-                <td class="search-cell" style="position: relative;">
-                    <div class="position-relative">
-                        <input type="text"
-                            class="form-control form-control-sm kode-search-input-lain"
-                            placeholder="Cari kode pemeriksaan..."
-                            data-jenis-pemeriksaan="${jenisPemeriksaan}"
-                            data-index="${index}"
-                            data-row-id=""
-                            autocomplete="off">
-                        <input type="hidden"
-                            name="hasil_lain[${jenisPemeriksaan}][${index}][id_data_pemeriksaan]"
-                            class="kode-pemeriksaan-input"
-                            value="">
-                    </div>
-                </td>
-                <td class="bg-light satuan-cell" style="text-align:center;">
-                    <span class="satuan-display">-</span>
-                </td>
-                <td class="bg-light rujukan-cell" style="text-align:center;">
-                    <span class="rujukan-display">-</span>
-                </td>
-                <td class="bg-light ch-cell" style="text-align:center;">
-                    <span class="ch-display">-</span>
-                    <input type="hidden"
-                        name="hasil_lain[${jenisPemeriksaan}][${index}][ch]"
-                        class="ch-input"
-                        value="-">
-                </td>
-                <td class="bg-light cl-cell" style="text-align:center;">
-                    <span class="cl-display">-</span>
-                    <input type="hidden"
-                        name="hasil_lain[${jenisPemeriksaan}][${index}][cl]"
-                        class="cl-input"
-                        value="-">
-                </td>
-                <td class="hasil-cell">
-                    <input type="text"
-                        name="hasil_lain[${jenisPemeriksaan}][${index}][hasil_pengujian]"
-                        class="form-control form-control-sm excel-input hasil-input-lain"
-                        value=""
-                        placeholder="Hasil"
-                        data-original=""
-                        data-id=""
-                        data-type="hasil_lain"
-                        data-rujukan=""
-                        data-ch=""
-                        data-cl=""
-                        autocomplete="off">
-                </td>
-                <td class="keterangan-cell">
-                    <div class="keterangan-display bg-success bg-opacity-10 text-success rounded py-1 px-2 text-center"
-                        data-keterangan="-">
-                        <strong>-</strong>
-                    </div>
-                    <input type="hidden"
-                        name="hasil_lain[${jenisPemeriksaan}][${index}][keterangan]"
-                        value="-">
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn">
-                        <i class="ri-delete-bin-line"></i>
-                    </button>
-                </td>
-            </tr>
-            `;
-
-            $section.find('tbody').append(newRow);
-
-            console.log('New row added at index:', index);
-
-            // Focus ke input kode
-            setTimeout(() => {
-                $section.find('tbody tr:last-child .kode-search-input-lain').focus();
-            }, 100);
-        });
-
-        // Tombol hapus row
-        $(document).on('click', '.hapus-row-btn', function(e) {
-            e.preventDefault();
-            const $row = $(this).closest('tr');
-            const id = $row.data('id');
-            const jenisPemeriksaan = $row.data('jenis-pemeriksaan');
-
-            console.log('Delete row clicked:', {
-                id,
-                jenisPemeriksaan
-            });
-
-            if (confirm('Yakin ingin menghapus pemeriksaan ini?')) {
-                if (id && id !== '') {
-                    // Hapus dari database
-                    console.log('Deleting from database ID:', id);
-                    $.ajax({
-                        url: '{{ url("hasil-lain") }}/' + id,
-                        method: 'DELETE',
-                        data: {
-                            _token: csrfToken
-                        },
-                        success: function(response) {
-                            console.log('Delete response:', response);
-                            if (response.success) {
-                                $row.remove();
-                                updateRowIndices(jenisPemeriksaan);
-                                if (typeof window.showToast === 'function') {
-                                    window.showToast('success', 'Pemeriksaan berhasil dihapus');
-                                }
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('Delete error:', {
-                                status: status,
-                                error: error,
-                                response: xhr.responseText
-                            });
-                            if (typeof window.showToast === 'function') {
-                                window.showToast('danger', 'Gagal menghapus pemeriksaan');
-                            }
-                        }
-                    });
-                } else {
-                    // Hapus langsung jika belum tersimpan
-                    console.log('Deleting unsaved row');
-                    $row.remove();
-                    updateRowIndices(jenisPemeriksaan);
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('info', 'Pemeriksaan dihapus');
-                    }
-                }
-            }
-        });
-
-        // Tombol hapus tabel
-        $(document).on('click', '.hapus-tabel-btn', function(e) {
-            e.preventDefault();
-            const jenisPemeriksaan = $(this).data('jenis-pemeriksaan');
-            const $section = $(`.pemeriksaan-lain-section[data-jenis-pemeriksaan="${jenisPemeriksaan}"]`);
-
-            console.log('Delete table clicked for:', jenisPemeriksaan);
-
-            if (confirm(`Yakin ingin menghapus seluruh tabel ${jenisPemeriksaan}?`)) {
-                // Kumpulkan semua ID yang ada di tabel
-                const ids = [];
-                $section.find('tr[data-id]').each(function() {
-                    const id = $(this).data('id');
-                    if (id && id !== '') ids.push(id);
-                });
-
-                console.log('IDs to delete:', ids);
-
-                if (ids.length > 0) {
-                    // Hapus dari database
-                    $.ajax({
-                        url: '{{ route("hasil-lain.destroy-multiple") }}',
-                        method: 'POST',
-                        data: {
-                            _token: csrfToken,
-                            ids: ids
-                        },
-                        success: function(response) {
-                            console.log('Delete multiple response:', response);
-                            if (response.success) {
-                                $section.remove();
-                                if (typeof window.showToast === 'function') {
-                                    window.showToast('success', `Tabel ${jenisPemeriksaan} berhasil dihapus`);
-                                }
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('Delete multiple error:', {
-                                status: status,
-                                error: error,
-                                response: xhr.responseText
-                            });
-                            if (typeof window.showToast === 'function') {
-                                window.showToast('danger', 'Gagal menghapus tabel');
-                            }
-                        }
-                    });
-                } else {
-                    // Hapus langsung jika tidak ada data tersimpan
-                    console.log('No saved data, removing table directly');
-                    $section.remove();
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('success', `Tabel ${jenisPemeriksaan} dihapus`);
-                    }
-                }
-            }
-        });
-
-        // Tombol tambah tabel baru
-        $(document).on('click', '#tambahTabelBtn', function(e) {
-            e.preventDefault();
-            console.log('=== TAMBAH TABEL BARU CLICKED ===');
-
-            const jenisPemeriksaan = $('#jenisPemeriksaanSelect').val();
-            console.log('Selected jenis:', jenisPemeriksaan);
-
-            if (!jenisPemeriksaan) {
-                console.log('No jenis selected, showing warning');
-                if (typeof window.showToast === 'function') {
-                    window.showToast('warning', 'Pilih jenis pemeriksaan terlebih dahulu');
-                }
-                return;
-            }
-
-            // Cek apakah tabel sudah ada
-            if ($(`.pemeriksaan-lain-section[data-jenis-pemeriksaan="${jenisPemeriksaan}"]`).length > 0) {
-                console.log('Table already exists for jenis:', jenisPemeriksaan);
-                if (typeof window.showToast === 'function') {
-                    window.showToast('warning', `Tabel ${jenisPemeriksaan} sudah ada`);
-                }
-                return;
-            }
-
-            console.log('Creating new table for jenis:', jenisPemeriksaan);
-
-            // Buat tabel baru dengan DUA TOMBOL
-            const newTableSection = `
-            <div class="mt-4 pemeriksaan-lain-section" data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h6 class="mb-0 border-bottom pb-2">
-                        <i class="ri-list-check me-2"></i>${jenisPemeriksaan}
-                    </h6>
-                    <div>
-                        <!-- TOMBOL 1: TAMBAH ROW KOSONG -->
-                        <button type="button" class="btn btn-sm btn-outline-primary tambah-row-btn"
-                                data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                            <i class="ri-add-line me-1"></i>Tambah Row
-                        </button>
-
-                        <!-- TOMBOL 2: TAMBAH DENGAN MODAL -->
-                        <button type="button" class="btn btn-sm btn-outline-success tambah-modal-btn ms-2"
-                                data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                            <i class="ri-checkbox-multiple-line me-1"></i>Pilih dari Daftar
-                        </button>
-
-                        <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn ms-2"
-                                data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                            <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
-                        </button>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-bordered table-sm pemeriksaan-lain-table">
-                        <thead class="table-light">
-                            <tr>
-                                <th width="20%" class="bg-light" hidden>Jenis Pengujian</th>
-                                <th width="25%" class="bg-light">Pilih Jenis Pemeriksaan</th>
-                                <th width="15%" class="bg-light">Satuan</th>
-                                <th width="15%" class="bg-light">Rujukan</th>
-                                <th width="15%">Hasil Pengujian</th>
-                                <th width="10%">Ket</th>
-                                <th width="5%">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Rows akan ditambahkan melalui salah satu tombol -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            `;
-
-            // Tambahkan sebelum tombol tambah tabel
-            $('#tambahTabelBtn').closest('.card').before(newTableSection);
-            console.log('New table section added');
-
-            // Reset select
-            $('#jenisPemeriksaanSelect').val('');
-
-            if (typeof window.showToast === 'function') {
-                window.showToast('success', `Tabel ${jenisPemeriksaan} berhasil ditambahkan`);
-            }
-        });
-
-        // Function untuk update row indices
-        function updateRowIndices(jenisPemeriksaan) {
-            console.log('Updating row indices for jenis:', jenisPemeriksaan);
-            const $rows = $(`.pemeriksaan-lain-section[data-jenis-pemeriksaan="${jenisPemeriksaan}"] tbody tr`);
-            $rows.each(function(index) {
-                const $row = $(this);
-                $row.data('index', index);
-
-                // Update name attributes
-                const oldPrefix = `hasil_lain[${jenisPemeriksaan}][${$row.data('old-index') || 0}]`;
-                const newPrefix = `hasil_lain[${jenisPemeriksaan}][${index}]`;
-
-                $row.find('input, select').each(function() {
-                    const $input = $(this);
-                    const name = $input.attr('name');
-                    if (name && name.includes(oldPrefix)) {
-                        $input.attr('name', name.replace(oldPrefix, newPrefix));
-                    }
-                });
-            });
-        }
-
-        // Sembunyikan dropdown saat klik di luar
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('#globalSearchResults').length &&
-                !$(e.target).closest('.kode-search-input-lain, .kode-edit-input-lain').length) {
-                $('#globalSearchResults').hide();
-                activeSearchInput = null;
-            }
-        });
-
-        // Update posisi dropdown saat scroll
-        $(window).on('scroll resize', function() {
-            if (activeSearchInput && $('#globalSearchResults').is(':visible')) {
-                positionDropdown(activeSearchInput);
-            }
-        });
-
-        // PERBAIKAN: Inisialisasi CH dan CL untuk hasil_lain yang sudah ada
-        $(window).on('load', function() {
-            setTimeout(function() {
-                console.log('🔧 Initializing CH/CL for hasil_lain...');
-
-                $('.hasil-input-lain').each(function(index) {
-                    const $input = $(this);
-                    const $row = $input.closest('tr');
-
-                    // Ambil dari display cells
-                    const rujukanDisplay = $row.find('.rujukan-display').text().trim();
-                    const chDisplay = $row.find('.ch-display').text().trim();
-                    const clDisplay = $row.find('.cl-display').text().trim();
-
-                    // Set data attributes
-                    $input.data('rujukan', rujukanDisplay);
-                    $input.attr('data-rujukan', rujukanDisplay);
-                    $input.data('ch', chDisplay);
-                    $input.attr('data-ch', chDisplay);
-                    $input.data('cl', clDisplay);
-                    $input.attr('data-cl', clDisplay);
-
-                    console.log(`HasilLain Row ${index}:`, {
-                        rujukan: rujukanDisplay,
-                        ch: chDisplay,
-                        cl: clDisplay
-                    });
-
-                    // Hitung ulang keterangan jika ada hasil
-                    if ($input.val() && $input.val().trim() !== '') {
-                        if (typeof window.updateKeteranganClientSide === 'function') {
-                            window.updateKeteranganClientSide($input);
-                        }
-                    }
-                });
-            }, 1000);
-        });
-
-        // Inisialisasi data rujukan untuk hasil_lain yang sudah ada
-        $('.hasil-input-lain').each(function() {
-            const $input = $(this);
-            const $row = $input.closest('tr');
-            const rujukan = $row.find('.rujukan-display').text().trim();
-            const satuan = $row.find('.satuan-display').text().trim();
-            const kodePemeriksaan = $row.find('.kode-pemeriksaan-input').val();
-
-            if (rujukan && rujukan !== '-') {
-                $input.data('rujukan', rujukan);
-                $input.attr('data-rujukan', rujukan);
-                console.log('Initialized rujukan for input:', rujukan);
-            }
-
-            // PERBAIKAN: Jika satuan hilang tapi ada kode, coba ambil data
-            if ((!satuan || satuan === '-' || satuan === '') && kodePemeriksaan) {
-                fetchPemeriksaanByKode(kodePemeriksaan, function(data) {
-                    if (data) {
-                        updateHasilLainRowData(
-                            $row,
-                            kodePemeriksaan,
-                            data.data_pemeriksaan || $row.find('input[name*="[jenis_pengujian]"]').val(),
-                            data.satuan || '-',
-                            data.rujukan || rujukan || '-',
-                            data.metode || '-'
-                        );
-                    }
-                });
-            }
-        });
-
-
-
-        // Log semua existing rows pada load
-        console.log('Initializing existing rows:');
-        $('.hasil-input-lain').each(function(index) {
-            const $input = $(this);
-            const $row = $input.closest('tr');
-            console.log(`Row ${index}:`, {
-                id: $input.data('id'),
-                rujukan: $input.data('rujukan'),
-                satuan: $row.find('.satuan-display').text(),
-                kode: $row.find('.kode-pemeriksaan-input').val(),
-                value: $input.val(),
-                rowId: $row.data('id')
-            });
-        });
-
-        // Tambahkan update save status function jika tidak ada
-        if (typeof updateSaveStatus === 'undefined') {
-            window.updateSaveStatus = function() {
-                const $status = $('#saveStatus');
-                const changedCount = $('.is-changed').length;
-
-                if (changedCount > 0) {
-                    $status.removeClass('bg-secondary').addClass('bg-warning');
-                    $status.html(`<i class="ri-edit-line me-1"></i>${changedCount} perubahan`);
-                } else {
-                    $status.removeClass('bg-warning').addClass('bg-secondary');
-                    $status.html('<i class="ri-check-line me-1"></i>Tersimpan');
-                }
-            };
-        }
     });
 </script>
 
@@ -5894,9 +5029,9 @@
                         </button>
 
                         <!-- TOMBOL 2: TAMBAH DENGAN MODAL -->
-                        <button type="button" class="btn btn-sm btn-outline-success tambah-modal-btn ms-2"
+                        <button type="button" class="btn btn-sm btn-outline-success simple-modal-btn ms-2"
                                 data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                            <i class="ri-checkbox-multiple-line me-1"></i>Pilih dari Daftar
+                            <i class="ri-list-check me-1"></i>Pilih dari Daftar
                         </button>
 
                         <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn ms-2"
@@ -7700,14 +6835,13 @@
 </script>
 
 <script>
-    $(document).ready(function() {
+    $(document).ready(function () {
         console.log('✅ Multi-Panel History System Initializing...');
 
         const csrfToken = $('#csrf_token').val();
         let currentActiveElement = null;
         let isHistoryLoading = false;
 
-        // Fungsi untuk membuat slug dari nama pemeriksaan
         function createSlug(text) {
             return text.toLowerCase()
                 .replace(/[^\w\s-]/g, '')
@@ -7715,38 +6849,51 @@
                 .replace(/-+/g, '_');
         }
 
-        // Fungsi untuk memuat history
-        function loadHistory(jenisPemeriksaan, type, rmPasien) {
+        function getPanelSuffix(type, jenisPemeriksaan) {
+            switch (type) {
+                case 'hematology':
+                    return '_hematology';
+                case 'kimia':
+                    return '_kimia';
+                case 'hasil_lain':
+                    return '_' + createSlug(jenisPemeriksaan);
+                default:
+                    return '';
+            }
+        }
+
+        function loadHistory(jenisPemeriksaan, type, rmPasien, kelompok = null) {
             if (!jenisPemeriksaan || !rmPasien) return;
 
-            // Tentukan panel mana yang akan di-update
-            const panelSuffix = getPanelSuffix(type, jenisPemeriksaan);
+            let panelSuffix;
+            if (type === 'hasil_lain' && kelompok) {
+                panelSuffix = '_' + createSlug(kelompok);
+            } else {
+                panelSuffix = getPanelSuffix(type, jenisPemeriksaan);
+            }
 
-            // Periksa apakah panel ada
-            if ($(`#hoverJenisPemeriksaan${panelSuffix}`).length === 0) {
-                console.warn(`Panel ${panelSuffix} tidak ditemukan`);
+            if ($(`#historyPanelContent${panelSuffix}`).length === 0) {
+                console.warn('Panel tidak ditemukan:', panelSuffix);
                 return;
             }
 
-            // Update info panel
             $(`#hoverJenisPemeriksaan${panelSuffix}`).html(`
                 <i class="ri-search-line me-1"></i>
                 <strong>${jenisPemeriksaan}</strong>
             `);
 
-            // Set type info
             const typeText = {
-                'hematology': 'Hematology',
-                'kimia': 'Kimia',
-                'hasil_lain': 'Pemeriksaan Lain'
-            }[type] || 'Unknown';
+                hematology: 'Hematology',
+                kimia: 'Kimia',
+                hasil_lain: 'Pemeriksaan Lain'
+            }[type] || '-';
+
             $(`#hoverTypeInfo${panelSuffix}`).text(typeText);
 
-            // Tampilkan loading
             $(`#historyPanelContent${panelSuffix}`).html(`
                 <div class="text-center py-3">
                     <div class="spinner-border spinner-border-sm text-primary"></div>
-                    <div class="mt-1 text-muted small">Memuat...</div>
+                    <div class="mt-1 text-muted small">Memuat riwayat...</div>
                 </div>
             `);
 
@@ -7762,240 +6909,1268 @@
                     rm_pasien: rmPasien,
                     current_no_lab: '{{ $pasien->no_lab }}'
                 },
-                success: function(response) {
-                    if (response.success && response.data) {
-                        displayHistoryData(response.data, panelSuffix);
+                success(res) {
+                    if (res.success && res.data && res.data.length) {
+                        displayHistoryData(res.data, panelSuffix);
                     } else {
-                        showError('Tidak ada data', panelSuffix);
+                        showNoDataMessage(jenisPemeriksaan, panelSuffix);
                     }
                 },
-                error: function(xhr) {
-                    showError('Gagal memuat', panelSuffix);
+                error() {
+                    showError('Terjadi kesalahan saat memuat data', panelSuffix);
                 },
-                complete: function() {
+                complete() {
                     isHistoryLoading = false;
                 }
             });
         }
 
-        // Helper: Mendapatkan suffix untuk ID panel
-        function getPanelSuffix(type, jenisPemeriksaan) {
-            switch(type) {
-                case 'hematology':
-                    return '_hematology';
-                case 'kimia':
-                    return '_kimia';
-                case 'hasil_lain':
-                    // Gunakan slug dari jenis pemeriksaan
-                    return '_' + createSlug(jenisPemeriksaan);
-                default:
-                    return '';
-            }
-        }
-
-        // Fungsi untuk menampilkan data history
         function displayHistoryData(data, panelSuffix) {
-            const $panelContent = $(`#historyPanelContent${panelSuffix}`);
-
-            if (!data || data.length === 0) {
-                $panelContent.html(`
-                    <div class="text-center py-3 text-muted small">
-                        <i class="ri-inbox-line me-1"></i>
-                        Tidak ada history
-                    </div>
-                `);
-                return;
-            }
-
             let html = '<div class="history-items">';
-
-            data.forEach((item) => {
-                const waktuValidasi = item.waktu_validasi;
-                const tanggalDisplay = waktuValidasi ? formatDateTimeSimple(waktuValidasi) : '-';
-                const hasil = item.hasil_pengujian || '-';
-                const isValidated = !!waktuValidasi;
-
+            data.forEach((item, i) => {
                 html += `
-                    <div class="history-row py-1 border-bottom">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="small ${isValidated ? 'text-success' : 'text-muted'}">
-                                <i class="ri-calendar-line me-1"></i>${tanggalDisplay}
+                    <div class="history-row py-2 border-bottom ${i % 2 === 0 ? 'bg-light bg-opacity-25' : ''}">
+                        <div class="d-flex justify-content-between mb-1">
+                            <div class="small text-muted">
+                                <i class="ri-calendar-line me-1"></i>${formatDate(item.waktu_validasi)}
                             </div>
-                            <div class="history-value fw-bold ${isValidated ? 'text-success' : 'text-primary'}">
-                                ${hasil}
+                            <div class="fw-bold text-success">
+                                ${item.hasil_pengujian || '-'}
                             </div>
+                        </div>
+                        <div class="small text-muted">
+                            <i class="ri-user-line me-1"></i>${item.nama_pasien || '-'}
                         </div>
                     </div>
                 `;
             });
-
             html += '</div>';
+            $(`#historyPanelContent${panelSuffix}`).html(html);
+        }
 
-            // Tambahkan summary
-            const totalValidated = data.filter(item => item.waktu_validasi).length;
-            const totalData = data.length;
+        function showNoDataMessage(jenis, panelSuffix) {
+            $(`#historyPanelContent${panelSuffix}`).html(`
+                <div class="text-center py-5 text-muted">
+                    <i class="ri-database-2-line display-4 opacity-50"></i>
+                    <p class="mt-2 small">Tidak ada riwayat<br><strong>${jenis}</strong></p>
+                </div>
+            `);
+        }
 
-            html += `
-                <div class="mt-2 pt-2 border-top small text-muted">
-                    <div class="d-flex justify-content-between">
-                        <span>${totalData} data</span>
-                        <span>${totalValidated} divalidasi</span>
+        function showError(msg, panelSuffix) {
+            $(`#historyPanelContent${panelSuffix}`).html(`
+                <div class="text-center py-5 text-danger">
+                    <i class="ri-error-warning-line display-4 opacity-50"></i>
+                    <p class="mt-2 small">${msg}</p>
+                </div>
+            `);
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr.split('.')[0]);
+            if (isNaN(d)) return '-';
+            return d.getDate().toString().padStart(2, '0') + '/' +
+                (d.getMonth() + 1).toString().padStart(2, '0') + ' ' +
+                d.getHours().toString().padStart(2, '0') + ':' +
+                d.getMinutes().toString().padStart(2, '0');
+        }
+
+        function resetHistoryPanel(panelSuffix) {
+            if ($(`#historyPanelContent${panelSuffix}`).length === 0) return;
+
+            $(`#hoverJenisPemeriksaan${panelSuffix}`).html(`
+                <i class="ri-history-line me-1"></i> History Pemeriksaan
+            `);
+
+            $(`#hoverTypeInfo${panelSuffix}`).text('Klik hasil untuk melihat riwayat');
+
+            $(`#historyPanelContent${panelSuffix}`).html(`
+                <div class="text-center py-5 text-muted">
+                    <i class="ri-file-list-3-line display-5 opacity-25"></i>
+                    <p class="small mt-2">Klik hasil untuk melihat riwayat</p>
+                </div>
+            `);
+        }
+
+        function resetAllHistoryPanels() {
+            $('[id^="historyPanelContent_"]').each(function () {
+                const suffix = $(this).attr('id').replace('historyPanelContent', '');
+                resetHistoryPanel(suffix);
+            });
+        }
+
+        /* =========================
+        EVENT CLICK (FIX UTAMA)
+        ========================= */
+        $(document).on(
+            'click',
+            '.hasil-input, .hasil-input-lain, .hasil-input-hasil-lain',
+            function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+
+                if (isHistoryLoading) return;
+
+                const $this = $(this);
+                const type = $this.data('type');
+                const rm = $this.data('rm') || '{{ $pasien->rm_pasien }}';
+
+                let jenis = null;
+                let kelompok = null;
+
+                if (type === 'hasil_lain') {
+                    const $section = $this.closest('.pemeriksaan-lain-section');
+                    kelompok = $section.data('jenis-pemeriksaan');
+                    jenis = kelompok;
+                } else {
+                    jenis = $this.data('jenis');
+                }
+
+                if (!jenis || !type || !rm) {
+                    console.warn('Data tidak lengkap', { jenis, type, rm });
+                    return;
+                }
+
+                if (currentActiveElement && currentActiveElement[0] !== $this[0]) {
+                    currentActiveElement.removeClass('click-active');
+                }
+
+                $this.toggleClass('click-active');
+
+                if (currentActiveElement && currentActiveElement[0] === $this[0]) {
+                    const suffix = getPanelSuffix(type, jenis);
+                    resetHistoryPanel(suffix);
+                    currentActiveElement = null;
+                    return;
+                }
+
+                currentActiveElement = $this;
+                loadHistory(jenis, type, rm, kelompok);
+            }
+        );
+
+        $(document).on('click keydown', function (e) {
+            if (e.type === 'keydown' && e.key !== 'Escape') return;
+            if (!$(e.target).closest('.hasil-input, .hasil-input-hasil-lain, .history-panel-card').length) {
+                if (currentActiveElement) {
+                    currentActiveElement.removeClass('click-active');
+                    currentActiveElement = null;
+                }
+                resetAllHistoryPanels();
+            }
+        });
+
+        $('.card.h-100.border-start.border-primary').addClass('history-panel-card');
+        resetAllHistoryPanels();
+
+        console.log('✅ Multi-Panel History System Ready');
+    });
+</script>
+
+<script>
+    $(document).ready(function() {
+        console.log('=== HASIL LAIN SYSTEM - COMPLETE VERSION ===');
+
+        const csrfToken = $('#csrf_token').val();
+        console.log('CSRF Token:', csrfToken ? 'Found' : 'Missing');
+
+        // Variables untuk modal
+        let currentJenisPemeriksaanModal = null;
+        let currentTableSectionModal = null;
+        let modalSelectedData = [];
+        let modalDataPemeriksaanList = [];
+
+        // Variable untuk hapus tabel
+        let tabelYangAkanDihapus = null;
+
+        // ============================================
+        // 1. TAMBAH TABEL PEMERIKSAAN BARU
+        // ============================================
+        $('#tambahTabelBtn').on('click', function() {
+            const jenisPemeriksaan = $('#jenisPemeriksaanSelect').val();
+
+            if (!jenisPemeriksaan) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('warning', 'Pilih jenis pemeriksaan terlebih dahulu');
+                }
+                return;
+            }
+
+            // Cek apakah tabel sudah ada
+            if ($(`.pemeriksaan-lain-section[data-jenis-pemeriksaan="${jenisPemeriksaan}"]`).length > 0) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('warning', `Tabel ${jenisPemeriksaan} sudah ada`);
+                }
+                return;
+            }
+
+
+            const $allSections = $('.pemeriksaan-lain-section');
+            // Buat slug untuk ID
+            const slug = jenisPemeriksaan.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+
+            // ============================================
+            // PERUBAHAN: Ganti mt-4 dengan pt-3 border-top
+            // ============================================
+            const newTableSection = `
+                <div class="pt-3 border-top pemeriksaan-lain-section"
+                    data-jenis-pemeriksaan="${jenisPemeriksaan}"
+                    id="section_${slug}">
+                    <div class="row">
+                        <div class="col-lg-9 col-md-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0 border-bottom pb-2">
+                                    <i class="ri-list-check me-2"></i>${jenisPemeriksaan}
+                                </h6>
+                                <div>
+                                    <!-- TOMBOL 1: TAMBAH ROW KOSONG -->
+                                    <button type="button" class="btn btn-sm btn-outline-primary tambah-row-btn-hasil-lain"
+                                            data-jenis-pemeriksaan="${jenisPemeriksaan}">
+                                        <i class="ri-add-line me-1"></i>Tambah Row
+                                    </button>
+
+                                    <!-- TOMBOL 2: TAMBAH DENGAN MODAL -->
+                                    <button type="button" class="btn btn-sm btn-outline-success modal-hasil-lain-btn ms-2"
+                                            data-jenis-pemeriksaan="${jenisPemeriksaan}">
+                                        <i class="ri-list-check me-1"></i>Pilih dari Daftar
+                                    </button>
+
+                                    <!-- TOMBOL 3: HAPUS TABEL -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn-hasil-lain ms-2"
+                                            data-jenis-pemeriksaan="${jenisPemeriksaan}">
+                                        <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive overflow-visible">
+                                <table class="table table-bordered table-sm pemeriksaan-lain-table" id="tabel_${slug}">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th width="20%" class="bg-light">Pilih Jenis Pemeriksaan</th>
+                                            <th width="10%" class="bg-light">Satuan</th>
+                                            <th width="15%" class="bg-light">Rujukan</th>
+                                            <th width="5%" class="bg-light">CH</th>
+                                            <th width="5%" class="bg-light">CL</th>
+                                            <th width="15%">Hasil Pengujian</th>
+                                            <th width="10%">Keterangan</th>
+                                            <th width="5%">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Rows akan ditambahkan di sini -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- History Panel -->
+                        <div class="col-lg-3 col-md-12">
+                            <div class="card h-100 border-start border-primary history-panel-card">
+                                <div class="card-header bg-light py-2">
+                                    <h6 class="card-title mb-0 small">
+                                        <i class="ri-history-line me-2 text-primary"></i>History ${jenisPemeriksaan}
+                                    </h6>
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="p-2 border-bottom bg-primary bg-opacity-5" id="currentHoverInfo_${slug}">
+                                        <div class="text-center">
+                                            <div class="text-primary mb-1 small" id="hoverJenisPemeriksaan_${slug}">
+                                                <i class="ri-history-line me-1"></i>
+                                                <span>History Pemeriksaan</span>
+                                            </div>
+                                            <div class="small text-muted" id="hoverTypeInfo_${slug}">
+                                                Klik pada kolom "Hasil"
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="p-2" id="historyPanelContent_${slug}"
+                                        style="height: 300px; overflow-y: auto; font-size: 0.85rem;">
+                                        <div class="text-center text-muted py-4">
+                                            <i class="ri-file-list-3-line display-6 mb-3 opacity-50"></i>
+                                            <p class="mb-1 small">History akan muncul di sini</p>
+                                            <small class="text-muted">Klik pada hasil</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
 
-            $panelContent.html(html);
-        }
-
-        // Format tanggal sederhana
-        function formatDateTimeSimple(dateString) {
-            if (!dateString) return '-';
-            try {
-                if (dateString.includes('.')) {
-                    dateString = dateString.split('.')[0];
+            if ($allSections.length > 0) {
+                // Jika sudah ada section, tambahkan setelah yang terakhir
+                $allSections.last().after(newTableSection);
+            } else {
+                // Jika belum ada section sama sekali
+                // Cari container tombol tambah
+                const $tambahContainer = $('.card:contains("Tambah Pemeriksaan Lain")').closest('.mt-3');
+                if ($tambahContainer.length > 0) {
+                    // Tambahkan sebelum container tombol
+                    $tambahContainer.before(newTableSection);
+                } else {
+                    // Fallback
+                    $('#tambahTabelBtn').closest('.card').before(newTableSection);
                 }
-
-                const date = new Date(dateString);
-                if (isNaN(date.getTime())) return 'Invalid';
-
-                const day = date.getDate().toString().padStart(2, '0');
-                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                const hours = date.getHours().toString().padStart(2, '0');
-                const minutes = date.getMinutes().toString().padStart(2, '0');
-
-                return `${day}/${month} ${hours}:${minutes}`;
-            } catch (e) {
-                return '-';
             }
-        }
 
-        // Tampilkan error
-        function showError(message, panelSuffix) {
-            $(`#historyPanelContent${panelSuffix}`).html(`
-                <div class="text-center py-3 text-danger small">
-                    <i class="ri-error-warning-line me-1"></i>
-                    ${message}
-                </div>
-            `);
-        }
+            // Tambahkan sebelum tombol tambah tabel
+            $('#tambahTabelBtn').closest('.card').before(newTableSection);
 
-        // Event handler untuk KLIK pada input hasil
-        $(document).on('click', '.hasil-input, .hasil-input-lain', function(e) {
-            e.stopPropagation();
+            // Reset select
+            $('#jenisPemeriksaanSelect').val('');
+
+            if (typeof window.showToast === 'function') {
+                window.showToast('success', `Tabel ${jenisPemeriksaan} berhasil ditambahkan`);
+            }
+
+            console.log(`Tabel ${jenisPemeriksaan} ditambahkan dengan semua tombol`);
+        });
+
+        // ============================================
+        // 2. TOMBOL "PILIH DARI DAFTAR" (MODAL CHECKBOX)
+        // ============================================
+        $(document).on('click', '.modal-hasil-lain-btn', function(e) {
             e.preventDefault();
+            console.log('Tombol "Pilih dari Daftar" diklik');
 
-            if (isHistoryLoading) return;
+            const jenisPemeriksaan = $(this).data('jenis-pemeriksaan');
+            const $section = $(this).closest('.pemeriksaan-lain-section');
 
-            const $this = $(this);
-            const jenis = $this.data('jenis') || $this.attr('data-jenis');
-            const type = $this.data('type') || $this.attr('data-type');
-            const rm = $this.data('rm') || $this.attr('data-rm') || '{{ $pasien->rm_pasien }}';
+            console.log('Jenis Pemeriksaan:', jenisPemeriksaan);
+            console.log('Section ditemukan:', $section.length > 0);
 
-            if (!jenis || !rm || !type) return;
+            // Simpan referensi
+            currentJenisPemeriksaanModal = jenisPemeriksaan;
+            currentTableSectionModal = $section;
 
-            // Hapus active class dari element sebelumnya
-            if (currentActiveElement && currentActiveElement[0] !== $this[0]) {
-                currentActiveElement.removeClass('click-active');
+            // Reset modal
+            modalSelectedData = [];
+            $('#searchModalDataPemeriksaan').val('');
+            $('#selectAllModal').prop('checked', false);
+            updateSelectedCountModal();
+
+            // Update modal title
+            $('#modalTitleJenisPemisah').text(`Pilih Data Pemeriksaan - ${jenisPemeriksaan}`);
+
+            // Tampilkan loading
+            $('#modalDataPemeriksaanList').html(`
+                <tr>
+                    <td colspan="5" class="text-center py-4">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                        Memuat data pemeriksaan...
+                    </td>
+                </tr>
+            `);
+
+            // Load data
+            loadModalDataPemeriksaan(jenisPemeriksaan);
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('modalPilihDataPemeriksaan'));
+            modal.show();
+        });
+
+        function loadModalDataPemeriksaan(jenisPemeriksaan) {
+            console.log('Loading modal data for:', jenisPemeriksaan);
+
+            $.ajax({
+                url: '/hasil-lain/get-pemeriksaan-by-jenis',
+                method: 'GET',
+                data: {
+                    jenis_pemeriksaan: jenisPemeriksaan
+                },
+                success: function(response) {
+                    console.log('Modal data response:', response);
+
+                    if (response.success && response.data && response.data.length > 0) {
+                        modalDataPemeriksaanList = response.data;
+                        renderModalDataPemeriksaanList();
+                    } else {
+                        $('#modalDataPemeriksaanList').html(`
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    <i class="ri-inbox-line me-2"></i>
+                                    Tidak ada data pemeriksaan untuk jenis ini
+                                </td>
+                            </tr>
+                        `);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Modal load error:', error);
+                    $('#modalDataPemeriksaanList').html(`
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-danger">
+                                <i class="ri-error-warning-line me-2"></i>
+                                Gagal memuat data
+                            </td>
+                        </tr>
+                    `);
+                }
+            });
+        }
+
+        function renderModalDataPemeriksaanList(filterTerm = '') {
+            const $list = $('#modalDataPemeriksaanList');
+            $list.empty();
+
+            let filteredData = modalDataPemeriksaanList;
+
+            // Filter jika ada search term
+            if (filterTerm) {
+                const term = filterTerm.toLowerCase();
+                filteredData = modalDataPemeriksaanList.filter(item => {
+                    const searchText = (item.id_data_pemeriksaan + ' ' + item.data_pemeriksaan + ' ' + (item.rujukan || '')).toLowerCase();
+                    return searchText.includes(term);
+                });
             }
 
-            // Toggle active class
-            $this.toggleClass('click-active');
-
-            // Jika klik kedua pada element yang sama, reset panel yang sesuai
-            if ($this.hasClass('click-active') && currentActiveElement && currentActiveElement[0] === $this[0]) {
-                $this.removeClass('click-active');
-                resetHistoryPanel(getPanelSuffix(type, jenis));
-                currentActiveElement = null;
+            if (filteredData.length === 0) {
+                $list.html(`
+                    <tr>
+                        <td colspan="5" class="text-center py-4 text-muted">
+                            <i class="ri-search-line me-2"></i>
+                            Tidak ditemukan data
+                        </td>
+                    </tr>
+                `);
                 return;
             }
 
-            // Set element aktif baru
-            currentActiveElement = $this;
+            filteredData.forEach((item, index) => {
+                const isSelected = modalSelectedData.some(selected => selected.id === item.id_data_pemeriksaan);
 
-            // Load history
-            loadHistory(jenis, type, rm);
+                const row = `
+                    <tr class="${isSelected ? 'table-primary' : ''}">
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input modal-data-checkbox"
+                                    type="checkbox"
+                                    data-id="${item.id_data_pemeriksaan}"
+                                    data-nama="${item.data_pemeriksaan}"
+                                    data-satuan="${item.satuan || ''}"
+                                    data-rujukan="${item.rujukan || ''}"
+                                    data-ch="${item.ch || ''}"
+                                    data-cl="${item.cl || ''}"
+                                    ${isSelected ? 'checked' : ''}>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark">${item.id_data_pemeriksaan}</span>
+                        </td>
+                        <td>${item.data_pemeriksaan}</td>
+                        <td>${item.satuan || '-'}</td>
+                        <td>${item.rujukan || '-'}</td>
+                    </tr>
+                `;
+
+                $list.append(row);
+            });
+        }
+
+        // Search di modal
+        $('#searchModalDataPemeriksaan').on('input', function() {
+            const searchTerm = $(this).val();
+            renderModalDataPemeriksaanList(searchTerm);
         });
 
-        // Event handler untuk klik di luar element
-        $(document).on('click', function(e) {
-            if (!$(e.target).closest('.hasil-input, .hasil-input-lain, .history-panel-card').length) {
-                if (currentActiveElement) {
-                    currentActiveElement.removeClass('click-active');
-                    currentActiveElement = null;
+        // Clear search modal
+        $('#clearSearchModal').on('click', function() {
+            $('#searchModalDataPemeriksaan').val('').trigger('input');
+        });
+
+        // Select all modal
+        $('#selectAllModal').on('change', function() {
+            const isChecked = $(this).prop('checked');
+            const visibleCheckboxes = $('.modal-data-checkbox:visible');
+
+            if (isChecked) {
+                visibleCheckboxes.each(function() {
+                    const $checkbox = $(this);
+                    if (!$checkbox.prop('checked')) {
+                        $checkbox.prop('checked', true);
+                        addToModalSelected($checkbox);
+                    }
+                });
+            } else {
+                visibleCheckboxes.each(function() {
+                    const $checkbox = $(this);
+                    if ($checkbox.prop('checked')) {
+                        $checkbox.prop('checked', false);
+                        removeFromModalSelected($checkbox.data('id'));
+                    }
+                });
+            }
+
+            updateSelectedCountModal();
+        });
+
+        // Individual checkbox selection
+        $(document).on('change', '.modal-data-checkbox', function() {
+            const $checkbox = $(this);
+
+            if ($checkbox.prop('checked')) {
+                addToModalSelected($checkbox);
+            } else {
+                removeFromModalSelected($checkbox.data('id'));
+                $('#selectAllModal').prop('checked', false);
+            }
+
+            updateSelectedCountModal();
+        });
+
+        function addToModalSelected($checkbox) {
+            const data = {
+                id: $checkbox.data('id'),
+                nama: $checkbox.data('nama'),
+                satuan: $checkbox.data('satuan'),
+                rujukan: $checkbox.data('rujukan'),
+                ch: $checkbox.data('ch'),
+                cl: $checkbox.data('cl')
+            };
+
+            // Cek apakah sudah ada
+            const existingIndex = modalSelectedData.findIndex(item => item.id === data.id);
+            if (existingIndex === -1) {
+                modalSelectedData.push(data);
+            }
+        }
+
+        function removeFromModalSelected(id) {
+            modalSelectedData = modalSelectedData.filter(item => item.id !== id);
+        }
+
+        function updateSelectedCountModal() {
+            $('#selectedCountModal').text(`${modalSelectedData.length} item dipilih`);
+        }
+
+        // Tambah data ke tabel dari modal
+        $('#tambahDataPemeriksaanBtn').on('click', function() {
+            console.log('Tombol tambah dari modal diklik');
+            console.log('Selected data:', modalSelectedData);
+
+            if (modalSelectedData.length === 0) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('warning', 'Pilih minimal satu data pemeriksaan');
                 }
-                resetAllHistoryPanels();
+                return;
+            }
+
+            if (!currentTableSectionModal || !currentJenisPemeriksaanModal) {
+                console.error('Table section tidak ditemukan');
+                return;
+            }
+
+            const $tbody = currentTableSectionModal.find('tbody');
+            const currentRowCount = $tbody.find('tr').length;
+
+            console.log('Current row count:', currentRowCount);
+            console.log('Jenis pemeriksaan:', currentJenisPemeriksaanModal);
+
+            modalSelectedData.forEach((item, index) => {
+                const rowIndex = currentRowCount + index;
+
+                const newRow = `
+                    <tr data-index="${rowIndex}" data-jenis-pemeriksaan="${currentJenisPemeriksaanModal}">
+                        <td class="search-cell-hasil-lain">
+                            <div class="position-relative">
+                                <input type="text"
+                                    class="form-control form-control-sm search-data-pemeriksaan-hasil-lain"
+                                    placeholder="Cari data pemeriksaan..."
+                                    value="${item.nama}"
+                                    data-jenis-pemeriksaan="${currentJenisPemeriksaanModal}"
+                                    data-index="${rowIndex}"
+                                    autocomplete="off"
+                                    readonly>
+
+                                <div class="search-results-hasil-lain dropdown-menu"
+                                    style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">
+                                </div>
+
+                                <input type="hidden" class="id-data-pemeriksaan-input" value="${item.id}">
+                                <input type="hidden" class="jenis-pengujian-input" value="${item.nama}">
+                                <input type="hidden" class="row-id-input" value="">
+                            </div>
+                        </td>
+
+                        <td class="bg-light satuan-cell-hasil-lain">
+                            <span class="satuan-display-hasil-lain">${item.satuan || '-'}</span>
+                        </td>
+
+                        <td class="bg-light rujukan-cell-hasil-lain">
+                            <span class="rujukan-display-hasil-lain">${item.rujukan || '-'}</span>
+                        </td>
+
+                        <td class="bg-light ch-cell-hasil-lain">
+                            <span class="ch-display-hasil-lain">${item.ch || '-'}</span>
+                        </td>
+
+                        <td class="bg-light cl-cell-hasil-lain">
+                            <span class="cl-display-hasil-lain">${item.cl || '-'}</span>
+                        </td>
+
+                        <td class="hasil-cell-hasil-lain">
+                            <input type="text"
+                                class="form-control form-control-sm hasil-input-hasil-lain"
+                                value=""
+                                placeholder="Hasil"
+                                data-id=""
+                                data-type="hasil_lain"
+                                data-rujukan="${item.rujukan || ''}"
+                                data-ch="${item.ch || ''}"
+                                data-cl="${item.cl || ''}"
+                                autocomplete="off">
+                        </td>
+
+                        <td class="keterangan-cell-hasil-lain">
+                            <div class="keterangan-display-hasil-lain bg-success bg-opacity-10 text-success rounded py-1 px-2 text-center"
+                                data-keterangan="-">
+                                <strong>-</strong>
+                            </div>
+                            <input type="hidden" class="keterangan-input-hasil-lain" value="-">
+                        </td>
+
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn-hasil-lain">
+                                <i class="ri-delete-bin-line"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+
+                $tbody.append(newRow);
+                console.log(`Row ${index} ditambahkan untuk ${item.nama}`);
+
+                // Simpan ke database
+                setTimeout(() => {
+                    saveDataPemeriksaanToDatabase($tbody.find('tr:last-child'), item.id, item.nama, item.satuan, item.rujukan);
+                }, 100);
+            });
+
+            // Tutup modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalPilihDataPemeriksaan'));
+            modal.hide();
+
+            // Reset modal
+            modalSelectedData = [];
+
+            if (typeof window.showToast === 'function') {
+                window.showToast('success', `${modalSelectedData.length} data pemeriksaan berhasil ditambahkan`);
             }
         });
 
-        // Event handler untuk ESC key
+        // ============================================
+        // 3. TOMBOL "HAPUS TABEL"
+        // ============================================
+        $(document).on('click', '.hapus-tabel-btn-hasil-lain', function(e) {
+            e.preventDefault();
+            console.log('Tombol hapus tabel diklik');
+
+            const jenisPemeriksaan = $(this).data('jenis-pemeriksaan');
+            const $section = $(this).closest('.pemeriksaan-lain-section');
+
+            console.log('Jenis Pemeriksaan untuk dihapus:', jenisPemeriksaan);
+
+            // Simpan referensi
+            tabelYangAkanDihapus = {
+                jenisPemeriksaan: jenisPemeriksaan,
+                $section: $section
+            };
+
+            // Update modal konfirmasi
+            $('#modalNamaTabel').text(jenisPemeriksaan);
+
+            // Show modal konfirmasi
+            const modal = new bootstrap.Modal(document.getElementById('modalKonfirmasiHapusTabel'));
+            modal.show();
+        });
+
+        // Konfirmasi hapus tabel
+        $('#konfirmasiHapusTabelBtn').on('click', function() {
+            if (!tabelYangAkanDihapus) return;
+
+            const { jenisPemeriksaan, $section } = tabelYangAkanDihapus;
+
+            console.log('Menghapus tabel:', jenisPemeriksaan);
+
+            // Hapus semua rows terlebih dahulu jika ada data di database
+            $('#konfirmasiHapusTabelBtn').on('click', function () {
+                if (!tabelYangAkanDihapus) return;
+
+                const { $section, jenisPemeriksaan } = tabelYangAkanDihapus;
+
+                const ids = [];
+                $section.find('tr').each(function () {
+                    const id = $(this).data('id');
+                    if (id) ids.push(id);
+                });
+
+                if (ids.length === 0) {
+                    $section.remove();
+                    return;
+                }
+
+                $.ajax({
+                    url: '/hasil-lain/destroy-multiple',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    data: { ids },
+                    success: function (res) {
+                        if (res.success) {
+                            $section.remove();
+                            window.showToast?.('success', res.message);
+                        } else {
+                            window.showToast?.('danger', res.message || 'Gagal menghapus tabel');
+                        }
+                    },
+                    error: function () {
+                        window.showToast?.('danger', 'Terjadi kesalahan saat menghapus tabel');
+                    }
+                });
+
+                bootstrap.Modal.getInstance(
+                    document.getElementById('modalKonfirmasiHapusTabel')
+                ).hide();
+
+                tabelYangAkanDihapus = null;
+            });
+
+
+            // Tutup modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('modalKonfirmasiHapusTabel'));
+            modal.hide();
+
+            // Reset variable
+            tabelYangAkanDihapus = null;
+        });
+
+        // ============================================
+        // 4. TAMBAH ROW MANUAL
+        // ============================================
+        $(document).on('click', '.tambah-row-btn-hasil-lain', function(e) {
+            e.preventDefault();
+            console.log('Tombol tambah row diklik');
+
+            const jenisPemeriksaan = $(this).data('jenis-pemeriksaan');
+            const $section = $(this).closest('.pemeriksaan-lain-section');
+            const $tbody = $section.find('tbody');
+            const rowCount = $tbody.find('tr').length;
+
+            console.log('Adding row for jenis:', jenisPemeriksaan, 'rowCount:', rowCount);
+
+            const newRow = `
+                <tr data-index="${rowCount}" data-jenis-pemeriksaan="${jenisPemeriksaan}">
+                    <td class="search-cell-hasil-lain">
+                        <div class="position-relative">
+                            <input type="text"
+                                class="form-control form-control-sm search-data-pemeriksaan-hasil-lain"
+                                placeholder="Cari data pemeriksaan..."
+                                data-jenis-pemeriksaan="${jenisPemeriksaan}"
+                                data-index="${rowCount}"
+                                autocomplete="off">
+
+                            <div class="search-results-hasil-lain dropdown-menu"
+                                style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">
+                            </div>
+
+                            <input type="hidden" class="id-data-pemeriksaan-input" value="">
+                            <input type="hidden" class="jenis-pengujian-input" value="">
+                            <input type="hidden" class="row-id-input" value="">
+                        </div>
+                    </td>
+
+                    <td class="bg-light satuan-cell-hasil-lain">
+                        <span class="satuan-display-hasil-lain">-</span>
+                    </td>
+
+                    <td class="bg-light rujukan-cell-hasil-lain">
+                        <span class="rujukan-display-hasil-lain">-</span>
+                    </td>
+
+                    <td class="bg-light ch-cell-hasil-lain">
+                        <span class="ch-display-hasil-lain">-</span>
+                    </td>
+
+                    <td class="bg-light cl-cell-hasil-lain">
+                        <span class="cl-display-hasil-lain">-</span>
+                    </td>
+
+                    <td class="hasil-cell-hasil-lain">
+                        <input type="text"
+                            class="form-control form-control-sm hasil-input-hasil-lain"
+                            value=""
+                            placeholder="Hasil"
+                            data-id=""
+                            data-type="hasil_lain"
+                            autocomplete="off">
+                    </td>
+
+                    <td class="keterangan-cell-hasil-lain">
+                        <div class="keterangan-display-hasil-lain bg-success bg-opacity-10 text-success rounded py-1 px-2 text-center"
+                            data-keterangan="-">
+                            <strong>-</strong>
+                        </div>
+                        <input type="hidden" class="keterangan-input-hasil-lain" value="-">
+                    </td>
+
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn-hasil-lain">
+                            <i class="ri-delete-bin-line"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+            $tbody.append(newRow);
+            console.log('Row added successfully');
+
+            // Focus ke input search
+            setTimeout(() => {
+                $tbody.find('tr:last-child .search-data-pemeriksaan-hasil-lain').focus();
+            }, 100);
+        });
+
+        // ============================================
+        // 5. SEARCH REALTIME DATA PEMERIKSAAN
+        // ============================================
+        $(document).on('input', '.search-data-pemeriksaan-hasil-lain', function() {
+            const $input = $(this);
+            const searchTerm = $input.val().trim();
+            const $results = $input.next('.search-results-hasil-lain');
+            const jenisPemeriksaan = $input.data('jenis-pemeriksaan');
+
+            clearTimeout($input.data('searchTimer'));
+
+            if (searchTerm.length < 2) {
+                $results.hide().empty();
+                return;
+            }
+
+            $input.data('searchTimer', setTimeout(() => {
+                console.log('Searching for:', searchTerm, 'in jenis:', jenisPemeriksaan);
+
+                $.ajax({
+                    url: '/hasil-lain/search-data-pemeriksaan',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrfToken
+                    },
+                    data: {
+                        search: searchTerm,
+                        jenis_pemeriksaan: jenisPemeriksaan
+                    },
+                    beforeSend: function() {
+                        $results.html('<div class="dropdown-item">Mencari data...</div>').show();
+                    },
+                    success: function(response) {
+                        console.log('Search response:', response);
+                        $results.empty();
+
+                        if (response.success && response.data && response.data.length > 0) {
+                            response.data.forEach(function(item) {
+                                const option = `
+                                    <button type="button" class="dropdown-item pilih-data-pemeriksaan-option"
+                                            data-id="${item.id_data_pemeriksaan}"
+                                            data-nama="${item.data_pemeriksaan}"
+                                            data-satuan="${item.satuan || ''}"
+                                            data-rujukan="${item.rujukan || ''}"
+                                            data-ch="${item.ch || ''}"
+                                            data-cl="${item.cl || ''}">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong>${item.data_pemeriksaan}</strong>
+                                                <div class="small text-muted">
+                                                    ${item.satuan || ''} | ${item.rujukan || ''}
+                                                </div>
+                                            </div>
+                                            <i class="ri-arrow-right-s-line text-muted"></i>
+                                        </div>
+                                    </button>
+                                `;
+                                $results.append(option);
+                            });
+                        } else {
+                            $results.html('<div class="dropdown-item text-muted">Tidak ditemukan data</div>');
+                        }
+
+                        $results.show();
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Search error:', error);
+                        $results.html('<div class="dropdown-item text-danger">Error</div>').show();
+                    }
+                });
+            }, 500));
+        });
+
+        // ============================================
+        // 6. PILIH DATA DARI SEARCH REALTIME
+        // ============================================
+        $(document).on('click', '.pilih-data-pemeriksaan-option', function(e) {
+            e.preventDefault();
+            console.log('Data pemeriksaan dipilih dari search');
+
+            const $option = $(this);
+            const $row = $option.closest('tr');
+
+            // Get data
+            const idDataPemeriksaan = $option.data('id');
+            const nama = $option.data('nama');
+            const satuan = $option.data('satuan') || '-';
+            const rujukan = $option.data('rujukan') || '-';
+            const ch = $option.data('ch') || '-';
+            const cl = $option.data('cl') || '-';
+
+            console.log('Selected data:', { idDataPemeriksaan, nama, satuan, rujukan });
+
+            // Update row
+            $row.find('.search-data-pemeriksaan-hasil-lain').val(nama).attr('readonly', true);
+            $row.find('.search-results-hasil-lain').hide().empty();
+
+            $row.find('.id-data-pemeriksaan-input').val(idDataPemeriksaan);
+            $row.find('.jenis-pengujian-input').val(nama);
+
+            $row.find('.satuan-display-hasil-lain').text(satuan);
+            $row.find('.rujukan-display-hasil-lain').text(rujukan);
+            $row.find('.ch-display-hasil-lain').text(ch);
+            $row.find('.cl-display-hasil-lain').text(cl);
+
+            // Update hasil input
+            const $hasilInput = $row.find('.hasil-input-hasil-lain');
+            $hasilInput.data('rujukan', rujukan);
+            $hasilInput.data('ch', ch);
+            $hasilInput.data('cl', cl);
+
+            // Update form names
+            updateFormNames($row);
+
+            // Save to database
+            saveDataPemeriksaanToDatabase($row, idDataPemeriksaan, nama, satuan, rujukan);
+        });
+
+        function saveDataPemeriksaanToDatabase($row, idDataPemeriksaan, jenisPengujian, satuan, rujukan) {
+            const noLab = window.pasienNoLab || '{{ $pasien->no_lab }}';
+            const jenisPemeriksaan = $row.data('jenis-pemeriksaan');
+
+            console.log('Saving to database:', { noLab, jenisPemeriksaan, idDataPemeriksaan });
+
+            if (!noLab) {
+                console.error('No Lab tidak ditemukan');
+                return;
+            }
+
+            $.ajax({
+                url: '/hasil-lain/store-manual',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                data: {
+                    no_lab: noLab,
+                    jenis_pemeriksaan: jenisPemeriksaan,
+                    id_data_pemeriksaan: idDataPemeriksaan,
+                    jenis_pengujian: jenisPengujian,
+                    satuan: satuan,
+                    rujukan: rujukan
+                },
+                beforeSend: function() {
+                    console.log('Sending save request...');
+                    $row.addClass('table-warning');
+                },
+                success: function(response) {
+                    console.log('Save response:', response);
+
+                    if (response.success) {
+                        // Update row dengan ID dari database
+                        $row.data('id', response.data.id_hasil_lain);
+                        $row.find('.row-id-input').val(response.data.id_hasil_lain);
+                        $row.find('.hasil-input-hasil-lain').data('id', response.data.id_hasil_lain);
+
+                        // Update form inputs dengan format yang benar
+                        updateFormInputs($row, response.data.id_hasil_lain);
+
+                        setTimeout(() => {
+                            $row.removeClass('table-warning').addClass('table-success');
+                            setTimeout(() => $row.removeClass('table-success'), 2000);
+                        }, 100);
+
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('success', 'Data berhasil disimpan');
+                        }
+                    } else {
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('danger', response.message || 'Gagal menyimpan data');
+                        }
+                        $row.removeClass('table-warning');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Save error:', error);
+                    console.log('Response:', xhr.responseText);
+
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('danger', 'Gagal menyimpan data');
+                    }
+                    $row.removeClass('table-warning');
+                }
+            });
+        }
+
+        function updateFormNames($row) {
+            const rowIndex = $row.data('index');
+            const jenisPemeriksaan = $row.data('jenis-pemeriksaan');
+
+            $row.find('.id-data-pemeriksaan-input').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][id_data_pemeriksaan]`);
+            $row.find('.jenis-pengujian-input').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][jenis_pengujian]`);
+            $row.find('.row-id-input').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][id]`);
+            $row.find('.hasil-input-hasil-lain').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][hasil_pengujian]`);
+            $row.find('.keterangan-input-hasil-lain').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][keterangan]`);
+
+            // Update ch dan cl jika ada
+            const chValue = $row.find('.ch-display-hasil-lain').text();
+            const clValue = $row.find('.cl-display-hasil-lain').text();
+
+            if (!$row.find('.ch-input-hidden').length) {
+                $row.find('.ch-cell-hasil-lain').append(`<input type="hidden" class="ch-input-hidden" name="hasil_lain[${jenisPemeriksaan}][${rowIndex}][ch]" value="${chValue}">`);
+            }
+            if (!$row.find('.cl-input-hidden').length) {
+                $row.find('.cl-cell-hasil-lain').append(`<input type="hidden" class="cl-input-hidden" name="hasil_lain[${jenisPemeriksaan}][${rowIndex}][cl]" value="${clValue}">`);
+            }
+        }
+
+        function updateFormInputs($row, idHasilLain) {
+            const rowIndex = $row.data('index');
+            const jenisPemeriksaan = $row.data('jenis-pemeriksaan');
+
+            // Update semua input names dengan format yang benar
+            updateFormNames($row);
+
+            // Update row-id input
+            $row.find('.row-id-input').val(idHasilLain);
+        }
+
+        // ============================================
+        // 7. UPDATE HASIL PENGUJIAN
+        // ============================================
+        $(document).on('input', '.hasil-input-hasil-lain', function() {
+            const $input = $(this);
+            const id = $input.data('id');
+            const value = $input.val();
+
+            console.log('Hasil input changed - ID:', id, 'Value:', value);
+
+            if (!id) {
+                console.log('ID belum ada, data belum disimpan ke database');
+                return;
+            }
+
+            // Update keterangan
+            updateKeteranganHasilLain($input);
+
+            // Save after delay
+            clearTimeout($input.data('saveTimer'));
+            $input.data('saveTimer', setTimeout(() => {
+                saveHasilPengujian(id, value, $input);
+            }, 800));
+        });
+
+        function updateKeteranganHasilLain($input) {
+            const value = $input.val();
+            const rujukan = $input.data('rujukan') || '';
+            const ch = $input.data('ch') || '';
+            const cl = $input.data('cl') || '';
+            const $row = $input.closest('tr');
+            const $display = $row.find('.keterangan-display-hasil-lain');
+            const $hidden = $row.find('.keterangan-input-hasil-lain');
+
+            console.log('Updating keterangan:', { value, rujukan, ch, cl });
+
+            // Gunakan fungsi calculateKeterangan jika ada
+            if (typeof window.calculateKeterangan === 'function') {
+                const keterangan = window.calculateKeterangan(value, $input);
+                console.log('Keterangan calculated:', keterangan);
+
+                // Update display
+                updateKeteranganDisplay($display, keterangan);
+                $hidden.val(keterangan);
+            } else {
+                // Fallback logic
+                let keterangan = '-';
+
+                if (value && value.trim() !== '') {
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue)) {
+                        // Cek critical values
+                        if (ch && ch !== '-' && ch !== '') {
+                            const chNum = parseFloat(ch);
+                            if (!isNaN(chNum) && numValue > chNum) {
+                                keterangan = 'CH';
+                            }
+                        }
+
+                        if (cl && cl !== '-' && cl !== '') {
+                            const clNum = parseFloat(cl);
+                            if (!isNaN(clNum) && numValue < clNum) {
+                                keterangan = 'CL';
+                            }
+                        }
+
+                        // Cek rujukan
+                        if (rujukan && rujukan !== '-' && rujukan !== '' && keterangan === '-') {
+                            if (rujukan.includes('-')) {
+                                const parts = rujukan.split('-');
+                                if (parts.length === 2) {
+                                    const min = parseFloat(parts[0]);
+                                    const max = parseFloat(parts[1]);
+
+                                    if (!isNaN(min) && !isNaN(max)) {
+                                        if (numValue < min) keterangan = 'L';
+                                        else if (numValue > max) keterangan = 'H';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Update display
+                updateKeteranganDisplay($display, keterangan);
+                $hidden.val(keterangan);
+
+                console.log('Keterangan updated to:', keterangan);
+            }
+        }
+
+        function updateKeteranganDisplay($display, keterangan) {
+            $display.removeClass('bg-danger bg-opacity-10 bg-primary bg-opacity-10 bg-success bg-opacity-10 text-danger text-primary text-success');
+
+            if (keterangan === 'CH' || keterangan === 'H') {
+                $display.addClass('bg-danger bg-opacity-10 text-danger').html('<strong>' + keterangan + '</strong>');
+            } else if (keterangan === 'CL' || keterangan === 'L') {
+                $display.addClass('bg-primary bg-opacity-10 text-primary').html('<strong>' + keterangan + '</strong>');
+            } else {
+                $display.addClass('bg-success bg-opacity-10 text-success').html('<strong>-</strong>');
+            }
+
+            $display.data('keterangan', keterangan);
+        }
+
+        function saveHasilPengujian(id, value, $input) {
+            const $row = $input.closest('tr');
+            const keterangan = $row.find('.keterangan-input-hasil-lain').val();
+
+            console.log('Saving hasil pengujian - ID:', id, 'Value:', value, 'Keterangan:', keterangan);
+
+            $.ajax({
+                url: '/hasil-lain/update-hasil-pengujian/' + id,
+                method: 'PUT',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                data: {
+                    hasil_pengujian: value,
+                    keterangan: keterangan
+                },
+                beforeSend: function() {
+                    $input.addClass('is-changing');
+                },
+                success: function(response) {
+                    console.log('Save response:', response);
+
+                    if (response.success) {
+                        $input.removeClass('is-changing').addClass('is-changed');
+
+                        if (typeof window.updateSaveStatus === 'function') {
+                            window.updateSaveStatus();
+                        }
+
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('success', 'Hasil berhasil disimpan');
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('Save error:', error);
+                    $input.removeClass('is-changing').addClass('has-error');
+
+                    if (typeof window.showToast === 'function') {
+                        window.showToast('danger', 'Gagal menyimpan hasil');
+                    }
+                }
+            });
+        }
+
+        // ============================================
+        // 8. HAPUS ROW INDIVIDUAL
+        // ============================================
+        $(document).on('click', '.hapus-row-btn-hasil-lain', function () {
+            const $row = $(this).closest('tr');
+            const rowId = $row.data('id');
+
+            if (!rowId) {
+                $row.remove();
+                return;
+            }
+
+            if (!confirm('Yakin ingin menghapus data ini secara permanen?')) return;
+
+            $.ajax({
+                url: '/hasil-lain/destroy/' + rowId,
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                success: function (res) {
+                    if (res.success) {
+                        $row.remove();
+                        window.showToast?.('success', res.message);
+                    } else {
+                        window.showToast?.('danger', res.message || 'Gagal menghapus data');
+                    }
+                },
+                error: function () {
+                    window.showToast?.('danger', 'Gagal menghapus data');
+                }
+            });
+        });
+
+
+        // ============================================
+        // 9. CLOSE DROPDOWN SAAT KLIK DI LUAR
+        // ============================================
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.search-cell-hasil-lain').length) {
+                $('.search-results-hasil-lain').hide().empty();
+            }
+        });
+
+        // ============================================
+        // 10. ESCAPE KEY UNTUK TUTUP DROPDOWN
+        // ============================================
         $(document).on('keydown', function(e) {
             if (e.key === 'Escape') {
-                if (currentActiveElement) {
-                    currentActiveElement.removeClass('click-active');
-                    currentActiveElement = null;
-                }
-                resetAllHistoryPanels();
+                $('.search-results-hasil-lain').hide().empty();
             }
         });
 
-        // Fungsi reset history panel tertentu
-        function resetHistoryPanel(panelSuffix) {
-            if ($(`#hoverJenisPemeriksaan${panelSuffix}`).length === 0) return;
-
-            $(`#hoverJenisPemeriksaan${panelSuffix}`).html(`
-                <i class="ri-history-line me-1"></i>
-                <span>History</span>
-            `);
-            $(`#hoverTypeInfo${panelSuffix}`).text('Klik pada hasil untuk melihat riwayat');
-            $(`#historyPanelContent${panelSuffix}`).html(`
-                <div class="text-center py-4 text-muted small">
-                    <i class="ri-arrow-up-line display-6 mb-2 opacity-25"></i>
-                    <div>Klik hasil untuk melihat riwayat</div>
-                </div>
-            `);
-        }
-
-        // Fungsi reset semua panel
-        function resetAllHistoryPanels() {
-            // Reset panel yang pasti ada
-            const fixedPanels = ['_hematology', '_kimia'];
-
-            fixedPanels.forEach(suffix => {
-                if ($(`#hoverJenisPemeriksaan${suffix}`).length > 0) {
-                    resetHistoryPanel(suffix);
-                }
-            });
-
-            // Reset panel pemeriksaan lain secara dinamis
-            $('[id^="hoverJenisPemeriksaan_"]').each(function() {
-                const id = $(this).attr('id');
-                const suffix = '_' + id.replace('hoverJenisPemeriksaan_', '');
-
-                // Skip panel tetap yang sudah direset
-                if (!fixedPanels.includes(suffix)) {
-                    resetHistoryPanel(suffix);
-                }
-            });
-        }
-
-        // Inisialisasi data attributes
-        $(window).on('load', function() {
-            const currentRm = '{{ $pasien->rm_pasien }}';
-
-            $('.hasil-input, .hasil-input-lain').each(function() {
-                const $this = $(this);
-                if (!$this.attr('data-rm')) {
-                    $this.attr('data-rm', currentRm);
-                }
-            });
-
-            // Tambahkan class untuk identifikasi
-            $('.card.h-100.border-start.border-primary').addClass('history-panel-card');
-        });
-
-        // Inisialisasi semua panel
-        resetAllHistoryPanels();
-        console.log('✅ Multi-Panel History System Ready');
+        console.log('✅ Hasil Lain System Complete Version Loaded');
+        console.log('Fitur yang tersedia:');
+        console.log('1. Tambah tabel baru dari dropdown');
+        console.log('2. Tombol "Tambah Row" untuk row kosong');
+        console.log('3. Tombol "Pilih dari Daftar" untuk modal checkbox');
+        console.log('4. Tombol "Hapus Tabel" dengan konfirmasi');
+        console.log('5. Search realtime data pemeriksaan');
+        console.log('6. Auto-save ke database');
+        console.log('7. Auto-calculate keterangan');
+        console.log('8. History panel untuk setiap tabel');
     });
 </script>
+
+
+
 @endsection

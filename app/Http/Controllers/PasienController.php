@@ -571,7 +571,7 @@ class PasienController extends Controller
         * KIMIA (ORDER BY dp.urutan)
         * ========================= */
         $kimia = $pasien->kimia()
-            ->join('data_pemeriksaan as dp', 'pemeriksaan_kimia.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
+            ->leftJoin('data_pemeriksaan as dp', 'pemeriksaan_kimia.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
             ->with('dataPemeriksaan.jenisPemeriksaan')
             ->orderBy('dp.urutan', 'asc') // 🔥 FIX
             ->select('pemeriksaan_kimia.*')
@@ -581,36 +581,73 @@ class PasienController extends Controller
         * PEMERIKSAAN LAIN (ORDER BY dp.urutan)
         * ========================= */
         $hasil_lain = DB::table('hasil_pemeriksaan_lain as hpl')
-            ->leftJoin('data_pemeriksaan as dp', 'hpl.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
-            ->leftJoin('jenis_pemeriksaan_1 as jp1', 'dp.id_jenis_pemeriksaan_1', '=', 'jp1.id_jenis_pemeriksaan_1')
-            ->where('hpl.no_lab', $no_lab)
-            ->whereNull('hpl.deleted_at')
-            ->select(
-                'hpl.*',
-                'dp.data_pemeriksaan',
-                'dp.satuan as satuan_pemeriksaan',
-                'dp.rujukan as rujukan_pemeriksaan',
-                'dp.metode',
-                'dp.ch', // TAMBAHKAN INI
-                'dp.cl',
-                'jp1.nama_pemeriksaan as jenis_pemeriksaan_nama',
-                'jp1.id_jenis_pemeriksaan_1 as jenis_pemeriksaan_id'
-            )
-            ->orderBy('dp.urutan', 'asc') // 🔥 FIX
-            ->get();
+        ->leftJoin('data_pemeriksaan as dp', 'hpl.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
+        ->leftJoin('jenis_pemeriksaan_1 as jp1', 'dp.id_jenis_pemeriksaan_1', '=', 'jp1.id_jenis_pemeriksaan_1')
+        ->where('hpl.no_lab', $no_lab)
+        ->whereNull('hpl.deleted_at')
+        ->select(
+            'hpl.*',
+            'dp.data_pemeriksaan',
+            'dp.satuan as satuan_pemeriksaan',
+            'dp.rujukan as rujukan_pemeriksaan',
+            'dp.metode',
+            'dp.ch',
+            'dp.cl',
+            'dp.urutan as urutan_pemeriksaan', // TAMBAHKAN
+            'jp1.nama_pemeriksaan as jenis_pemeriksaan_nama',
+            'jp1.id_jenis_pemeriksaan_1 as jenis_pemeriksaan_id',
+            DB::raw("COALESCE(jp1.nama_pemeriksaan, 'Lainnya') as kelompok_pemeriksaan") // GUNAKAN COALESCE
+        )
+        ->orderBy('hpl.created_at', 'asc') // URUTKAN BERDASARKAN WAKTU DIBUAT
+        ->orderBy('dp.urutan', 'asc') // KEMUDIAN URUTKAN PADA DATA PEMERIKSAAN
+        ->orderBy('dp.data_pemeriksaan', 'asc')
+        ->get();
 
         /* =========================
-        * GROUPING (GAYA ASLI – TIDAK DIUBAH)
+        * GROUPING DENGAN URUTAN YANG TEPAT
         * ========================= */
         $hasil_lain_grouped = [];
+        $jenis_pemeriksaan_order = []; // Untuk menyimpan urutan jenis pemeriksaan
+
+        // Pertama, urutkan berdasarkan created_at
+        $hasil_lain = $hasil_lain->sortBy('created_at');
+
         foreach ($hasil_lain as $item) {
-            $jenis_pemeriksaan = $item->jenis_pemeriksaan_nama ?? 'Lainnya';
+            // Gunakan COALESCE untuk menangani null
+            $jenis_pemeriksaan = $item->kelompok_pemeriksaan;
 
             if (!isset($hasil_lain_grouped[$jenis_pemeriksaan])) {
                 $hasil_lain_grouped[$jenis_pemeriksaan] = [];
+                // Simpan waktu pertama kali jenis pemeriksaan ini muncul
+                if (!isset($jenis_pemeriksaan_order[$jenis_pemeriksaan])) {
+                    $jenis_pemeriksaan_order[$jenis_pemeriksaan] = $item->created_at;
+                }
             }
 
             $hasil_lain_grouped[$jenis_pemeriksaan][] = $item;
+        }
+
+        // Urutkan kelompok berdasarkan waktu pertama kali muncul (created_at tertua)
+        uksort($hasil_lain_grouped, function($a, $b) use ($jenis_pemeriksaan_order) {
+            $timeA = $jenis_pemeriksaan_order[$a] ?? Carbon::now();
+            $timeB = $jenis_pemeriksaan_order[$b] ?? Carbon::now();
+            return $timeA <=> $timeB;
+        });
+
+        // Urutkan item dalam setiap kelompok
+        foreach ($hasil_lain_grouped as &$items) {
+            usort($items, function($a, $b) {
+                // Urutkan berdasarkan urutan dari data_pemeriksaan
+                $urutan_a = $a->urutan_pemeriksaan ?? 9999;
+                $urutan_b = $b->urutan_pemeriksaan ?? 9999;
+
+                if ($urutan_a != $urutan_b) {
+                    return $urutan_a <=> $urutan_b;
+                }
+
+                // Jika urutan sama, urutkan berdasarkan data_pemeriksaan
+                return strcmp($a->data_pemeriksaan ?? '', $b->data_pemeriksaan ?? '');
+            });
         }
 
         /* =========================
@@ -3710,7 +3747,6 @@ class PasienController extends Controller
     public function getHistoryHover(Request $request)
     {
         try {
-            // Validasi input
             $request->validate([
                 'jenis_pemeriksaan' => 'required|string',
                 'rm_pasien' => 'required|string',
@@ -3740,17 +3776,20 @@ class PasienController extends Controller
                 ], 400);
             }
 
-            // Query dengan JOIN ke tabel data_pemeriksaan dan pasien
+            // Query dengan JOIN ke data_pemeriksaan dan filter berdasarkan data_pemeriksaan
             $history = DB::table($mainTable)
                 ->select(
                     "$mainTable.hasil_pengujian",
                     "$mainTable.no_lab",
-                    'pasien.waktu_validasi'
+                    'pasien.waktu_validasi',
+                    'pasien.nama_pasien',
+                    'data_pemeriksaan.data_pemeriksaan',
+                    'data_pemeriksaan.satuan'
                 )
                 ->leftJoin('pasien', 'pasien.no_lab', '=', "$mainTable.no_lab")
                 ->leftJoin('data_pemeriksaan', 'data_pemeriksaan.id_data_pemeriksaan', '=', "$mainTable.id_data_pemeriksaan")
-                ->where('data_pemeriksaan.data_pemeriksaan', $request->jenis_pemeriksaan)
-                ->where('pasien.rm_pasien', $request->rm_pasien) // rm_pasien dari tabel pasien
+                ->where('data_pemeriksaan.data_pemeriksaan', $request->jenis_pemeriksaan)  // Filter berdasarkan data_pemeriksaan
+                ->where('pasien.rm_pasien', $request->rm_pasien)
                 ->where("$mainTable.no_lab", '!=', $request->current_no_lab)
                 ->orderBy('pasien.waktu_validasi', 'DESC')
                 ->limit(50)

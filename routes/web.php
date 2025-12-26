@@ -45,15 +45,16 @@ Route::prefix('hasil-lab')->group(function () {
 // Route untuk hapus pemeriksaan lain
 // Hasil Lain Routes
 Route::prefix('hasil-lain')->group(function () {
-    Route::post('/search-kode-pemeriksaan', [HasilLainController::class, 'searchKodePemeriksaan'])->name('hasil-lain.search-kode-pemeriksaan');
-    Route::post('/store', [HasilLainController::class, 'store'])->name('hasil-lain.store');
-    Route::post('/{id}/update-kode', [HasilLainController::class, 'updateKodePemeriksaan'])->name('hasil-lain.update-kode');
-    Route::delete('/{id}', [HasilLainController::class, 'destroy'])->name('hasil-lain.destroy');
+    Route::get('/get-pemeriksaan-by-jenis', [HasilLainController::class, 'getPemeriksaanByJenis'])->name('hasil-lain.get-pemeriksaan-by-jenis');
+    Route::post('/search-data-pemeriksaan', [HasilLainController::class, 'searchDataPemeriksaan'])->name('hasil-lain.search-data-pemeriksaan');
+    Route::get('/get-pemeriksaan-by-kode', [HasilLainController::class, 'getPemeriksaanByKode'])->name('hasil-lain.get-pemeriksaan-by-kode');
+    Route::post('/store-manual', [HasilLainController::class, 'storeManual'])->name('hasil-lain.store-manual');
+    Route::put('/update-hasil-pengujian/{id}', [HasilLainController::class, 'updateHasilPengujian'])->name('hasil-lain.update-hasil-pengujian');
     Route::post('/destroy-multiple', [HasilLainController::class, 'destroyMultiple'])->name('hasil-lain.destroy-multiple');
-    Route::get('/jenis-pemeriksaan', [HasilLainController::class, 'getJenisPemeriksaanList'])->name('hasil-lain.jenis-pemeriksaan');
-    Route::get('/hasil-lain/get-pemeriksaan-by-jenis', [HasilLainController::class, 'getPemeriksaanByJenis'])->name('hasil-lain.get-pemeriksaan-by-jenis');
-    Route::get('/get-pemeriksaan-by-kode', [PasienController::class, 'getPemeriksaanByKode'])->name('hasil-lain.get-pemeriksaan-by-kode');
+    Route::delete('/destroy/{id}', [HasilLainController::class, 'destroy'])->name('hasil-lain.destroy');
+    Route::post('/search-kode-pemeriksaan', [HasilLainController::class, 'searchKodePemeriksaan'])->name('hasil-lain.search-kode-pemeriksaan');
 });
+
 Route::post('/hasil-lab/history-hover-detailed', [PasienController::class, 'getHistoryHover'])->name('hasil-lab.get-history-hover');
 Route::post('/hasil-lab/update-keterangan-batch', [PasienController::class, 'updateKeteranganBatch'])->name('hasil-lab.update-keterangan-batch');
 // Routes untuk Penjamin
