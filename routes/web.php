@@ -26,6 +26,7 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middl
 Route::post('/hematology/update-ajax', [PasienController::class, 'updateHematologyAjax'])->name('hematology.update.ajax');
 Route::post('/kimia/update-ajax', [PasienController::class, 'updateKimiaAjax'])->name('kimia.update.ajax');
 Route::post('/hematology/bulk-update-ajax', [PasienController::class, 'bulkUpdateHematologyAjax'])->name('hematology.bulk.update.ajax');
+Route::post('/kirim-ke-alat/{no_lab}', [PasienController::class, 'kirimKeAlat'])->name('kirim.ke.alat');
 // Route untuk update hasil lab
 Route::get('/check-file/{no_lab}', [PasienController::class, 'checkFile']);
 Route::prefix('hasil-lab')->group(function () {
@@ -55,6 +56,7 @@ Route::prefix('hasil-lain')->group(function () {
     Route::post('/search-kode-pemeriksaan', [HasilLainController::class, 'searchKodePemeriksaan'])->name('hasil-lain.search-kode-pemeriksaan');
 });
 
+Route::get('/search/pemeriksa', [PemeriksaController::class, 'searchPemeriksa'])->name('pemeriksa.search');
 Route::post('/hasil-lab/history-hover-detailed', [PasienController::class, 'getHistoryHover'])->name('hasil-lab.get-history-hover');
 Route::post('/hasil-lab/update-keterangan-batch', [PasienController::class, 'updateKeteranganBatch'])->name('hasil-lab.update-keterangan-batch');
 // Routes untuk Penjamin

@@ -634,6 +634,17 @@ class HasilLainController extends Controller
         DB::beginTransaction();
 
         try {
+
+            /**
+             * ==============================
+             * JEDA ANTRIAN (PENTING)
+             * ==============================
+             * - Menghindari tabrakan insert
+             * - Aman untuk input massal (±50 data)
+             * - 100ms per request
+             */
+            usleep(500000); // 0.5 detik
+
             $dataPemeriksaan = DataPemeriksaan::findOrFail($request->id_data_pemeriksaan);
 
             $hasilLain = HasilPemeriksaanLain::create([
@@ -643,8 +654,9 @@ class HasilLainController extends Controller
                 'hasil_pengujian' => $request->hasil_pengujian,
                 'satuan_hasil_pengujian' => $dataPemeriksaan->satuan,
                 'rujukan' => $dataPemeriksaan->rujukan,
-                'keterangan' => $request->hasil_pengujian ?
-                    $this->determineKeterangan($request->hasil_pengujian, $dataPemeriksaan->rujukan) : '-',
+                'keterangan' => $request->hasil_pengujian
+                    ? $this->determineKeterangan($request->hasil_pengujian, $dataPemeriksaan->rujukan)
+                    : '-',
                 'status_pemeriksaan' => 'selesai'
             ]);
 
@@ -665,14 +677,18 @@ class HasilLainController extends Controller
                 'message' => 'Data pemeriksaan berhasil ditambahkan',
                 'data' => $hasilLain
             ]);
+
         } catch (\Exception $e) {
+
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
                 'message' => 'Terjadi kesalahan: ' . $e->getMessage()
             ], 500);
         }
     }
+
 
     public function searchDataPemeriksaan(Request $request)
     {

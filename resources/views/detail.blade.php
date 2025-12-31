@@ -950,7 +950,7 @@
                             <!-- Modal untuk Pilih Data Pemeriksaan (Checkbox Multiple) -->
 
                             <div class="modal fade" id="modalPilihDataPemeriksaan" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog modal-lg">
+                                <div class="modal-dialog modal-lg modal-dialog-scrollable">
                                     <div class="modal-content">
                                         <div class="modal-header">
                                             <h5 class="modal-title">
@@ -1014,30 +1014,26 @@
                                 </div>
                             </div>
 
-                            <!-- Modal Konfirmasi Hapus Tabel -->
-                            <div class="modal fade" id="modalKonfirmasiHapusTabel" tabindex="-1" aria-hidden="true">
-                                <div class="modal-dialog">
+                            <div class="modal fade" id="modalKonfirmasiHapusTabel" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
                                     <div class="modal-content">
                                         <div class="modal-header">
-                                            <h5 class="modal-title text-danger">
-                                                <i class="ri-delete-bin-line me-2"></i>
-                                                Konfirmasi Hapus Tabel
-                                            </h5>
+                                            <h5 class="modal-title">Konfirmasi Hapus</h5>
                                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                         </div>
                                         <div class="modal-body">
-                                            <p>Apakah Anda yakin ingin menghapus tabel <strong id="modalNamaTabel"></strong>?</p>
-                                            <p class="text-muted small">Semua data dalam tabel ini akan dihapus.</p>
+                                            Yakin ingin menghapus tabel <strong id="modalNamaTabel"></strong> ?
                                         </div>
                                         <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                                            <button type="button" class="btn btn-danger" id="konfirmasiHapusTabelBtn">
-                                                <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
+                                            <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                            <button class="btn btn-danger" id="konfirmasiHapusTabelBtn">
+                                                Ya, Hapus
                                             </button>
                                         </div>
                                     </div>
                                 </div>
                             </div>
+
 
                             <!-- Toast Container -->
                             <div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
@@ -1048,43 +1044,48 @@
                                 <div class="col-md-4">
                                     <div class="mb-2 mb-md-0">
                                         <label class="form-label small mb-1">
-                                            <i class="ri-user-check-line me-1"></i>Validator
+                                            <i class="ri-user-check-line me-1"></i> Validator
                                         </label>
-                                        <div class="d-flex align-items-center">
-                                            <select id="pemeriksaSelect" class="form-select form-select-sm"
-                                                style="max-width: 250px;">
-                                                <option value="">-- Pilih Pemeriksa --</option>
-                                                @if($pasien->pemeriksa)
-                                                <option value="{{ $pasien->id_pemeriksa }}" selected>
-                                                    {{ $pasien->pemeriksa->nama_pemeriksa }}
-                                                </option>
-                                                @endif
-                                            </select>
+
+                                        <div class="input-group" id="pemeriksaContainer">
+                                            <!-- HAPUS data-bs-toggle dan data-bs-display -->
+                                            <input
+                                                type="text"
+                                                id="pemeriksaInput"
+                                                class="form-control form-control-sm"
+                                                placeholder="Ketik minimal 2 karakter nama pemeriksa..."
+                                                autocomplete="off"
+                                                value="{{ $pasien->pemeriksa->nama_pemeriksa ?? '' }}"
+                                                data-pemeriksa-id="{{ $pasien->id_pemeriksa ?? '' }}"
+                                                data-pemeriksa-nama="{{ $pasien->pemeriksa->nama_pemeriksa ?? '' }}">
+
                                             <button id="savePemeriksaBtn"
-                                                class="btn btn-sm btn-outline-primary ms-2">
+                                                type="button"
+                                                class="btn btn-sm btn-outline-primary ms-1">
                                                 <i class="ri-save-line"></i>
                                             </button>
+
+                                            <!-- DROPDOWN HASIL SEARCH -->
+                                            <div id="pemeriksaDropdown"
+                                                class="dropdown-menu"
+                                                style="display: none; max-height:300px; overflow-y:auto;">
+                                            </div>
                                         </div>
-                                        @if($pasien->id_pemeriksa)
-                                        <div class="mt-1">
-                                            <small class="text-success" id="validatorInfo">
-                                                <i class="ri-checkbox-circle-line me-1"></i>
-                                                Sudah divalidasi oleh:
-                                                <strong>{{ $pasien->pemeriksa->nama_pemeriksa ?? '-'}}</strong>
-                                                <br>
-                                                <small class="text-muted">
-                                                    Pada: {{ $pasien->updated_at ?? '-' }}
-                                                </small>
-                                            </small>
-                                        </div>
-                                        @else
+
                                         <div class="mt-1" id="validatorInfo">
-                                            <small class="text-warning">
-                                                <i class="ri-alert-line me-1"></i>
-                                                Belum divalidasi. Pilih pemeriksa sebelum print.
-                                            </small>
+                                            @if($pasien->id_pemeriksa)
+                                                <small class="text-success">
+                                                    <i class="ri-checkbox-circle-line me-1"></i>
+                                                    Sudah divalidasi oleh:
+                                                    <strong>{{ $pasien->pemeriksa->nama_pemeriksa }}</strong>
+                                                </small>
+                                            @else
+                                                <small class="text-warning">
+                                                    <i class="ri-alert-line me-1"></i>
+                                                    Belum divalidasi.
+                                                </small>
+                                            @endif
                                         </div>
-                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -1102,7 +1103,7 @@
                                     <button type="button" id="saveAllBtn" class="btn btn-primary">
                                         <i class="ri-save-line me-1"></i> Simpan Semua
                                     </button>
-                                    <a href="{{ route('pasien.print', $pasien->no_lab) }}" target="_blank" class="btn btn-success" id="printBtn">
+                                    <a href="{{ route('pasien.print', $pasien->no_lab) }}" class="btn btn-success">
                                         <i class="ri-printer-line me-1"></i> Print
                                     </a>
                                     <button type="button" id="refreshBtn" class="btn btn-outline-secondary">
@@ -1684,6 +1685,37 @@
 
 </style>
 
+<style>
+    .ri-loader-4-line {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    #pemeriksaContainer {
+        position: relative;
+    }
+
+    #pemeriksaDropdown {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+</style>
+
 
 <!-- Toast Container -->
 <div class="toast-container"></div>
@@ -1692,6 +1724,246 @@
 @endsection
 
 @section('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        let typingTimer;
+        const delay = 300;
+
+        const input = document.getElementById('pemeriksaInput');
+        const dropdownMenu = document.getElementById('pemeriksaDropdown');
+        const saveBtn = document.getElementById('savePemeriksaBtn');
+
+        let selectedPemeriksaId = input.dataset.pemeriksaId || null;
+        let selectedPemeriksaNama = input.dataset.pemeriksaNama || null;
+
+        /* ===============================
+        FUNGSI TOAST GLOBAL
+        =============================== */
+        function showToastGlobal(type, message) {
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="ri-${type === 'success' ? 'check-circle' : 'error-warning'}-fill me-2"></i>
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+
+            // Gunakan toast container yang sama dengan sistem lainnya
+            const $container = $('#toastContainer');
+            if ($container.length === 0) {
+                // Buat container jika belum ada
+                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+            }
+
+            $('#toastContainer').append(toastHtml);
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, {
+                delay: 3000
+            });
+            toast.show();
+
+            toastElement.addEventListener('hidden.bs.toast', function() {
+                $(this).remove();
+            });
+        }
+
+        /* ===============================
+        SEARCH PEMERIKSA
+        =============================== */
+        $(input).on('keyup', function () {
+            clearTimeout(typingTimer);
+            const keyword = this.value.trim();
+
+            if (keyword.length < 2) {
+                hideDropdown();
+                dropdownMenu.innerHTML = '';
+                if (keyword === '') {
+                    selectedPemeriksaId = null;
+                    selectedPemeriksaNama = null;
+                }
+                return;
+            }
+
+            typingTimer = setTimeout(() => {
+                $.get("{{ route('pemeriksa.search') }}", { q: keyword }, function (res) {
+                    dropdownMenu.innerHTML = '';
+                    if (!res.length) {
+                        hideDropdown();
+                        return;
+                    }
+
+                    res.forEach(item => {
+                        dropdownMenu.insertAdjacentHTML('beforeend', `
+                            <button type="button"
+                                class="dropdown-item pemeriksa-item"
+                                data-id="${item.id}"
+                                data-nama="${item.text}">
+                                <i class="ri-user-line me-2"></i>
+                                ${item.text}
+                            </button>
+                        `);
+                    });
+
+                    showDropdown();
+                });
+            }, delay);
+        });
+
+        /* ===============================
+        PILIH DROPDOWN ITEM
+        =============================== */
+        document.addEventListener('click', function (e) {
+            const item = e.target.closest('.pemeriksa-item');
+            if (!item) return;
+
+            selectedPemeriksaId = item.dataset.id;
+            selectedPemeriksaNama = item.dataset.nama;
+
+            input.value = selectedPemeriksaNama;
+            hideDropdown();
+
+            // Simpan otomatis saat dipilih dari dropdown
+            setTimeout(() => {
+                saveValidator();
+            }, 300);
+        });
+
+        /* ===============================
+        SAVE VALIDATOR
+        =============================== */
+        function saveValidator() {
+            let value = input.value.trim();
+
+            // Jika input kosong, hapus validator
+            if (!value && !selectedPemeriksaId) {
+                showToastGlobal('warning', 'Silakan pilih atau ketik nama pemeriksa');
+                return;
+            }
+
+            saveBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
+            saveBtn.disabled = true;
+
+            fetch("{{ route('pasien.update.data.validator', $pasien->no_lab) }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                },
+                body: JSON.stringify({
+                    id_pemeriksa: selectedPemeriksaId,
+                    nama_pemeriksa: value
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                if (res.success) {
+                    // update dari respons server
+                    selectedPemeriksaId = res.pemeriksa.id_pemeriksa;
+                    selectedPemeriksaNama = res.pemeriksa.nama_pemeriksa;
+
+                    input.value = selectedPemeriksaNama;
+                    input.dataset.pemeriksaId = selectedPemeriksaId;
+                    input.dataset.pemeriksaNama = selectedPemeriksaNama;
+
+                    document.getElementById('validatorInfo').innerHTML = `
+                        <small class="text-success">
+                            <i class="ri-checkbox-circle-line me-1"></i>
+                            Sudah divalidasi oleh:
+                            <strong>${selectedPemeriksaNama}</strong>
+                        </small>
+                    `;
+
+                    showToastGlobal('success', '✅ Validator berhasil diperbarui');
+                } else {
+                    showToastGlobal('danger', res.message || '❌ Gagal menyimpan validator');
+                }
+            })
+            .catch(err => {
+                showToastGlobal('danger', '❌ Terjadi kesalahan jaringan');
+            })
+            .finally(() => {
+                saveBtn.innerHTML = '<i class="ri-save-line"></i>';
+                saveBtn.disabled = false;
+            });
+        }
+
+        // Event click untuk tombol save
+        saveBtn.addEventListener('click', function (e) {
+            e.preventDefault();
+            saveValidator();
+        });
+
+        /* ===============================
+        RESET JIKA DIKETIK MANUAL
+        =============================== */
+        input.addEventListener('input', function () {
+            if (this.value !== selectedPemeriksaNama) {
+                selectedPemeriksaId = null;
+                selectedPemeriksaNama = null;
+            }
+        });
+
+        /* ===============================
+        CLICK OUTSIDE DROPDOWN
+        =============================== */
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('#pemeriksaInput') &&
+                !e.target.closest('#pemeriksaDropdown')) {
+                hideDropdown();
+            }
+        });
+
+        /* ===============================
+        FUNGSI SHOW / HIDE DROPDOWN
+        =============================== */
+        function showDropdown() {
+            dropdownMenu.style.display = 'block';
+            dropdownMenu.style.position = 'absolute';
+            dropdownMenu.style.top = input.offsetHeight + 'px';
+            dropdownMenu.style.left = '0';
+            dropdownMenu.style.width = '100%';
+            dropdownMenu.style.zIndex = '1050';
+        }
+
+        function hideDropdown() {
+            dropdownMenu.style.display = 'none';
+        }
+
+        /* ===============================
+        ENTER KEY TO SAVE
+        =============================== */
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                saveValidator();
+            }
+        });
+
+        /* ===============================
+        INISIALISASI DATA AWAL
+        =============================== */
+        function initializeValidatorData() {
+            const currentValue = input.value.trim();
+            const currentId = input.dataset.pemeriksaId;
+
+            if (currentValue && currentId) {
+                selectedPemeriksaId = currentId;
+                selectedPemeriksaNama = currentValue;
+            }
+        }
+
+        // Jalankan inisialisasi
+        initializeValidatorData();
+
+        console.log('✅ Script pemeriksa autocomplete siap dengan toast global');
+    });
+</script>
+
 <script>
     function syncHistoryHeight() {
         document.querySelectorAll('.pemeriksaan-lain-section').forEach(section => {
@@ -6968,13 +7240,20 @@
 
         function formatDate(dateStr) {
             if (!dateStr) return '-';
+
             const d = new Date(dateStr.split('.')[0]);
             if (isNaN(d)) return '-';
-            return d.getDate().toString().padStart(2, '0') + '/' +
-                (d.getMonth() + 1).toString().padStart(2, '0') + ' ' +
-                d.getHours().toString().padStart(2, '0') + ':' +
-                d.getMinutes().toString().padStart(2, '0');
+
+            const bulan = [
+                'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+            ];
+
+            return d.getDate() + ' ' +
+                bulan[d.getMonth()] + ' ' +
+                d.getFullYear();
         }
+
 
         function resetHistoryPanel(panelSuffix) {
             if ($(`#historyPanelContent${panelSuffix}`).length === 0) return;
@@ -7087,6 +7366,7 @@
         // ============================================
         // 1. TAMBAH TABEL PEMERIKSAAN BARU
         // ============================================
+        // Versi yang lebih sederhana:
         $('#tambahTabelBtn').on('click', function() {
             const jenisPemeriksaan = $('#jenisPemeriksaanSelect').val();
 
@@ -7105,9 +7385,7 @@
                 return;
             }
 
-
             const $allSections = $('.pemeriksaan-lain-section');
-            // Buat slug untuk ID
             const slug = jenisPemeriksaan.toLowerCase().replace(/[^a-z0-9]+/g, '_');
 
             // ============================================
@@ -7200,23 +7478,6 @@
                 </div>
             `;
 
-            if ($allSections.length > 0) {
-                // Jika sudah ada section, tambahkan setelah yang terakhir
-                $allSections.last().after(newTableSection);
-            } else {
-                // Jika belum ada section sama sekali
-                // Cari container tombol tambah
-                const $tambahContainer = $('.card:contains("Tambah Pemeriksaan Lain")').closest('.mt-3');
-                if ($tambahContainer.length > 0) {
-                    // Tambahkan sebelum container tombol
-                    $tambahContainer.before(newTableSection);
-                } else {
-                    // Fallback
-                    $('#tambahTabelBtn').closest('.card').before(newTableSection);
-                }
-            }
-
-            // Tambahkan sebelum tombol tambah tabel
             $('#tambahTabelBtn').closest('.card').before(newTableSection);
 
             // Reset select
@@ -7226,7 +7487,7 @@
                 window.showToast('success', `Tabel ${jenisPemeriksaan} berhasil ditambahkan`);
             }
 
-            console.log(`Tabel ${jenisPemeriksaan} ditambahkan dengan semua tombol`);
+            console.log(`Tabel ${jenisPemeriksaan} ditambahkan`);
         });
 
         // ============================================
@@ -7542,11 +7803,20 @@
                 `;
 
                 $tbody.append(newRow);
+                const $lastRow = $tbody.find('tr:last-child');
+                updateFormNames($lastRow);
+
                 console.log(`Row ${index} ditambahkan untuk ${item.nama}`);
 
                 // Simpan ke database
                 setTimeout(() => {
-                    saveDataPemeriksaanToDatabase($tbody.find('tr:last-child'), item.id, item.nama, item.satuan, item.rujukan);
+                    saveDataPemeriksaanToDatabase(
+                        $lastRow,
+                        item.id,
+                        item.nama,
+                        item.satuan,
+                        item.rujukan
+                    );
                 }, 100);
             });
 
@@ -7555,10 +7825,12 @@
             modal.hide();
 
             // Reset modal
+            const count = modalSelectedData.length;
+            // baru reset
             modalSelectedData = [];
 
             if (typeof window.showToast === 'function') {
-                window.showToast('success', `${modalSelectedData.length} data pemeriksaan berhasil ditambahkan`);
+                window.showToast('success', `${count} data pemeriksaan berhasil ditambahkan`);
             }
         });
 
@@ -7588,65 +7860,62 @@
             modal.show();
         });
 
+
+
         // Konfirmasi hapus tabel
-        $('#konfirmasiHapusTabelBtn').on('click', function() {
+        // ============================================
+        // KONFIRMASI HAPUS TABEL (FIX FINAL)
+        // ============================================
+        $(document).on('click', '#konfirmasiHapusTabelBtn', function () {
             if (!tabelYangAkanDihapus) return;
 
-            const { jenisPemeriksaan, $section } = tabelYangAkanDihapus;
+            const { $section, jenisPemeriksaan } = tabelYangAkanDihapus;
 
-            console.log('Menghapus tabel:', jenisPemeriksaan);
+            // Ambil semua ID hasil_lain di tabel
+            const ids = [];
+            $section.find('tr[data-id]').each(function () {
+                const id = $(this).data('id');
+                if (id) ids.push(id);
+            });
 
-            // Hapus semua rows terlebih dahulu jika ada data di database
-            $('#konfirmasiHapusTabelBtn').on('click', function () {
-                if (!tabelYangAkanDihapus) return;
-
-                const { $section, jenisPemeriksaan } = tabelYangAkanDihapus;
-
-                const ids = [];
-                $section.find('tr').each(function () {
-                    const id = $(this).data('id');
-                    if (id) ids.push(id);
-                });
-
-                if (ids.length === 0) {
-                    $section.remove();
-                    return;
-                }
-
-                $.ajax({
-                    url: '/hasil-lain/destroy-multiple',
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrfToken
-                    },
-                    data: { ids },
-                    success: function (res) {
-                        if (res.success) {
-                            $section.remove();
-                            window.showToast?.('success', res.message);
-                        } else {
-                            window.showToast?.('danger', res.message || 'Gagal menghapus tabel');
-                        }
-                    },
-                    error: function () {
-                        window.showToast?.('danger', 'Terjadi kesalahan saat menghapus tabel');
-                    }
-                });
-
+            // TIDAK ADA DATA → HAPUS UI SAJA
+            if (ids.length === 0) {
+                $section.remove();
                 bootstrap.Modal.getInstance(
                     document.getElementById('modalKonfirmasiHapusTabel')
                 ).hide();
 
+                window.showToast?.('success', `Tabel ${jenisPemeriksaan} berhasil dihapus`);
                 tabelYangAkanDihapus = null;
+                return;
+            }
+
+            // ADA DATA → FORCE DELETE
+            $.ajax({
+                url: '/hasil-lain/destroy-multiple',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken
+                },
+                data: { ids },
+                success: function (res) {
+                    if (res.success) {
+                        $section.remove();
+                        window.showToast?.('success', res.message);
+                    } else {
+                        window.showToast?.('danger', res.message || 'Gagal menghapus tabel');
+                    }
+                },
+                error: function () {
+                    window.showToast?.('danger', 'Terjadi kesalahan saat menghapus tabel');
+                },
+                complete: function () {
+                    bootstrap.Modal.getInstance(
+                        document.getElementById('modalKonfirmasiHapusTabel')
+                    ).hide();
+                    tabelYangAkanDihapus = null;
+                }
             });
-
-
-            // Tutup modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('modalKonfirmasiHapusTabel'));
-            modal.hide();
-
-            // Reset variable
-            tabelYangAkanDihapus = null;
         });
 
         // ============================================

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Pemeriksa;
 use Illuminate\Http\Request;
 use App\Services\LogActivityService;
-
+use Illuminate\Http\JsonResponse;
 class PemeriksaController extends Controller
 {
     /**
@@ -122,4 +122,30 @@ class PemeriksaController extends Controller
 
         return redirect()->back()->with('success', 'Pemeriksa berhasil dihapus!');
     }
+
+   public function searchPemeriksa(Request $request)
+    {
+        $search = $request->input('q', '');
+
+        if (strlen($search) < 2) {
+            return response()->json([]);
+        }
+
+        $pemeriksa = Pemeriksa::where('nama_pemeriksa', 'like', '%' . $search . '%')
+            ->limit(15)
+            ->get(['id_pemeriksa', 'nama_pemeriksa'])
+            ->map(function ($item) {
+                return [
+                    'id'   => $item->id_pemeriksa,
+                    'text' => $item->nama_pemeriksa,
+                ];
+            });
+
+        return response()->json($pemeriksa);
+    }
+
+
+
+
+
 }

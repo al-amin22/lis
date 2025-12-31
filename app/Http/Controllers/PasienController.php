@@ -31,87 +31,14 @@ class PasienController extends Controller
 {
     public function index(Request $request)
     {
+        Carbon::setLocale('id');
         $today     = Carbon::today();
-        $todayDmy  = $today->format('ymd'); // contoh: 221225
-        $search    = trim($request->get('search'));
+        $todayDmy  = $today->format('ymd');
 
         $query = Pasien::query();
 
         // =========================
-        // JIKA SEARCH → LANGSUNG CARI
-        // =========================
-        if (!empty($search)) {
-            $query->where('nomor_registrasi', 'like', "%{$search}%");
-        }
-        // =========================
-        // DEFAULT → HARI INI (PRIORITAS NO REG)
-        // =========================
-        else {
-            $query->where(function ($q) use ($today, $todayDmy) {
-
-                // 1️⃣ PRIORITAS: NOMOR REGISTRASI
-                $q->where('nomor_registrasi', 'like', $todayDmy . '%')
-
-                // 2️⃣ FALLBACK: JIKA NO REG KOSONG / TIDAK VALID
-                ->orWhere(function ($qq) use ($today) {
-                    $qq->whereNull('nomor_registrasi')
-                        ->orWhere('nomor_registrasi', '')
-                        ->whereDate('updated_at', $today);
-                });
-            });
-        }
-
-        $pasiens = $query
-            ->orderByDesc('nomor_registrasi') // 🔥 hari & urutan REG
-            ->orderByDesc('updated_at')
-            ->paginate(50)
-            ->withQueryString();
-
-        // =========================
-        // STATISTIK (LOGIKA SAMA)
-        // =========================
-        $stat = Pasien::query();
-
-        if (!empty($search)) {
-            $stat->where('nomor_registrasi', 'like', "%{$search}%");
-        } else {
-            $stat->where(function ($q) use ($today, $todayDmy) {
-
-                $q->where('nomor_registrasi', 'like', $todayDmy . '%')
-                ->orWhere(function ($qq) use ($today) {
-                    $qq->whereNull('nomor_registrasi')
-                        ->orWhere('nomor_registrasi', '')
-                        ->whereDate('updated_at', $today);
-                });
-            });
-        }
-
-        $statusOrders  = (clone $stat)->count();
-        $statusSelesai = (clone $stat)->whereNotNull('id_pemeriksa')->count();
-        $statusProses  = (clone $stat)->whereNull('id_pemeriksa')->count();
-
-        // =========================
-        // LOG
-        // =========================
-        LogActivityService::log(
-            action: 'READ',
-            module: 'Pasien',
-            description: 'User mengakses pasien berdasarkan tanggal nomor registrasi'
-        );
-
-        return view('index', compact(
-            'pasiens',
-            'statusOrders',
-            'statusSelesai',
-            'statusProses',
-            'search'
-        ));
-    }
-
-    public function search(Request $request)
-    {
-        // =========================
-        // TANGGAL (WAJIB & TIDAK BOLEH RESET)
+        // FILTER TANGGAL
         // =========================
         $date = $request->filled('search_date')
             ? Carbon::parse($request->search_date)
@@ -120,11 +47,7 @@ class PasienController extends Controller
         $dmyDate  = $date->format('ymd');
         $dateOnly = $date->toDateString();
 
-        $query = Pasien::query();
-
-        // =========================
-        // FILTER TANGGAL (WAJIB)
-        // =========================
+        // Filter berdasarkan tanggal
         $query->where(function ($q) use ($dmyDate, $dateOnly) {
             $q->where('nomor_registrasi', 'like', $dmyDate . '%')
             ->orWhere(function ($qq) use ($dateOnly) {
@@ -137,31 +60,18 @@ class PasienController extends Controller
         });
 
         // =========================
-        // KEYWORD (OPSIONAL, TIDAK RESET TANGGAL)
+        // FILTER KOLOM (SERVER-SIDE)
         // =========================
-        if ($request->filled('search')) {
-            $search = trim($request->search);
+        $this->applyColumnFilters($query, $request);
 
-            $query->where(function ($q) use ($search) {
-                $q->where('rm_pasien', 'ilike', "%{$search}%")
-                ->orWhere('nama_pasien', 'ilike', "%{$search}%")
-                ->orWhere('nomor_registrasi', 'ilike', "%{$search}%")
-                ->orWhere('nota', 'ilike', "%{$search}%")
-                ->orWhere('ket_klinik', 'ilike', "%{$search}%");
-            });
-        }
-
-        // =========================
-        // DATA
-        // =========================
         $pasiens = $query
-            ->orderByDesc('nomor_registrasi')
             ->orderByDesc('updated_at')
+            ->orderByDesc('nomor_registrasi')
             ->paginate(50)
             ->withQueryString();
 
         // =========================
-        // STATISTIK (PAKAI TANGGAL SAJA)
+        // STATISTIK
         // =========================
         $stat = Pasien::where(function ($q) use ($dmyDate, $dateOnly) {
             $q->where('nomor_registrasi', 'like', $dmyDate . '%')
@@ -174,16 +84,92 @@ class PasienController extends Controller
             });
         });
 
+        $this->applyColumnFilters($stat, $request);
+
         $statusOrders  = (clone $stat)->count();
         $statusSelesai = (clone $stat)->whereNotNull('id_pemeriksa')->count();
         $statusProses  = (clone $stat)->whereNull('id_pemeriksa')->count();
+
+        LogActivityService::log(
+            action: 'READ',
+            module: 'Pasien',
+            description: 'User mengakses pasien dengan filter'
+        );
 
         return view('index', compact(
             'pasiens',
             'statusOrders',
             'statusSelesai',
-            'statusProses'
-        ));
+            'statusProses',
+            'date'
+        ))->with(['activeDate' => $date]);
+    }
+
+    public function search(Request $request)
+    {
+        // Method ini bisa digabung dengan index() atau diarahkan ke index()
+        return $this->index($request);
+    }
+
+    // =========================
+    // HELPER METHOD UNTUK FILTER KOLOM
+    // =========================
+    private function applyColumnFilters($query, Request $request)
+    {
+        // Filter Tanggal (kolom 0)
+        if ($request->filled('filter_tanggal')) {
+            $filter = $request->filter_tanggal;
+            $query->where(function ($q) use ($filter) {
+                $q->whereRaw("TO_CHAR(created_at, 'DD/MM/YYYY') LIKE ?", ["%{$filter}%"])
+                ->orWhereRaw("TO_CHAR(updated_at, 'DD/MM/YYYY') LIKE ?", ["%{$filter}%"]);
+            });
+        }
+
+        // Filter No. Reg Lab (kolom 1)
+        if ($request->filled('filter_registrasi')) {
+            $query->where('nomor_registrasi', 'ilike', "%{$request->filter_registrasi}%");
+        }
+
+        // Filter RM Pasien (kolom 2)
+        if ($request->filled('filter_rm')) {
+            $query->where('rm_pasien', 'ilike', "%{$request->filter_rm}%");
+        }
+
+        // Filter Nama Pasien (kolom 3)
+        if ($request->filled('filter_nama')) {
+            $query->where('nama_pasien', 'ilike', "%{$request->filter_nama}%");
+        }
+
+        // Filter Asal Kunjungan (kolom 4)
+        if ($request->filled('filter_asal')) {
+            $query->where('ket_klinik', 'ilike', "%{$request->filter_asal}%");
+        }
+
+        // Filter Penjamin (kolom 5)
+        if ($request->filled('filter_penjamin')) {
+            $query->where('nota', 'ilike', "%{$request->filter_penjamin}%");
+        }
+
+        // Filter Status (kolom 6)
+        if ($request->filled('filter_status')) {
+            if ($request->filter_status === 'Selesai') {
+                $query->whereNotNull('id_pemeriksa')->whereNotNull('waktu_validasi');
+            } elseif ($request->filter_status === 'Diproses') {
+                $query->whereNull('id_pemeriksa')->orWhereNull('waktu_validasi');
+            }
+        }
+
+        // Filter Global Search
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('rm_pasien', 'ilike', "%{$search}%")
+                ->orWhere('nama_pasien', 'ilike', "%{$search}%")
+                ->orWhere('nomor_registrasi', 'ilike', "%{$search}%")
+                ->orWhere('nota', 'ilike', "%{$search}%")
+                ->orWhere('ket_klinik', 'ilike', "%{$search}%");
+            });
+        }
     }
 
     public function create()
@@ -598,9 +584,7 @@ class PasienController extends Controller
             'jp1.id_jenis_pemeriksaan_1 as jenis_pemeriksaan_id',
             DB::raw("COALESCE(jp1.nama_pemeriksaan, 'Lainnya') as kelompok_pemeriksaan") // GUNAKAN COALESCE
         )
-        ->orderBy('hpl.created_at', 'asc') // URUTKAN BERDASARKAN WAKTU DIBUAT
         ->orderBy('dp.urutan', 'asc') // KEMUDIAN URUTKAN PADA DATA PEMERIKSAAN
-        ->orderBy('dp.data_pemeriksaan', 'asc')
         ->get();
 
         /* =========================
@@ -1654,7 +1638,7 @@ class PasienController extends Controller
                 'hasilPemeriksaanLain.dataPemeriksaan.lisMappings',
                 'pemeriksa',
                 'ruangan'
-            ])->findOrFail($no_lab);
+            ])->where('no_lab', $no_lab)->firstOrFail();
 
             // 2. Proses data lab
             $lab = $this->processLabData($pasien);
@@ -1894,6 +1878,7 @@ class PasienController extends Controller
             ], $lab));
 
         } catch (\Exception $e) {
+            dd($e->getMessage(), $e->getTraceAsString());
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -3407,6 +3392,188 @@ class PasienController extends Controller
         }
     }
 
+    // public function ambilOrderDariSimrs()
+    // {
+    //     try {
+    //         // ===============================
+    //         // KONFIGURASI SIMRS (LAN RS)
+    //         // ===============================
+    //         $simrsIp   = '192.168.3.66';   // IP KOMPUTER / SERVER SIMRS
+    //         $simrsPort = '80';           // PORT SIMRS
+
+    //         $baseUrl  = "http://{$simrsIp}:{$simrsPort}";
+    //         $loginUrl = $baseUrl . '/rsbr/new72/bridging/frontend/auth/login';
+    //         $dataUrl  = $baseUrl . '/rsbr/new72/bridging/frontend/api/getData';
+
+    //         $username = 'arvindo';
+    //         $password = 'ArvindoWS2025!@';
+
+    //         // ===============================
+    //         // LOGIN SIMRS
+    //         // ===============================
+    //         $loginResponse = Http::timeout(10)
+    //             ->withHeaders([
+    //                 'x-username' => $username,
+    //                 'x-password' => $password,
+    //                 'Accept'     => 'application/json',
+    //             ])
+    //             ->get($loginUrl);
+
+    //         if (!$loginResponse->successful()) {
+    //             throw new \Exception('Login SIMRS gagal');
+    //         }
+
+    //         $token = $loginResponse->json('response.token');
+    //         if (!$token) {
+    //             throw new \Exception('Token SIMRS tidak ditemukan');
+    //         }
+
+    //         // ===============================
+    //         // AMBIL DATA ORDER
+    //         // ===============================
+    //         $dataResponse = Http::timeout(20)
+    //             ->withHeaders([
+    //                 'x-token' => $token,
+    //                 'Accept'  => 'application/json',
+    //             ])
+    //             ->post($dataUrl);
+
+    //         if (!$dataResponse->successful()) {
+    //             throw new \Exception('Gagal ambil data order SIMRS');
+    //         }
+
+    //         $ordersList = $dataResponse->json('response.list', []);
+
+    //         if (empty($ordersList)) {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'message' => 'Tidak ada data baru dari SIMRS',
+    //             ]);
+    //         }
+
+    //         // ===============================
+    //         // PROSES BATCH
+    //         // ===============================
+    //         $batchSize       = 100;
+    //         $totalProcessed  = 0;
+    //         $totalSuccess    = 0;
+    //         $totalUjiSuccess = 0;
+    //         $allNewOrders    = [];
+
+    //         for ($i = 0; $i < count($ordersList); $i += $batchSize) {
+
+    //             $batchOrders = array_slice($ordersList, $i, $batchSize);
+
+    //             $batchNoLabs = [];
+    //             foreach ($batchOrders as $order) {
+    //                 if (!empty($order['nomor_registrasi'])) {
+    //                     $batchNoLabs[] = $this->konversiFormatNoLab($order['nomor_registrasi']);
+    //                 }
+    //             }
+
+    //             if (empty($batchNoLabs)) {
+    //                 $totalProcessed += count($batchOrders);
+    //                 continue;
+    //             }
+
+    //             // CEK PASIEN EXISTING
+    //             $existingMap = DB::table('pasien')
+    //                 ->whereIn('no_lab', $batchNoLabs)
+    //                 ->pluck('no_lab')
+    //                 ->flip()
+    //                 ->toArray();
+
+    //             // CEK UJI EXISTING
+    //             $existingUji = DB::table('uji_pemeriksaan')
+    //                 ->whereIn('no_lab', $batchNoLabs)
+    //                 ->get()
+    //                 ->keyBy(fn ($x) => $x->no_lab . '|' . $x->kode_pemeriksaan)
+    //                 ->toArray();
+
+    //             $batchPasien = [];
+    //             $batchUji    = [];
+    //             $ujiKey      = [];
+
+    //             foreach ($batchOrders as $order) {
+
+    //                 if (empty($order['nomor_registrasi'])) continue;
+
+    //                 $noLab = $this->konversiFormatNoLab($order['nomor_registrasi']);
+
+    //                 if (isset($existingMap[$noLab])) continue;
+
+    //                 $batchPasien[] = [
+    //                     'no_lab'           => $noLab,
+    //                     'nomor_registrasi' => $noLab,
+    //                     'rm_pasien'        => $order['rm_pasien'] ?? null,
+    //                     'tgl_pendaftaran' => $order['tgl_pendaftaran'] ?? null,
+    //                     'nama_pasien'     => $order['nama_pasien'] ?? null,
+    //                     'tgl_lahir'       => $order['tgl_lahir'] ?? null,
+    //                     'jenis_kelamin'   => $order['jenis_kelamin'] ?? null,
+    //                     'alamat'          => $order['alamat'] ?? null,
+    //                     'pengirim'        => $order['pengirim'] ?? null,
+    //                     'ket_klinik'      => $order['asal_ruangan'] ?? null,
+    //                     'synced_at'       => now(),
+    //                     'created_at'      => now(),
+    //                     'updated_at'      => now(),
+    //                 ];
+
+    //                 if (!empty($order['jenis_pemeriksaan'])) {
+    //                     foreach ($order['jenis_pemeriksaan'] as $kategori => $list) {
+    //                         foreach ($list as $item) {
+    //                             foreach ($item as $kode => $nama) {
+
+    //                                 $key = $noLab . '|' . $kode;
+    //                                 if (isset($existingUji[$key]) || isset($ujiKey[$key])) continue;
+
+    //                                 $ujiKey[$key] = true;
+
+    //                                 $batchUji[] = [
+    //                                     'no_lab'           => $noLab,
+    //                                     'kategori'         => $kategori,
+    //                                     'kode_pemeriksaan' => $kode,
+    //                                     'nama_pemeriksaan' => $nama,
+    //                                     'created_at'       => now(),
+    //                                     'updated_at'       => now(),
+    //                                 ];
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+
+    //             DB::transaction(function () use ($batchPasien, $batchUji, &$totalSuccess, &$totalUjiSuccess) {
+    //                 if (!empty($batchPasien)) {
+    //                     DB::table('pasien')->insert($batchPasien);
+    //                     $totalSuccess += count($batchPasien);
+    //                 }
+    //                 if (!empty($batchUji)) {
+    //                     DB::table('uji_pemeriksaan')->insertOrIgnore($batchUji);
+    //                     $totalUjiSuccess += count($batchUji);
+    //                 }
+    //             });
+
+    //             $totalProcessed += count($batchOrders);
+    //             usleep(100000);
+    //         }
+
+    //         return response()->json([
+    //             'success'              => true,
+    //             'message'              => 'Sinkronisasi SIMRS LAN berhasil',
+    //             'total_diterima'       => count($ordersList),
+    //             'total_diproses'       => $totalProcessed,
+    //             'total_pasien_baru'    => $totalSuccess,
+    //             'total_uji_baru'       => $totalUjiSuccess,
+    //         ]);
+
+    //     } catch (\Throwable $e) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+
     private function konversiFormatNoLab(string $noLab): string
     {
         if (strlen($noLab) < 6) {
@@ -3808,6 +3975,77 @@ class PasienController extends Controller
             ], 500);
         }
     }
+
+    public function kirimKeAlat(Request $request, $no_lab)
+    {
+        // Ambil data pasien dari database
+        $patient = Pasien::where('no_lab', $no_lab)->first();
+
+        if (!$patient) {
+            return redirect()->back()->with('error', 'Pasien tidak ditemukan.');
+        }
+
+        // =========================
+        // Mapping gender: PRIA/WANITA → M/F
+        // =========================
+        $gender = strtoupper($patient->jenis_kelamin) === 'PRIA' ? 'M' : 'F';
+
+        // =========================
+        // Format tanggal lahir: YYYYMMDD
+        // =========================
+        $tgl_lahir = date('Ymd', strtotime($patient->tgl_lahir));
+
+        $nama_pasien = strtoupper($patient->nama_pasien);
+        $dokter = strtoupper($patient->pengirim ?? 'DR.^UNKNOWN');
+
+        // =========================
+        // Path Python & script
+        // =========================
+        $pythonPath = "C:\\Users\\amin\\AppData\\Local\\Programs\\Python\\Python312\\python.exe";
+        $scriptPath = "D:\\RUMAH SAKIT\\kirim_ke_alat.py";
+
+        // =========================
+        // Build command
+        // =========================
+        $command = sprintf(
+            '"%s" "%s" "%s" "%s" "%s" "%s" "%s"',
+            $pythonPath,
+            $scriptPath,
+            $no_lab,
+            $nama_pasien,
+            $gender,
+            $tgl_lahir,
+            $dokter
+        );
+
+        // =========================
+        // Jalankan Python
+        // =========================
+        $output = shell_exec($command . " 2>&1");
+
+        // =========================
+        // Logging (sangat disarankan)
+        // =========================
+        Log::info("Kirim HL7 ke alat", [
+            'no_lab'  => $no_lab,
+            'command' => $command,
+            'output'  => $output
+        ]);
+
+        // =========================
+        // Response ke web
+        // =========================
+        if (!$output) {
+            return redirect()->back()->with('error', 'Tidak ada respon dari Python / alat.');
+        }
+
+        if (str_contains($output, 'GAGAL')) {
+            return redirect()->back()->with('error', $output);
+        }
+
+        return redirect()->back()->with('success', $output);
+    }
+
 
 }
 
