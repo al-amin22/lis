@@ -22,7 +22,7 @@
     <div class="sidebarMenuScroll">
         <ul class="sidebar-menu">
             <li class="active current-page">
-                <a href="{{ route('pasien.index') }}">
+                <a href="{{ route('user.index') }}">
                     <i class="ri-home-6-line"></i>
                     <span class="menu-text">Dashboard</span>
                 </a>

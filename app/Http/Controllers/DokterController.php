@@ -13,7 +13,7 @@ class DokterController extends Controller
      */
     public function index()
     {
-        $dokters = Dokter::withCount('pasien')->orderBy('id_dokter', 'desc')->get();
+        $dokters = Dokter::withCount('pasien')->orderBy('id_dokter', 'desc')->paginate(10);
         LogActivityService::log(
             action: 'READ',
             module: 'Dokter',

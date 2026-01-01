@@ -133,7 +133,7 @@
                                         value="{{ $pasien->umur }}"
                                         readonly
                                         style="background-color: #f8f9fa;">
-                                    <input type="hidden" data-field="umur" value="{{ $pasien->umur }}">
+
                                 </div>
                             </div>
 
@@ -309,6 +309,33 @@
                     </div>
                 </div>
                 <div class="card mb-3">
+                    <!-- Info Uji Pemeriksaan/Info Yang Diuji -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Info Pengujian Lab</h5>
+                        </div>
+                        <div class="card-body">
+                            @if($pasien->ujiPemeriksaan && $pasien->ujiPemeriksaan->count() > 0)
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach($pasien->ujiPemeriksaan as $uji)
+                                    <div class="border rounded p-2 bg-light">
+                                        <div class="d-flex align-items-center">
+                                            <span class="badge bg-primary me-2">{{ $uji->kategori ?? 'N/A' }}</span>
+                                            <span>{{ $uji->nama_pemeriksaan ?? '-' }}</span>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                                <div class="mt-3 text-muted small">
+                                    <i class="ri-information-line me-1"></i> Total: {{ $pasien->ujiPemeriksaan->count() }} uji pemeriksaan
+                                </div>
+                            @else
+                                <div class="alert alert-info mb-0">
+                                    <i class="ri-information-line me-2"></i> Tidak ada data uji pemeriksaan
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <div>
                             <h5 class="card-title mb-0">Hasil Pengujian Laboratorium</h5>
@@ -4116,22 +4143,18 @@
                 };
             }
 
-            // Format untuk display: DD-MM-YYYY
-            const displayFormat = `${day.padStart(2, '0')}-${month.padStart(2, '0')}-${yearNum}`;
-
             return {
                 isValid: true,
                 dbFormat: dateStr, // YYYY-MM-DD untuk database
-                displayFormat: displayFormat, // DD-MM-YYYY untuk display
                 dateObj: inputDate
             };
         }
 
         // ============================================
-        // FUNGSI HITUNG UMUR
+        // FUNGSI HITUNG UMUR DENGAN FORMAT "X Tahun Y Bulan Z Hari"
         // ============================================
 
-        function calculateAge(birthDateStr) {
+        function calculateAgeWithFormat(birthDateStr) {
             const validation = validateDateInput(birthDateStr);
             if (!validation.isValid) {
                 return {
@@ -4171,45 +4194,33 @@
                 months = Math.max(0, months);
                 days = Math.max(0, days);
 
-                // Format hasil
+                // Format hasil: "X Tahun Y Bulan Z Hari"
                 let result = '';
                 if (years > 0) result += years + ' Tahun ';
                 if (months > 0 || years > 0) result += months + ' Bulan ';
                 result += days + ' Hari';
 
+                const umurFormatted = result.trim();
+
                 return {
                     success: true,
-                    umur: result.trim(),
+                    umur: umurFormatted,
                     dbFormat: validation.dbFormat,
-                    displayFormat: validation.displayFormat
+                    details: {
+                        years: years,
+                        months: months,
+                        days: days
+                    }
                 };
 
             } catch (e) {
-                console.error('Error calculateAge:', e);
+                console.error('Error calculateAgeWithFormat:', e);
                 return {
                     success: false,
                     umur: '',
                     error: 'Gagal menghitung umur'
                 };
             }
-        }
-
-        // ============================================
-        // FUNGSI FORMAT TANGGAL UNTUK DISPLAY (DD-MM-YYYY)
-        // ============================================
-
-        function formatDateForDisplay(dateStr) {
-            if (!dateStr) return '';
-
-            const regex = /^(\d{4})-(\d{2})-(\d{2})$/;
-            const match = dateStr.match(regex);
-
-            if (match) {
-                const [, year, month, day] = match;
-                return `${day}-${month}-${year}`;
-            }
-
-            return dateStr;
         }
 
         // ============================================
@@ -4244,6 +4255,12 @@
                             $('#lastSaved').text(`Terakhir disimpan: ${response.data.updated_at}`);
                         }
 
+                        // Update display umur jika field tgl_lahir
+                        if (field === 'tgl_lahir' && response.data?.umur) {
+                            $('#display_umur').val(response.data.umur);
+                            console.log('👶 Umur diupdate dari server:', response.data.umur);
+                        }
+
                         // Hapus status changed
                         $element.removeClass('is-changed');
                         updateSaveStatus();
@@ -4259,6 +4276,38 @@
                 error: function(xhr) {
                     console.error(`❌ AJAX Error ${field}:`, xhr);
                     showErrorStatus($element, 'Gagal menyimpan');
+                }
+            });
+        }
+
+        // ============================================
+        // FUNGSI KIRIM UMUR KE SERVER (TERPISAH)
+        // ============================================
+
+        function sendUmurToServer(umurValue) {
+            console.log('📤 Kirim umur terpisah:', umurValue);
+
+            $.ajax({
+                url: '/pasien/update-realtime',
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                data: {
+                    no_lab: noLab,
+                    field: 'umur',
+                    value: umurValue
+                },
+                timeout: 5000,
+                success: function(response) {
+                    console.log('✅ Response umur:', response);
+                    if (response.success) {
+                        console.log('✅ Umur berhasil disimpan ke database');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('❌ AJAX Error umur:', xhr);
                 }
             });
         }
@@ -4341,7 +4390,7 @@
         }
 
         // ============================================
-        // EVENT HANDLERS - TANGGAL LAHIR (INPUT TYPE="date")
+        // EVENT HANDLERS - TANGGAL LAHIR (DIPERBAIKI)
         // ============================================
 
         // Event saat tanggal berubah
@@ -4354,8 +4403,12 @@
             if (!dateStr) {
                 // Jika tanggal dihapus
                 $('#display_umur').val('');
-                $('[data-field="umur"]').val('');
+                // Kirim tgl_lahir kosong ke server
                 debounceSave('tgl_lahir', '', $this);
+                // Kirim umur kosong ke server
+                setTimeout(() => {
+                    sendUmurToServer('');
+                }, 200);
                 return;
             }
 
@@ -4368,23 +4421,23 @@
                 return;
             }
 
-            // Hitung umur
-            const ageResult = calculateAge(dateStr);
+            // Hitung umur dengan format "X Tahun Y Bulan Z Hari"
+            const ageResult = calculateAgeWithFormat(dateStr);
 
             if (ageResult.success) {
-                // Update umur display
-                $('#display_umur').val(ageResult.umur);
-                $('[data-field="umur"]').val(ageResult.umur);
+                const umurFormatted = ageResult.umur; // Format: "X Tahun Y Bulan Z Hari"
 
-                console.log('👶 Umur dihitung:', ageResult.umur);
+                // 1. Update display umur di UI
+                $('#display_umur').val(umurFormatted);
+                console.log('👶 Umur dihitung:', umurFormatted);
 
-                // Kirim tanggal lahir ke server
+                // 2. Kirim tgl_lahir ke server (server juga akan hitung umur)
                 debounceSave('tgl_lahir', dateStr, $this);
 
-                // Juga kirim umur
+                // 3. Kirim umur terpisah ke server untuk memastikan tersimpan
                 setTimeout(() => {
-                    debounceSave('umur', ageResult.umur, $('[data-field="umur"]'));
-                }, 100);
+                    sendUmurToServer(umurFormatted);
+                }, 300);
 
             } else {
                 alert(ageResult.error);
@@ -4421,7 +4474,7 @@
             }
         });
 
-        // TAMBAHKAN EVENT HANDLER UNTUK DATETIME INPUT
+        // Event handler untuk datetime input
         $(document).on('change', '.realtime-datetime', function() {
             const $this = $(this);
             const field = $this.data('field'); // waktu_periksa atau waktu_validasi
@@ -4461,23 +4514,37 @@
         function initializePage() {
             console.log('🔍 Inisialisasi data pasien...');
 
-            // 1. Hitung umur jika ada tanggal lahir
+            // 1. Hitung ulang umur jika ada tanggal lahir
             const $tglLahir = $('[data-field="tgl_lahir"]');
             const $displayUmur = $('#display_umur');
             const currentUmur = $displayUmur.val();
             const currentDate = $tglLahir.val();
 
             console.log('Tanggal lahir awal:', currentDate);
-            console.log('Umur awal:', currentUmur);
+            console.log('Umur awal dari database:', currentUmur);
 
             if (currentDate) {
-                // Hitung ulang umur jika kosong atau tidak valid
-                if (!currentUmur || currentUmur === '' || currentUmur === '0 Hari' || currentUmur.includes('-')) {
-                    const ageResult = calculateAge(currentDate);
-                    if (ageResult.success) {
-                        $displayUmur.val(ageResult.umur);
-                        $('[data-field="umur"]').val(ageResult.umur);
-                        console.log('✅ Umur dihitung ulang:', ageResult.umur);
+                // Hitung ulang umur untuk memastikan format konsisten
+                const ageResult = calculateAgeWithFormat(currentDate);
+                if (ageResult.success) {
+                    const calculatedUmur = ageResult.umur;
+
+                    // Jika umur di database berbeda dengan hasil hitungan, update
+                    if (currentUmur !== calculatedUmur) {
+                        console.log('⚠️  Umur database vs hitungan berbeda:', {
+                            database: currentUmur,
+                            calculated: calculatedUmur
+                        });
+
+                        // Update display dengan hasil hitungan
+                        $displayUmur.val(calculatedUmur);
+
+                        // Update umur di database
+                        setTimeout(() => {
+                            sendUmurToServer(calculatedUmur);
+                        }, 1000);
+                    } else {
+                        console.log('✅ Umur sudah sesuai dengan format yang benar');
                     }
                 }
             }
@@ -4488,16 +4555,13 @@
             });
 
             console.log('✅ Inisialisasi selesai');
-
-            // 3. Tampilkan semua field langsung
-            // Field sudah ada nilainya dari server, jadi langsung muncul
         }
 
         // Jalankan setelah page load
-        setTimeout(initializePage, 300);
+        setTimeout(initializePage, 500);
 
         // ============================================
-        // SAVE ALL FUNCTION
+        // SAVE ALL FUNCTION - DIPERBAIKI
         // ============================================
 
         $('#saveAllBtn').on('click', function() {
@@ -4505,6 +4569,22 @@
             const originalText = $btn.html();
 
             $btn.prop('disabled', true).html('<i class="ri-loader-4-line spin me-1"></i>Menyimpan...');
+
+            // Cek apakah ada perubahan tgl_lahir yang belum disimpan
+            const $tglLahirField = $('[data-field="tgl_lahir"]');
+            const tglLahirChanged = $tglLahirField.hasClass('is-changed');
+            const currentTglLahir = $tglLahirField.val();
+
+            // Jika tgl_lahir berubah, hitung ulang umur
+            if (tglLahirChanged && currentTglLahir) {
+                const ageResult = calculateAgeWithFormat(currentTglLahir);
+                if (ageResult.success) {
+                    // Update display umur
+                    $('#display_umur').val(ageResult.umur);
+                    // Kirim umur ke server
+                    sendUmurToServer(ageResult.umur);
+                }
+            }
 
             // Simpan semua field yang berubah
             const changedFields = $('.is-changed');
@@ -4540,6 +4620,11 @@
                             savedCount++;
                             $field.removeClass('is-changed');
 
+                            // Update display umur jika field tgl_lahir
+                            if (field === 'tgl_lahir' && response.success && response.data?.umur) {
+                                $('#display_umur').val(response.data.umur);
+                            }
+
                             if (savedCount === totalCount) {
                                 updateSaveStatus();
                                 $btn.prop('disabled', false).html(originalText);
@@ -4573,6 +4658,7 @@
 
         console.log('🎉 === Sistem Realtime Update Siap ===');
         console.log('📅 Datepicker: Input type="date" native browser');
+        console.log('👶 Format umur: "X Tahun Y Bulan Z Hari"');
     });
 </script>
 

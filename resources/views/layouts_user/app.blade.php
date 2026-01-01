@@ -61,11 +61,11 @@
 
     <!-- Page wrapper starts -->
     <div class="page-wrapper">
-        @include('layouts.header')
+        @include('layouts_user.header')
 
         <!-- Main container starts -->
         <div class="main-container">
-            @include('layouts.sidebar')
+            @include('layouts_user.sidebar')
 
             <!-- App container starts -->
             <div class="app-container">
@@ -77,7 +77,7 @@
     </div>
     <!-- Page wrapper ends -->
 
-    @include('layouts.scripts')
+    @include('layouts_user.scripts')
 </body>
 
 </html>

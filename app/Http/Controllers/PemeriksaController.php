@@ -13,7 +13,7 @@ class PemeriksaController extends Controller
      */
     public function index()
     {
-        $pemeriksa = Pemeriksa::withCount('pasien')->orderBy('id_pemeriksa', 'desc')->get();
+        $pemeriksa = Pemeriksa::withCount('pasien')->orderBy('id_pemeriksa', 'desc')->paginate(10);
         LogActivityService::log(
             action: 'READ',
             module: 'Pemeriksa',

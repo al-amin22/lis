@@ -15,11 +15,11 @@
     <div class="app-brand ms-3">
         <a href="{{ url('user/dashboard') }}" class="d-lg-block d-none">
             <img
-                src="https://arvindokaryautama.com/wp-content/uploads/2020/09/Logo-Arvindo-Sementara.png"
+                src="{{ asset('image/Logo-Arvindo-Sementara.png') }}"
                 class="logo"
                 alt="Medicare Admin Template" />
         </a>
-        <a href="{{ url('admin/dashboard') }}" class="d-lg-none d-md-block">
+        <a href="{{ url('user/dashboard') }}" class="d-lg-none d-md-block">
             <img
                 src="{{ asset('assets/images/logo-sm.svg') }}"
                 class="logo"

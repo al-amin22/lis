@@ -13,7 +13,7 @@ class RuanganController extends Controller
      */
     public function index()
     {
-        $ruangan = Ruangan::withCount('pasien')->orderBy('id_ruangan', 'desc')->get();
+        $ruangan = Ruangan::withCount('pasien')->orderBy('id_ruangan', 'desc')->paginate(10);
         LogActivityService::log(
             action: 'READ',
             module: 'Ruangan',

@@ -67,14 +67,14 @@
                                             data-telp="{{ $item->no_telp }}">
                                             <i class="fas fa-edit me-1"></i> Edit
                                         </button>
-                                        <button type="button" class="btn btn-danger btn-sm"
+                                        <!-- <button type="button" class="btn btn-danger btn-sm"
                                             data-bs-toggle="modal"
                                             data-bs-target="#hapusModal"
                                             data-id="{{ $item->id_pemeriksa }}"
                                             data-nama="{{ $item->nama_pemeriksa }}"
                                             data-jumlah="{{ $item->pasien_count }}">
                                             <i class="fas fa-trash me-1"></i> Hapus
-                                        </button>
+                                        </button> -->
                                     </td>
                                 </tr>
                                 @empty
@@ -86,6 +86,9 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        <div class="d-flex justify-content-center mt-3">
+                            {{ $pemeriksa->links('pagination::bootstrap-5') }}
+                        </div>
                     </div>
                 </div>
             </div>

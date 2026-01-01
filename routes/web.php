@@ -124,6 +124,7 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('create', [PasienController::class, 'create'])->name('create');
         Route::get('create', [PasienController::class, 'create'])->name('create');
+        Route::get('/search-dropdown', [PasienController::class, 'searchDropdown'])->name('search.dropdown');
         Route::get('/dashboard', [PasienController::class, 'index'])->name('index');
         Route::get('/search', [PasienController::class, 'search'])->name('search');
         Route::get('/hasil/uji-lab', [UjiLabController::class, 'index'])->name('hasil-lab');
@@ -169,7 +170,7 @@ Route::middleware(['auth', 'role:pengguna'])
         Route::get('/{no_lab}', [UserController::class, 'show'])->name('show');
         Route::get('/hasil/uji-lab', [UjiLabController::class, 'index'])->name('hasil-lab');
         Route::get('/pasien/history/{rm_pasien}', [UserController::class, 'history'])->name('history');
-        Route::get('/print/{no_lab}', [UserController::class, 'printPdf'])->name('print');
+        Route::get('/print/{no_lab}', [UserController::class, 'cetakHasilLab'])->name('print');
         Route::get('/generate-pdf/{no_lab}', [UserController::class, 'generatePdf'])->name('generatePdf');
         Route::get('/laboratorium/print/{no_lab}', [UserController::class, 'printLaboratorium'])->name('laboratorium.print');
     });

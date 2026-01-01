@@ -249,8 +249,61 @@ class PasienController extends Controller
         ));
     }
 
+    // Di Controller PasienController, tambahkan method ini:
+    public function searchDropdown(Request $request)
+    {
+        $type = $request->type;
+        $search = $request->search;
 
-   public function store(Request $request)
+        $results = [];
+
+        switch ($type) {
+            case 'penjamin':
+                $results = Penjamin::when($search, function($query) use ($search) {
+                    $query->whereRaw('LOWER(nama_penjamin) LIKE ?', ['%' . strtolower($search) . '%']);
+                })
+                ->limit(20)
+                ->get();
+                break;
+
+            case 'kelas':
+                $results = Kelas::when($search, function($query) use ($search) {
+                    $query->whereRaw('LOWER(nama_kelas) LIKE ?', ['%' . strtolower($search) . '%']);
+                })
+                ->limit(20)
+                ->get();
+                break;
+
+            case 'ruangan':
+                $results = Ruangan::when($search, function($query) use ($search) {
+                    $query->whereRaw('LOWER(nama_ruangan) LIKE ?', ['%' . strtolower($search) . '%']);
+                })
+                ->limit(20)
+                ->get();
+                break;
+
+            case 'validator':
+                $results = Pemeriksa::when($search, function($query) use ($search) {
+                    $query->whereRaw('LOWER(nama_pemeriksa) LIKE ?', ['%' . strtolower($search) . '%']);
+                })
+                ->limit(20)
+                ->get();
+                break;
+
+            case 'pengirim':
+                $results = Dokter::when($search, function($query) use ($search) {
+                    $query->whereRaw('LOWER(nama_dokter) LIKE ?', ['%' . strtolower($search) . '%']);
+                })
+                ->limit(20)
+                ->get();
+                break;
+        }
+
+        return response()->json($results);
+    }
+
+
+    public function store(Request $request)
     {
         try {
             $validated = $request->validate([
@@ -3067,7 +3120,8 @@ class PasienController extends Controller
                 'nomor_registrasi' => $pasien->nomor_registrasi,
                 'created_at' => $pasien->created_at,
                 'updated_at' => $pasien->updated_at,
-                'waktu_validasi' => $pasien->waktu_validasi
+                'waktu_validasi' => $pasien->waktu_validasi,
+                'umur' => $pasien->umur
             ]
         ]);
     }

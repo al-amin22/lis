@@ -1,36 +1,76 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card mb-3"> <!-- Changed from shadow mb-4 to mb-3 -->
-                <div class="card-header d-flex justify-content-between align-items-center"> <!-- Changed classes -->
-                    <h5 class="card-title mb-0">Data Dokter</h5> <!-- Changed from h6.m-0.font-weight-bold.text-primary -->
-                    <div class="d-flex align-items-center gap-2"> <!-- Added gap-2 -->
-                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addModal">
-                            <i class="fas fa-plus"></i> Tambah Dokter
+<!-- App hero header starts -->
+<div class="app-hero-header d-flex align-items-center">
+    <!-- Breadcrumb starts -->
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+            <i class="ri-home-8-line lh-1 pe-3 me-3 border-end"></i>
+            <a href="{{ url('admin/dashboard') }}">Home</a>
+        </li>
+        <li class="breadcrumb-item text-primary" aria-current="page">
+            Data Dokter
+        </li>
+    </ol>
+    <!-- Breadcrumb ends -->
+</div>
+<!-- App Hero header ends -->
+
+<!-- App body starts -->
+<div class="app-body">
+    {{-- Alert pesan berhasil/gagal --}}
+    @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+    @if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    @endif
+
+    {{-- Tampilkan error validasi --}}
+    @if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
+
+    <!-- Row starts -->
+    <div class="row gx-3">
+        <div class="col-sm-12">
+            <div class="card mb-3">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Daftar Dokter</h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Modal Trigger for Single Input -->
+                        <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#tambahModal">
+                            <i class="ri-add-line me-1"></i> Tambah Dokter
                         </button>
-                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#addMultipleModal">
-                            <i class="fas fa-layer-group"></i> Tambah Banyak
+
+                        <!-- Modal Trigger for Batch Input -->
+                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#tambahBatchModal">
+                            <i class="ri-file-list-line me-1"></i> Tambah Banyak
                         </button>
+
+                        <!-- Search Form -->
+                        <form method="GET" action="{{ route('pasien.dokter.index') }}" class="d-flex" style="max-width: 300px;">
+                            <input type="text" name="search" class="form-control form-control-sm me-2"
+                                placeholder="Cari nama dokter" value="{{ request('search') }}">
+                            <button type="submit" class="btn btn-sm btn-primary">Cari</button>
+                        </form>
                     </div>
                 </div>
                 <div class="card-body">
-                    @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    @endif
-
-                    @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                    @endif
-
                     <!-- Table starts -->
                     <div class="table-outer">
                         <div class="table-responsive">
@@ -39,38 +79,43 @@
                                     <tr>
                                         <th>No</th>
                                         <th>Nama Dokter</th>
-                                        <th>Alamat</th>
-                                        <th>Nomor Telepon</th>
-                                        <th>Aksi</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($dokters as $dokter)
+                                    @forelse($dokters as $index => $dokter)
                                     <tr>
-                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $index + 1 }}</td>
                                         <td>{{ $dokter->nama_dokter ?? '-' }}</td>
-                                        <td>{{ $dokter->alamat ?? '' }}</td>
-                                        <td>{{ $dokter->no_telp ?? '' }}</td>
                                         <td>
-                                            <button type="button" class="btn btn-sm btn-warning"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#editModal"
-                                                data-id="{{ $dokter->id_dokter }}"
-                                                data-nama="{{ $dokter->nama_dokter }}"
-                                                data-alamat="{{ $dokter->alamat }}"
-                                                data-telepon="{{ $dokter->no_telp }}">
-                                                <i class="bi bi-pencil-square"></i>
+                                            <button class="btn btn-warning btn-sm" data-bs-toggle="modal"
+                                                data-bs-target="#modalEdit{{ $dokter->id_dokter }}">
+                                                Edit
                                             </button>
-                                            <button type="button" class="btn btn-sm btn-danger delete-btn"
-                                                data-id="{{ $dokter->id_dokter }}"
-                                                data-nama="{{ $dokter->nama_dokter }}">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
+
+                                            <!-- <form action="{{ route('pasien.dokter.destroy', $dokter->id_dokter) }}"
+                                                method="POST"
+                                                class="d-inline"
+                                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus dokter ini?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-danger">
+                                                    <i class="ri-delete-bin-line"></i> Hapus
+                                                </button>
+                                            </form> -->
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center py-4">
+                                            <p class="text-muted">Tidak ada data dokter.</p>
+                                        </td>
+                                    </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
+                            <div class="d-flex justify-content-center mt-3">
+                                {{ $dokters->links('pagination::bootstrap-5') }}
                         </div>
                     </div>
                     <!-- Table ends -->
@@ -78,254 +123,135 @@
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Modal Tambah Dokter -->
-    <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form action="{{ route('pasien.dokter.store') }}" method="POST">
-                    @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addModalLabel">Tambah Dokter</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="nama_dokter" class="form-label">Nama Dokter *</label>
-                            <input type="text" class="form-control" id="nama_dokter" name="nama_dokter" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="alamat" class="form-label">Alamat *</label>
-                            <textarea class="form-control" id="alamat" name="alamat" rows="3" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="no_telp" class="form-label">Nomor Telepon *</label>
-                            <input type="text" class="form-control" id="no_telp" name="no_telp" required>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Simpan</button>
-                    </div>
-                </form>
+<!-- Modal Tambah Single -->
+<div class="modal fade" id="tambahModal" tabindex="-1" aria-labelledby="tambahModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tambahModalLabel">Tambah Dokter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-        </div>
-    </div>
-
-    <!-- Modal Edit Dokter -->
-    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="editForm" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="editModalLabel">Edit Dokter</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <form action="{{ route('pasien.dokter.store') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nama_dokter" class="form-label">Nama Dokter *</label>
+                        <input type="text" class="form-control" id="nama_dokter" name="nama_dokter" required
+                            placeholder="Masukkan nama dokter">
                     </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="edit_id" name="id">
-                        <div class="mb-3">
-                            <label for="edit_nama_dokter" class="form-label">Nama Dokter *</label>
-                            <input type="text" class="form-control" id="edit_nama_dokter" name="nama_dokter" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_alamat" class="form-label">Alamat *</label>
-                            <textarea class="form-control" id="edit_alamat" name="alamat" rows="3" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label for="edit_no_telp" class="form-label">Nomor Telepon *</label>
-                            <input type="text" class="form-control" id="edit_no_telp" name="no_telp" required>
-                        </div>
+                    <div class="mb-3">
+                        <label for="alamat" class="form-label">Alamat *</label>
+                        <textarea class="form-control" id="alamat" name="alamat" rows="3" required
+                            placeholder="Masukkan alamat dokter"></textarea>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-primary">Update</button>
+                    <div class="mb-3">
+                        <label for="no_telp" class="form-label">Nomor Telepon *</label>
+                        <input type="text" class="form-control" id="no_telp" name="no_telp" required
+                            placeholder="Masukkan nomor telepon">
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Tambah Banyak Dokter -->
-    <div class="modal fade" id="addMultipleModal" tabindex="-1" aria-labelledby="addMultipleModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <form action="{{ route('pasien.dokter.store.multiple') }}" method="POST">
-                    @csrf
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="addMultipleModalLabel">Tambah Banyak Dokter</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div id="dokterContainer">
-                            <div class="dokter-form mb-4 p-3 border rounded">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="mb-0">Dokter #1</h6>
-                                    <button type="button" class="btn btn-sm btn-danger remove-dokter" onclick="removeDokterForm(this)">
-                                        <i class="fas fa-times"></i>
-                                    </button>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Nama Dokter *</label>
-                                        <input type="text" class="form-control" name="dokters[0][nama_dokter]" required>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Alamat *</label>
-                                        <textarea class="form-control" name="dokters[0][alamat]" rows="1" required></textarea>
-                                    </div>
-                                    <div class="col-md-4 mb-3">
-                                        <label class="form-label">Nomor Telepon *</label>
-                                        <input type="text" class="form-control" name="dokters[0][no_telp]" required>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addDokterForm()">
-                            <i class="fas fa-plus"></i> Tambah Form Dokter
-                        </button>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-success">Simpan Semua</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Delete Confirmation -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="deleteForm" method="POST">
-                    @csrf
-                    @method('DELETE')
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="deleteModalLabel">Konfirmasi Hapus</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Apakah Anda yakin ingin menghapus dokter <strong id="deleteDokterName"></strong>?</p>
-                        <p class="text-danger"><small>Tindakan ini tidak dapat dibatalkan.</small></p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                        <button type="submit" class="btn btn-danger">Hapus</button>
-                    </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
+
+<!-- Modal Tambah Batch -->
+<div class="modal fade" id="tambahBatchModal" tabindex="-1" aria-labelledby="tambahBatchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="tambahBatchModalLabel">Tambah Banyak Dokter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('pasien.dokter.store.multiple') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="batch_dokter" class="form-label">Daftar Dokter (Format CSV)</label>
+                        <textarea class="form-control" id="batch_dokter" name="batch_dokter"
+                            rows="10" required
+                            placeholder="Format: Nama Dokter;Alamat;Nomor Telepon (gunakan titik koma sebagai pemisah)
+
+Contoh:
+dr. Andi Wijaya;Jl. Merdeka No. 123;081234567890
+dr. Budi Santoso;Jl. Sudirman No. 456;081298765432">
+                        </textarea>
+                        <div class="form-text">
+                            Masukkan data dokter dengan format: Nama Dokter;Alamat;Nomor Telepon. Satu dokter per baris.
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">Simpan Semua</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Edit -->
+@foreach($dokters as $dokter)
+<div class="modal fade" id="modalEdit{{ $dokter->id_dokter }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Edit: {{ $dokter->nama_dokter }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <form action="{{ route('pasien.dokter.update', $dokter->id_dokter) }}" method="POST">
+                @csrf
+                @method('PUT')
+
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nama Dokter</label>
+                        <input type="text"
+                            name="nama_dokter"
+                            class="form-control"
+                            value="{{ $dokter->nama_dokter }}"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alamat</label>
+                        <textarea name="alamat"
+                            class="form-control"
+                            rows="3"
+                            required>{{ $dokter->alamat }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nomor Telepon</label>
+                        <input type="text"
+                            name="no_telp"
+                            class="form-control"
+                            value="{{ $dokter->no_telp }}"
+                            required>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+@endforeach
 
 @endsection
 
 @section('scripts')
 <script>
-    // Edit Modal Handler
-    var editModal = document.getElementById('editModal');
-    editModal.addEventListener('show.bs.modal', function(event) {
-        var button = event.relatedTarget;
-        var id = button.getAttribute('data-id');
-        var nama = button.getAttribute('data-nama');
-        var alamat = button.getAttribute('data-alamat');
-        var telepon = button.getAttribute('data-telepon');
-
-        var modalTitle = editModal.querySelector('.modal-title');
-        var dokterId = editModal.querySelector('#edit_id');
-        var dokterNama = editModal.querySelector('#edit_nama_dokter');
-        var dokterAlamat = editModal.querySelector('#edit_alamat');
-        var dokterTelepon = editModal.querySelector('#edit_no_telp');
-        var form = editModal.querySelector('#editForm');
-
-        modalTitle.textContent = 'Edit Dokter: ' + nama;
-        dokterId.value = id;
-        dokterNama.value = nama;
-        dokterAlamat.value = alamat;
-        dokterTelepon.value = telepon;
-        form.action = '{{ url("admin/dokter") }}/' + id;
-    });
-
-    // Delete Modal Handler
-    var deleteModal = document.getElementById('deleteModal');
-    var deleteButtons = document.querySelectorAll('.delete-btn');
-
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            var id = this.getAttribute('data-id');
-            var nama = this.getAttribute('data-nama');
-
-            var deleteForm = deleteModal.querySelector('#deleteForm');
-            var dokterName = deleteModal.querySelector('#deleteDokterName');
-
-            dokterName.textContent = nama;
-            deleteForm.action = '{{ url("admin/dokter") }}/' + id;
-
-            var modal = new bootstrap.Modal(deleteModal);
-            modal.show();
-        });
-    });
-
-    // Dynamic form untuk tambah banyak dokter
-    let dokterCounter = 1;
-
-    function addDokterForm() {
-        const container = document.getElementById('dokterContainer');
-        const newForm = document.createElement('div');
-        newForm.className = 'dokter-form mb-4 p-3 border rounded';
-        newForm.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Dokter #${dokterCounter + 1}</h6>
-                <button type="button" class="btn btn-sm btn-danger remove-dokter" onclick="removeDokterForm(this)">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Nama Dokter *</label>
-                    <input type="text" class="form-control" name="dokters[${dokterCounter}][nama_dokter]" required>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Alamat *</label>
-                    <textarea class="form-control" name="dokters[${dokterCounter}][alamat]" rows="1" required></textarea>
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Nomor Telepon *</label>
-                    <input type="text" class="form-control" name="dokters[${dokterCounter}][no_telp]" required>
-                </div>
-            </div>
-        `;
-        container.appendChild(newForm);
-        dokterCounter++;
-    }
-
-    function removeDokterForm(button) {
-        const form = button.closest('.dokter-form');
-        form.remove();
-        renumberForms();
-    }
-
-    function renumberForms() {
-        const forms = document.querySelectorAll('.dokter-form');
-        forms.forEach((form, index) => {
-            const header = form.querySelector('h6');
-            const inputs = form.querySelectorAll('input, textarea');
-
-            header.textContent = `Dokter #${index + 1}`;
-
-            inputs.forEach(input => {
-                const name = input.getAttribute('name');
-                if (name) {
-                    const newName = name.replace(/\[\d+\]/, `[${index}]`);
-                    input.setAttribute('name', newName);
-                }
-            });
-        });
-        dokterCounter = forms.length;
-    }
-
     // Auto-hide alerts setelah 5 detik
     setTimeout(function() {
         var alerts = document.querySelectorAll('.alert');

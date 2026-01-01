@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts_user.app')
 
 @section('content')
 <!-- App hero header starts -->
@@ -10,7 +10,7 @@
             <a href="{{ url('user/dashboard') }}">Home</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ route('user.index') }}">Pasien</a>
+            <a href="{{ route('user.index') }}">Dashboard</a>
         </li>
         <li class="breadcrumb-item text-primary" aria-current="page">
             History Pasien - {{ $latestPatient->rm_pasien ?? '' }}
@@ -91,8 +91,6 @@
                                         <th>No Lab</th>
                                         <th>Tanggal</th>
                                         <th>Nama Pasien</th>
-                                        <th>Hematology</th>
-                                        <th>Kimia</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -100,50 +98,35 @@
                                 <tbody>
                                     @forelse($histories as $patient)
                                     <tr>
+
+                                        <td>@php
+                                                // Parse tanggal dari nomor_registrasi (yymmdd)
+                                                $nomorRegistrasi = $patient->nomor_registrasi ?? '';
+
+                                                if (strlen($nomorRegistrasi) >= 6) {
+                                                    $datePart = substr($nomorRegistrasi, 0, 6);
+
+                                                    $year  = substr($datePart, 0, 2);
+                                                    $month = substr($datePart, 2, 2);
+                                                    $day   = substr($datePart, 4, 2);
+
+                                                    // Konversi tahun 2 digit ke 4 digit
+                                                    $year = (int)$year < 50 ? '20' . $year : '19' . $year;
+
+                                                    echo "{$day}/{$month}/{$year}";
+                                                } else {
+                                                    echo '-';
+                                                }
+                                            @endphp
+                                        </td>
                                         <td>{{ $patient->no_lab ?? '-'}}</td>
-                                        <td>{{ $patient->updated_at ? \Carbon\Carbon::parse($patient->created_at)->format('d/m/Y') : '-' }}</td>
                                         <td>{{ $patient->nama_pasien ?? '-'}}</td>
                                         <td>
-                                            @if($patient->hematology->isNotEmpty())
-                                            <span class="badge bg-success">✅ Selesai</span>
+                                            @if($patient->id_pemeriksa && $patient->waktu_validasi)
+                                                <span class="badge bg-success">Selesai</span>
                                             @else
-                                            <span class="badge bg-danger">❌ Belum</span>
+                                                <span class="badge bg-warning">Diproses</span>
                                             @endif
-                                        </td>
-                                        <td>
-                                            @if($patient->kimia->isNotEmpty())
-                                            <span class="badge bg-success">✅ Selesai</span>
-                                            @else
-                                            <span class="badge bg-danger">❌ Belum</span>
-                                            @endif
-                                        </td>
-                                        <td>
-                                            @php
-                                            $totalTests = 0;
-                                            $completedTests = 0;
-
-                                            if($patient->hematology->isNotEmpty()) {
-                                            $totalTests++;
-                                            $completedTests++;
-                                            }
-
-                                            if($patient->kimia->isNotEmpty()) {
-                                            $totalTests++;
-                                            $completedTests++;
-                                            }
-
-                                            if($totalTests == 0) {
-                                            $status = 'Menunggu';
-                                            $badgeClass = 'bg-warning';
-                                            } elseif ($completedTests == $totalTests) {
-                                            $status = 'Selesai';
-                                            $badgeClass = 'bg-success';
-                                            } else {
-                                            $status = 'Diproses';
-                                            $badgeClass = 'bg-info';
-                                            }
-                                            @endphp
-                                            <span class="badge {{ $badgeClass }}">{{ $status }}</span>
                                         </td>
                                         <td>
                                             <div class="btn-group" role="group">
