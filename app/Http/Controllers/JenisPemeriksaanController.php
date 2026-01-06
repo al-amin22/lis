@@ -9,6 +9,27 @@ use App\Services\LogActivityService;
 
 class JenisPemeriksaanController extends Controller
 {
+
+    public function search(Request $request)
+    {
+        $q = trim($request->get('q'));
+
+        if (strlen($q) < 2) {
+            return response()->json([]);
+        }
+
+        $data = DB::table('jenis_pemeriksaan_1')
+            ->where('nama_pemeriksaan', 'ILIKE', "%{$q}%")
+            ->orderBy('nama_pemeriksaan')
+            ->limit(20)
+            ->get([
+                'nama_pemeriksaan as id',
+                'nama_pemeriksaan as text'
+            ]);
+
+        return response()->json($data);
+    }
+
     public function index()
     {
         $jenisPemeriksaans = JenisPemeriksaan::orderBy('updated_at', 'desc')->get();

@@ -94,6 +94,13 @@
                 </a>
             </li>
 
+            <li class="{{ request()->routeIs('detail-data-pemeriksaan.index') ? 'active' : '' }}">
+                <a href="{{ route('detail-data-pemeriksaan.index') }}" class="d-flex align-items-center">
+                    <i class="ri-database-2-line me-3"></i>
+                    <span class="menu-text">Detail Data Pemeriksaan</span>
+                </a>
+            </li>
+
             <!-- Spacer (optional) -->
             <li class="sidebar-spacer"></li>
 

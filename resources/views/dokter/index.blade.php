@@ -178,9 +178,9 @@
                             rows="10" required
                             placeholder="Format: Nama Dokter;Alamat;Nomor Telepon (gunakan titik koma sebagai pemisah)
 
-Contoh:
-dr. Andi Wijaya;Jl. Merdeka No. 123;081234567890
-dr. Budi Santoso;Jl. Sudirman No. 456;081298765432">
+                                Contoh:
+                                dr. Andi Wijaya;Jl. Merdeka No. 123;081234567890
+                                dr. Budi Santoso;Jl. Sudirman No. 456;081298765432">
                         </textarea>
                         <div class="form-text">
                             Masukkan data dokter dengan format: Nama Dokter;Alamat;Nomor Telepon. Satu dokter per baris.

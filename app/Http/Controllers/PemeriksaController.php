@@ -6,6 +6,10 @@ use App\Models\Pemeriksa;
 use Illuminate\Http\Request;
 use App\Services\LogActivityService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+
 class PemeriksaController extends Controller
 {
     /**
@@ -22,6 +26,32 @@ class PemeriksaController extends Controller
 
         return view('pemeriksa.index', compact('pemeriksa'));
     }
+
+    // App\Http\Controllers\PemeriksaController.php
+    public function search(Request $request)
+    {
+        $query = trim($request->input('q', ''));
+
+        if (strlen($query) < 2) {
+            return response()->json([]);
+        }
+
+        $results = DB::table('pemeriksa')
+            ->select('id_pemeriksa as id', 'nama_pemeriksa')
+            ->where('nama_pemeriksa', 'ILIKE', '%' . $query . '%')
+            ->orderBy('nama_pemeriksa')
+            ->limit(10)
+            ->get();
+
+        return response()->json(
+            $results->map(fn ($item) => [
+                'id'   => $item->id,
+                'text' => $item->nama_pemeriksa,
+            ])
+        );
+    }
+
+
 
     /**
      * Store a newly created resource in storage.
@@ -123,25 +153,27 @@ class PemeriksaController extends Controller
         return redirect()->back()->with('success', 'Pemeriksa berhasil dihapus!');
     }
 
-   public function searchPemeriksa(Request $request)
+    public function searchPemeriksa(Request $request)
     {
-        $search = $request->input('q', '');
+        $query = trim($request->input('q', ''));
 
-        if (strlen($search) < 2) {
+        if (strlen($query) < 2) {
             return response()->json([]);
         }
 
-        $pemeriksa = Pemeriksa::where('nama_pemeriksa', 'like', '%' . $search . '%')
-            ->limit(15)
-            ->get(['id_pemeriksa', 'nama_pemeriksa'])
-            ->map(function ($item) {
-                return [
-                    'id'   => $item->id_pemeriksa,
-                    'text' => $item->nama_pemeriksa,
-                ];
-            });
+        $results = DB::table('pemeriksa')
+            ->select('id_pemeriksa as id', 'nama_pemeriksa')
+            ->where('nama_pemeriksa', 'ILIKE', '%' . $query . '%')
+            ->orderBy('nama_pemeriksa')
+            ->limit(10)
+            ->get();
 
-        return response()->json($pemeriksa);
+        return response()->json(
+            $results->map(fn ($item) => [
+                'id'   => $item->id,
+                'text' => $item->nama_pemeriksa,
+            ])
+        );
     }
 
 

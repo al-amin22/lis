@@ -366,6 +366,7 @@
                             </div>
 
                             <!-- HEMATOLOGY SECTION -->
+                            <!-- HEMATOLOGY SECTION -->
                             @if(count(array_filter($hematology_fix)) > 0)
                             <div class="mb-4">
                                 <div class="row">
@@ -373,6 +374,7 @@
                                     <div class="col-lg-9 col-md-12">
                                         <h6 class="mb-3 border-bottom pb-2">
                                             <i class="ri-test-tube-line me-2"></i>HEMATOLOGY
+                                            <span class="badge bg-info ms-2">Kondisi: {{ $pasien->jenis_kelamin }} | {{ $data['umur_format'] }}</span>
                                         </h6>
                                         <div class="table-responsive">
                                             <table class="table table-bordered table-sm">
@@ -399,34 +401,50 @@
                                                     @foreach($hematology_fix as $index => $item)
                                                     @php
                                                     $jenis = $jenis_pemeriksaan_list[$index] ?? 'Unknown';
-                                                    $keterangan = $item->keterangan ?? '';
 
-                                                    // Ambil CH dan CL dari dataPemeriksaan
-                                                    $ch_value = $item->dataPemeriksaan->ch ?? '-';
-                                                    $cl_value = $item->dataPemeriksaan->cl ?? '-';
-                                                    $rujukan_pemeriksaan = $item->dataPemeriksaan->rujukan ?? '-';
+                                                    // Gunakan data yang sudah dihitung di controller
+                                                    if ($item && isset($item->rujukan_by_kondisi)) {
+                                                        $rujukanData = $item->rujukan_by_kondisi;
+                                                        $isRujukanFromDetail = $rujukanData['is_from_detail'] ?? false;
+                                                        $detailCondition = $rujukanData['detail_condition'] ?? null;
+
+                                                        $rujukan_value = $rujukanData['rujukan'] ?? '-';
+                                                        $ch_value = $rujukanData['ch'] ?? '-';
+                                                        $cl_value = $rujukanData['cl'] ?? '-';
+                                                        $satuan_value = $rujukanData['satuan'] ?? '-';
+
+                                                        // Gunakan keterangan yang sudah dihitung
+                                                        $keterangan = $item->calculated_keterangan ?? $item->keterangan ?? '-';
+                                                    } else {
+                                                        $keterangan = '-';
+                                                        $rujukan_value = '-';
+                                                        $ch_value = '-';
+                                                        $cl_value = '-';
+                                                        $satuan_value = '-';
+                                                        $isRujukanFromDetail = false;
+                                                    }
 
                                                     // Tentukan warna untuk keterangan
                                                     if ($keterangan === 'CH' || $keterangan === 'H') {
-                                                    $bgColor = 'bg-danger bg-opacity-10';
-                                                    $textColor = 'text-danger';
-                                                    $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
+                                                        $bgColor = 'bg-danger bg-opacity-10';
+                                                        $textColor = 'text-danger';
+                                                        $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
                                                     } elseif ($keterangan === 'CL' || $keterangan === 'L') {
-                                                    $bgColor = 'bg-primary bg-opacity-10';
-                                                    $textColor = 'text-primary';
-                                                    $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
+                                                        $bgColor = 'bg-primary bg-opacity-10';
+                                                        $textColor = 'text-primary';
+                                                        $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
                                                     } elseif ($keterangan === '-' || $keterangan === '') {
-                                                    $bgColor = 'bg-success bg-opacity-10';
-                                                    $textColor = 'text-success';
-                                                    $textDisplay = '-';
+                                                        $bgColor = 'bg-success bg-opacity-10';
+                                                        $textColor = 'text-success';
+                                                        $textDisplay = '-';
                                                     } else {
-                                                    $bgColor = 'bg-light';
-                                                    $textColor = 'text-muted';
-                                                    $textDisplay = '-';
+                                                        $bgColor = 'bg-light';
+                                                        $textColor = 'text-muted';
+                                                        $textDisplay = '-';
                                                     }
                                                     @endphp
 
-                                                    <tr data-index="{{ $index }}">
+                                                    <tr data-index="{{ $index }}" class="@if($isRujukanFromDetail) table-info @endif">
                                                         <td class="bg-light">
                                                             <strong>{{ $jenis }}</strong>
                                                             <input type="hidden"
@@ -435,6 +453,9 @@
                                                             <input type="hidden"
                                                                 name="hematology[{{ $index }}][jenis_pengujian]"
                                                                 value="{{ $jenis }}">
+                                                            <input type="hidden"
+                                                                name="hematology[{{ $index }}][id_data_pemeriksaan]"
+                                                                value="{{ $item->dataPemeriksaan->id_data_pemeriksaan ?? '' }}">
                                                         </td>
                                                         <td class="hasil-cell">
                                                             @if($item && $item->id_pemeriksaan_hematology)
@@ -446,12 +467,15 @@
                                                                 data-original="{{ $item->hasil_pengujian ?? '' }}"
                                                                 data-id="{{ $item->id_pemeriksaan_hematology }}"
                                                                 data-type="hematology"
-                                                                data-rujukan="{{ $rujukan_pemeriksaan }}"
+                                                                data-rujukan="{{ $rujukan_value }}"
                                                                 data-ch="{{ $ch_value }}"
                                                                 data-cl="{{ $cl_value }}"
+                                                                data-id-data-pemeriksaan="{{ $item->dataPemeriksaan->id_data_pemeriksaan ?? '' }}"
                                                                 data-jenis="{{ $jenis }}"
-                                                                data-jenis="{{ $item->dataPemeriksaan->data_pemeriksaan }}"
+                                                                data-jenis-full="{{ $item->dataPemeriksaan->data_pemeriksaan ?? '' }}"
                                                                 data-rm="{{ $pasien->rm_pasien }}"
+                                                                data-umur="{{ $data['umur_format'] }}"
+                                                                data-jenis-kelamin="{{ $pasien->jenis_kelamin }}"
                                                                 autocomplete="off">
                                                             @else
                                                             <input type="text"
@@ -465,22 +489,32 @@
                                                                 data-rujukan=""
                                                                 data-ch=""
                                                                 data-cl=""
+                                                                data-id-data-pemeriksaan=""
                                                                 data-jenis="{{ $jenis }}"
                                                                 data-rm="{{ $pasien->rm_pasien }}"
                                                                 autocomplete="off">
                                                             @endif
                                                         </td>
                                                         <td class="bg-light">
-                                                            {{ $item->dataPemeriksaan->satuan ?? '-' }}
+                                                            {{ $satuan_value }}
                                                         </td>
                                                         <td class="bg-light rujukan-cell">
-                                                            {{ $rujukan_pemeriksaan }}
+                                                            {{ $rujukan_value }}
+                                                            @if($isRujukanFromDetail)
+                                                            <span class="badge bg-info ms-1" title="CH/CL khusus kondisi">K</span>
+                                                            @endif
                                                         </td>
                                                         <td class="bg-light ch-cell" style="text-align:center;">
                                                             {{ $ch_value }}
+                                                            @if($isRujukanFromDetail && $ch_value !== '-' && $ch_value !== '')
+                                                            <br><small class="text-info">detail</small>
+                                                            @endif
                                                         </td>
                                                         <td class="bg-light cl-cell" style="text-align:center;">
                                                             {{ $cl_value }}
+                                                            @if($isRujukanFromDetail && $cl_value !== '-' && $cl_value !== '')
+                                                            <br><small class="text-info">detail</small>
+                                                            @endif
                                                         </td>
                                                         <td class="keterangan-cell">
                                                             <div class="keterangan-display {{ $bgColor }} {{ $textColor }} rounded py-1 px-2 text-center"
@@ -545,16 +579,16 @@
                                     <div class="col-lg-9 col-md-12">
                                         <h6 class="mb-3 border-bottom pb-2">
                                             <i class="ri-flask-line me-2"></i>KIMIA
+                                            <span class="badge bg-info ms-2">Kondisi: {{ $pasien->jenis_kelamin }} | {{ $data['umur_format'] }}</span>
                                         </h6>
 
                                         <div class="table-responsive">
                                             <table class="table table-bordered align-middle text-nowrap">
                                                 <thead class="table-light">
                                                     <tr>
-                                                        <th width="15%" class="bg-light">Nama Dari Alat</th>
+                                                        <th width="15%" class="bg-light">Dari Alat</th>
                                                         <th width="15%">Nama Standar dari RS</th>
                                                         <th width="10%" class="bg-light">Hasil</th>
-                                                        <th width="10%" class="bg-light">Satuan</th>
                                                         <th width="10%" class="bg-light">Rujukan</th>
                                                         <th width="5%" class="bg-light">CH</th>
                                                         <th width="5%" class="bg-light">CL</th>
@@ -564,34 +598,52 @@
                                                 <tbody>
                                                     @foreach($kimia as $index => $item)
                                                     @php
-                                                    $keterangan = $item->keterangan ?? '';
+                                                    // Gunakan data yang sudah dihitung di controller
+                                                    if ($item && isset($item->rujukan_by_kondisi)) {
+                                                        $rujukanData = $item->rujukan_by_kondisi;
+                                                        $isRujukanFromDetail = $rujukanData['is_from_detail'] ?? false;
+                                                        $detailCondition = $rujukanData['detail_condition'] ?? null;
+
+                                                        $rujukan_value = $rujukanData['rujukan'] ?? '-';
+                                                        $ch_value = $rujukanData['ch'] ?? '-';
+                                                        $cl_value = $rujukanData['cl'] ?? '-';
+                                                        $satuan_value = $rujukanData['satuan'] ?? '-';
+
+                                                        // Gunakan keterangan yang sudah dihitung
+                                                        $keterangan = $item->calculated_keterangan ?? $item->keterangan ?? '-';
+                                                    } else {
+                                                        $keterangan = $item->keterangan ?? '-';
+                                                        $rujukan_value = $item->dataPemeriksaan->rujukan ?? '-';
+                                                        $ch_value = $item->dataPemeriksaan->ch ?? '-';
+                                                        $cl_value = $item->dataPemeriksaan->cl ?? '-';
+                                                        $satuan_value = $item->dataPemeriksaan->satuan ?? '-';
+                                                        $isRujukanFromDetail = false;
+                                                    }
+
                                                     $id_data_pemeriksaan = $item->id_data_pemeriksaan ?? null;
                                                     $analysis = $item->analysis ?? '';
 
-                                                    // Ambil CH dan CL dari dataPemeriksaan
-                                                    $ch_value = $item->dataPemeriksaan->ch ?? '-';
-                                                    $cl_value = $item->dataPemeriksaan->cl ?? '-';
-
                                                     // Warna untuk keterangan
                                                     if ($keterangan === 'CH' || $keterangan === 'H') {
-                                                    $bgColor = 'bg-danger bg-opacity-10';
-                                                    $textColor = 'text-danger';
-                                                    $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
+                                                        $bgColor = 'bg-danger bg-opacity-10';
+                                                        $textColor = 'text-danger';
+                                                        $textDisplay = $keterangan === 'CH' ? 'CH' : 'H';
                                                     } elseif ($keterangan === 'CL' || $keterangan === 'L') {
-                                                    $bgColor = 'bg-primary bg-opacity-10';
-                                                    $textColor = 'text-primary';
-                                                    $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
+                                                        $bgColor = 'bg-primary bg-opacity-10';
+                                                        $textColor = 'text-primary';
+                                                        $textDisplay = $keterangan === 'CL' ? 'CL' : 'L';
                                                     } elseif ($keterangan === '-') {
-                                                    $bgColor = 'bg-success bg-opacity-10';
-                                                    $textColor = 'text-success';
-                                                    $textDisplay = '';
+                                                        $bgColor = 'bg-success bg-opacity-10';
+                                                        $textColor = 'text-success';
+                                                        $textDisplay = '';
                                                     } else {
-                                                    $bgColor = 'bg-light';
-                                                    $textColor = 'text-muted';
-                                                    $textDisplay = '-';
+                                                        $bgColor = 'bg-light';
+                                                        $textColor = 'text-muted';
+                                                        $textDisplay = '-';
                                                     }
                                                     @endphp
-                                                    <tr data-index="{{ $index }}" data-kimia-id="{{ $item->id_pemeriksaan_kimia }}">
+                                                    <tr data-index="{{ $index }}" data-kimia-id="{{ $item->id_pemeriksaan_kimia }}"
+                                                        class="@if($isRujukanFromDetail) table-info @endif">
                                                         <td class="bg-light">
                                                             <strong>{{ $analysis }}</strong>
                                                             <input type="hidden"
@@ -664,22 +716,23 @@
                                                                 data-original="{{ $item->hasil_pengujian ?? '' }}"
                                                                 data-id="{{ $item->id_pemeriksaan_kimia }}"
                                                                 data-type="kimia"
+                                                                data-id-data-pemeriksaan="{{ $id_data_pemeriksaan }}"
                                                                 data-jenis="{{ $item->dataPemeriksaan->data_pemeriksaan ?? '' }}"
-                                                                data-rujukan="{{ $item->rujukan ?? '' }}"
+                                                                data-rujukan="{{ $rujukan_value }}"
                                                                 data-ch="{{ $ch_value }}"
                                                                 data-cl="{{ $cl_value }}"
-                                                                data-jenis="{{ $analysis }}"
+                                                                data-analysis="{{ $analysis }}"
                                                                 data-rm="{{ $pasien->rm_pasien }}"
+                                                                data-umur="{{ $data['umur_format'] }}"
+                                                                data-jenis-kelamin="{{ $pasien->jenis_kelamin }}"
                                                                 autocomplete="off">
                                                         </td>
-                                                        <td class=" bg-light satuan-cell" style="text-align:center;">
-                                                            <span class="satuan-display">
-                                                                {{ $item->dataPemeriksaan->satuan ?? '-' }}
-                                                            </span>
-                                                        </td>
-                                                        <td class=" bg-light rujukan-cell" style="text-align:center;">
+                                                        <td class="bg-light rujukan-cell" style="text-align:center;">
                                                             <span class="rujukan-display">
-                                                                {{ $item->dataPemeriksaan->rujukan ?? '-' }}
+                                                                {{ $rujukan_value }}
+                                                                @if($isRujukanFromDetail)
+                                                                <span class="badge bg-info ms-1" title="CH/CL khusus kondisi">K</span>
+                                                                @endif
                                                             </span>
                                                         </td>
                                                         <td class="bg-light ch-cell" style="text-align:center;">
@@ -751,13 +804,14 @@
                                         $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', $jenis_pemeriksaan));
                                     @endphp
 
-                                   <div class="pt-3 border-top pemeriksaan-lain-section" data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                <div class="pt-3 border-top pemeriksaan-lain-section" data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
                                         <div class="row">
                                             <!-- TABEL PEMERIKSAAN LAIN -->
                                             <div class="col-lg-9 col-md-12">
                                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                                     <h6 class="mb-0 border-bottom pb-2">
                                                         <i class="ri-list-check me-2"></i>{{ $jenis_pemeriksaan }}
+                                                        <span class="badge bg-info ms-2">Kondisi: {{ $pasien->jenis_kelamin }} | {{ $data['umur_format'] }}</span>
                                                     </h6>
                                                     <div>
                                                         <!-- Tombol Tambah Row (Manual) -->
@@ -795,9 +849,16 @@
                                                         <tbody>
                                                             @foreach($items as $index => $item)
                                                             @php
-                                                                $keterangan = $item->keterangan ?? '-';
-                                                                $ch_value = $item->ch ?? '-';
-                                                                $cl_value = $item->cl ?? '-';
+                                                                // Gunakan data yang sudah dihitung di controller
+                                                                $rujukan_value = $item->rujukan_by_kondisi ?? '-';
+                                                                $ch_value = $item->ch_by_kondisi ?? '-';
+                                                                $cl_value = $item->cl_by_kondisi ?? '-';
+                                                                $satuan_value = $item->satuan_by_kondisi ?? '-';
+                                                                $isRujukanFromDetail = $item->is_from_detail ?? false;
+                                                                $detailCondition = $item->detail_condition ?? null;
+
+                                                                // Gunakan keterangan yang sudah dihitung
+                                                                $keterangan = $item->calculated_keterangan ?? $item->keterangan ?? '-';
 
                                                                 // Tentukan warna untuk keterangan
                                                                 if ($keterangan === 'CH' || $keterangan === 'H') {
@@ -817,7 +878,8 @@
 
                                                             <tr data-index="{{ $index }}"
                                                                 data-id="{{ $item->id_hasil_lain ?? '' }}"
-                                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}">
+                                                                data-jenis-pemeriksaan="{{ $jenis_pemeriksaan }}"
+                                                                class="@if($isRujukanFromDetail) table-info @endif">
                                                                 <!-- Kolom Search Data Pemeriksaan -->
                                                                 <td class="search-cell-hasil-lain">
                                                                     <div class="position-relative">
@@ -852,23 +914,32 @@
 
                                                                 <!-- Kolom Satuan -->
                                                                 <td class="bg-light satuan-cell-hasil-lain">
-                                                                    <span class="satuan-display-hasil-lain">{{ $item->satuan ?? '-' }}</span>
+                                                                    <span class="satuan-display-hasil-lain">{{ $satuan_value }}</span>
                                                                 </td>
 
                                                                 <!-- Kolom Rujukan -->
                                                                 <td class="bg-light rujukan-cell-hasil-lain">
-                                                                    <span class="rujukan-display-hasil-lain">{{ $item->rujukan ?? '-' }}</span>
+                                                                    <span class="rujukan-display-hasil-lain">
+                                                                        {{ $rujukan_value }}
+                                                                        @if($isRujukanFromDetail)
+                                                                        <span class="badge bg-info ms-1" title="CH/CL khusus kondisi">K</span>
+                                                                        @endif
+                                                                    </span>
                                                                 </td>
 
                                                                 <!-- Kolom CH -->
                                                                 <td class="bg-light ch-cell-hasil-lain">
-                                                                    <span class="ch-display-hasil-lain">{{ $ch_value }}</span>
+                                                                    <span class="ch-display-hasil-lain">
+                                                                        {{ $ch_value }}
+                                                                    </span>
                                                                     <input type="hidden" class="ch-input-hasil-lain" value="{{ $ch_value }}">
                                                                 </td>
 
                                                                 <!-- Kolom CL -->
                                                                 <td class="bg-light cl-cell-hasil-lain">
-                                                                    <span class="cl-display-hasil-lain">{{ $cl_value }}</span>
+                                                                    <span class="cl-display-hasil-lain">
+                                                                        {{ $cl_value }}
+                                                                    </span>
                                                                     <input type="hidden" class="cl-input-hasil-lain" value="{{ $cl_value }}">
                                                                 </td>
 
@@ -881,6 +952,13 @@
                                                                         placeholder="Hasil"
                                                                         data-id="{{ $item->id_hasil_lain ?? '' }}"
                                                                         data-type="hasil_lain"
+                                                                        data-id-data-pemeriksaan="{{ $item->id_data_pemeriksaan ?? '' }}"
+                                                                        data-rujukan="{{ $rujukan_value }}"
+                                                                        data-ch="{{ $ch_value }}"
+                                                                        data-cl="{{ $cl_value }}"
+                                                                        data-jenis="{{ $item->jenis_pengujian ?? '' }}"
+                                                                        data-umur="{{ $data['umur_format'] }}"
+                                                                        data-jenis-kelamin="{{ $pasien->jenis_kelamin }}"
                                                                         autocomplete="off">
                                                                 </td>
 
@@ -909,7 +987,7 @@
                                                 </div>
                                             </div>
 
-                                            <!-- HISTORY PANEL (Sesuai kode existing) -->
+                                            <!-- HISTORY PANEL -->
                                             <div class="col-lg-3 col-md-12">
                                                 <div class="card h-100 border-start border-primary history-panel-card">
                                                     <div class="card-header bg-light py-2">
@@ -960,9 +1038,12 @@
                                                 <select id="jenisPemeriksaanSelect" class="form-select">
                                                     <option value="">-- Pilih Jenis Pemeriksaan --</option>
                                                     @foreach($jenis_pemeriksaan_1_list as $itemJenis)
-                                                    <option value="{{ $itemJenis->nama_pemeriksaan }}">{{ $itemJenis->nama_pemeriksaan }}</option>
+                                                        <option value="{{ $itemJenis->nama_pemeriksaan }}">
+                                                            {{ $itemJenis->nama_pemeriksaan }}
+                                                        </option>
                                                     @endforeach
                                                 </select>
+
                                             </div>
                                             <div class="col-md-6 d-flex align-items-end">
                                                 <button type="button" id="tambahTabelBtn" class="btn btn-primary">
@@ -1751,28 +1832,53 @@
 @endsection
 
 @section('scripts')
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        let typingTimer;
-        const delay = 300;
+    $(document).ready(function () {
+        $('#jenisPemeriksaanSelect').select2({
+            placeholder: '-- Pilih Jenis Pemeriksaan --',
+            width: '100%',
+            allowClear: true,
+            minimumResultsForSearch: 0 // PAKSA INPUT SEARCH MUNCUL
+        });
+    });
+</script>
+
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🔧 Validator System Initializing...');
 
         const input = document.getElementById('pemeriksaInput');
-        const dropdownMenu = document.getElementById('pemeriksaDropdown');
+        const dropdown = document.getElementById('pemeriksaDropdown');
         const saveBtn = document.getElementById('savePemeriksaBtn');
+        const csrfToken = '{{ csrf_token() }}';
 
+        if (!input) {
+            console.error('❌ Input validator tidak ditemukan');
+            return;
+        }
+
+        let typingTimer;
+        const delay = 500;
         let selectedPemeriksaId = input.dataset.pemeriksaId || null;
         let selectedPemeriksaNama = input.dataset.pemeriksaNama || null;
 
-        /* ===============================
-        FUNGSI TOAST GLOBAL
-        =============================== */
-        function showToastGlobal(type, message) {
-            const toastId = 'toast-' + Date.now();
+        // ==================== FUNGSI UTAMA ====================
+
+        // 1. Fungsi untuk menampilkan toast
+        function showValidatorToast(type, message) {
+            const toastId = 'validator-toast-' + Date.now();
             const toastHtml = `
-                <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div id="${toastId}" class="toast align-items-center text-bg-${type}" role="alert">
                     <div class="d-flex">
                         <div class="toast-body">
-                            <i class="ri-${type === 'success' ? 'check-circle' : 'error-warning'}-fill me-2"></i>
+                            <i class="ri-${type === 'success' ? 'check' : 'error-warning'}-line me-2"></i>
                             ${message}
                         </div>
                         <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
@@ -1780,214 +1886,264 @@
                 </div>
             `;
 
-            // Gunakan toast container yang sama dengan sistem lainnya
-            const $container = $('#toastContainer');
-            if ($container.length === 0) {
-                // Buat container jika belum ada
-                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
-            }
+            // Gunakan container yang sama
+            const container = document.querySelector('#toastContainer') || createToastContainer();
+            container.insertAdjacentHTML('beforeend', toastHtml);
 
-            $('#toastContainer').append(toastHtml);
             const toastElement = document.getElementById(toastId);
-            const toast = new bootstrap.Toast(toastElement, {
-                delay: 3000
-            });
-            toast.show();
+            const bsToast = new bootstrap.Toast(toastElement, { delay: 3000 });
+            bsToast.show();
 
             toastElement.addEventListener('hidden.bs.toast', function() {
-                $(this).remove();
+                this.remove();
             });
         }
 
-        /* ===============================
-        SEARCH PEMERIKSA
-        =============================== */
-        $(input).on('keyup', function () {
-            clearTimeout(typingTimer);
-            const keyword = this.value.trim();
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toastContainer';
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            container.style.zIndex = '9999';
+            document.body.appendChild(container);
+            return container;
+        }
 
+        // 2. Fungsi untuk menampilkan dropdown
+        function showDropdown(content) {
+            if (!dropdown) return;
+
+            dropdown.innerHTML = content;
+            dropdown.style.display = 'block';
+            dropdown.style.position = 'absolute';
+            dropdown.style.top = (input.offsetHeight + 5) + 'px';
+            dropdown.style.left = '0';
+            dropdown.style.width = input.offsetWidth + 'px';
+            dropdown.style.zIndex = '1050';
+            dropdown.style.backgroundColor = 'white';
+            dropdown.style.border = '1px solid #dee2e6';
+            dropdown.style.borderRadius = '4px';
+            dropdown.style.boxShadow = '0 0.5rem 1rem rgba(0,0,0,.15)';
+            dropdown.style.maxHeight = '300px';
+            dropdown.style.overflowY = 'auto';
+        }
+
+        function hideDropdown() {
+            if (dropdown) {
+                dropdown.style.display = 'none';
+            }
+        }
+
+        // 3. Fungsi untuk mencari pemeriksa
+        function searchPemeriksa(keyword) {
             if (keyword.length < 2) {
-                hideDropdown();
-                dropdownMenu.innerHTML = '';
-                if (keyword === '') {
-                    selectedPemeriksaId = null;
-                    selectedPemeriksaNama = null;
-                }
+                showDropdown(`
+                    <div class="dropdown-item text-muted py-2">
+                        <i class="ri-search-line me-2"></i>
+                        <span>Ketik minimal 2 karakter</span>
+                    </div>
+                `);
                 return;
             }
 
-            typingTimer = setTimeout(() => {
-                $.get("{{ route('pemeriksa.search') }}", { q: keyword }, function (res) {
-                    dropdownMenu.innerHTML = '';
-                    if (!res.length) {
-                        hideDropdown();
+            showDropdown(`
+                <div class="dropdown-item py-2">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
+                        <span class="text-muted">Mencari pemeriksa...</span>
+                    </div>
+                </div>
+            `);
+
+            // Gunakan route yang benar
+            const url = '{{ route("pemeriksa.search") }}';
+            console.log('Searching pemeriksa:', keyword, 'URL:', url);
+
+            fetch(`${url}?q=${encodeURIComponent(keyword)}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Search results:', data);
+
+                    if (!data || data.length === 0) {
+                        showDropdown(`
+                            <div class="dropdown-item text-muted py-2">
+                                <i class="ri-user-search-line me-2"></i>
+                                <span>Tidak ditemukan pemeriksa</span>
+                            </div>
+                        `);
                         return;
                     }
 
-                    res.forEach(item => {
-                        dropdownMenu.insertAdjacentHTML('beforeend', `
+                    let html = '';
+                    data.forEach(item => {
+                        html += `
                             <button type="button"
-                                class="dropdown-item pemeriksa-item"
-                                data-id="${item.id}"
-                                data-nama="${item.text}">
+                                    class="dropdown-item pemeriksa-item text-start py-2"
+                                    data-id="${item.id}"
+                                    data-nama="${item.text || item.nama_pemeriksa}">
                                 <i class="ri-user-line me-2"></i>
-                                ${item.text}
+                                ${item.text || item.nama_pemeriksa}
                             </button>
-                        `);
+                        `;
                     });
 
-                    showDropdown();
+                    showDropdown(html);
+                })
+                .catch(error => {
+                    console.error('Search error:', error);
+                    showDropdown(`
+                        <div class="dropdown-item text-danger py-2">
+                            <i class="ri-error-warning-line me-2"></i>
+                            <span>Gagal memuat data</span>
+                        </div>
+                    `);
                 });
-            }, delay);
-        });
+        }
 
-        /* ===============================
-        PILIH DROPDOWN ITEM
-        =============================== */
-        document.addEventListener('click', function (e) {
-            const item = e.target.closest('.pemeriksa-item');
-            if (!item) return;
-
-            selectedPemeriksaId = item.dataset.id;
-            selectedPemeriksaNama = item.dataset.nama;
-
-            input.value = selectedPemeriksaNama;
-            hideDropdown();
-
-            // Simpan otomatis saat dipilih dari dropdown
-            setTimeout(() => {
-                saveValidator();
-            }, 300);
-        });
-
-        /* ===============================
-        SAVE VALIDATOR
-        =============================== */
+        // 4. Fungsi untuk menyimpan validator
         function saveValidator() {
-            let value = input.value.trim();
+            const value = input.value.trim();
 
-            // Jika input kosong, hapus validator
-            if (!value && !selectedPemeriksaId) {
-                showToastGlobal('warning', 'Silakan pilih atau ketik nama pemeriksa');
+            if (!value) {
+                showValidatorToast('warning', 'Masukkan nama pemeriksa');
                 return;
             }
 
-            saveBtn.innerHTML = '<i class="ri-loader-4-line ri-spin"></i>';
+            const originalHtml = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="ri-loader-4-line spin"></i>';
             saveBtn.disabled = true;
 
-            fetch("{{ route('pasien.update.data.validator', $pasien->no_lab) }}", {
+            // Kirim ke server
+            fetch('{{ route("pasien.update.data.validator", $pasien->no_lab) }}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({
                     id_pemeriksa: selectedPemeriksaId,
                     nama_pemeriksa: value
                 })
             })
-            .then(res => res.json())
-            .then(res => {
-                if (res.success) {
-                    // update dari respons server
-                    selectedPemeriksaId = res.pemeriksa.id_pemeriksa;
-                    selectedPemeriksaNama = res.pemeriksa.nama_pemeriksa;
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Save response:', data);
 
+                if (data.success) {
+                    // Update data
+                    selectedPemeriksaId = data.pemeriksa?.id_pemeriksa || selectedPemeriksaId;
+                    selectedPemeriksaNama = data.pemeriksa?.nama_pemeriksa || value;
+
+                    // Update UI
                     input.value = selectedPemeriksaNama;
                     input.dataset.pemeriksaId = selectedPemeriksaId;
                     input.dataset.pemeriksaNama = selectedPemeriksaNama;
 
+                    // Update info display
                     document.getElementById('validatorInfo').innerHTML = `
                         <small class="text-success">
                             <i class="ri-checkbox-circle-line me-1"></i>
-                            Sudah divalidasi oleh:
-                            <strong>${selectedPemeriksaNama}</strong>
+                            Sudah divalidasi oleh: <strong>${selectedPemeriksaNama}</strong>
                         </small>
                     `;
 
-                    showToastGlobal('success', '✅ Validator berhasil diperbarui');
+                    showValidatorToast('success', 'Validator berhasil diperbarui');
                 } else {
-                    showToastGlobal('danger', res.message || '❌ Gagal menyimpan validator');
+                    showValidatorToast('danger', data.message || 'Gagal menyimpan');
                 }
             })
-            .catch(err => {
-                showToastGlobal('danger', '❌ Terjadi kesalahan jaringan');
+            .catch(error => {
+                console.error('Save error:', error);
+                showValidatorToast('danger', 'Terjadi kesalahan jaringan');
             })
             .finally(() => {
-                saveBtn.innerHTML = '<i class="ri-save-line"></i>';
+                saveBtn.innerHTML = originalHtml;
                 saveBtn.disabled = false;
             });
         }
 
-        // Event click untuk tombol save
-        saveBtn.addEventListener('click', function (e) {
+        // ==================== EVENT LISTENERS ====================
+
+        // Input typing dengan debounce
+        input.addEventListener('input', function() {
+            clearTimeout(typingTimer);
+
+            const keyword = this.value.trim();
+
+            // Reset selection jika berbeda dengan yang dipilih
+            if (keyword !== selectedPemeriksaNama) {
+                selectedPemeriksaId = null;
+                selectedPemeriksaNama = null;
+            }
+
+            typingTimer = setTimeout(() => {
+                searchPemeriksa(keyword);
+            }, delay);
+        });
+
+        // Klik dropdown item
+        document.addEventListener('click', function(e) {
+            const item = e.target.closest('.pemeriksa-item');
+            if (item) {
+                selectedPemeriksaId = item.dataset.id;
+                selectedPemeriksaNama = item.dataset.nama;
+
+                input.value = selectedPemeriksaNama;
+                hideDropdown();
+
+                // Auto save
+                setTimeout(saveValidator, 300);
+            }
+        });
+
+        // Klik tombol save
+        saveBtn.addEventListener('click', function(e) {
             e.preventDefault();
             saveValidator();
         });
 
-        /* ===============================
-        RESET JIKA DIKETIK MANUAL
-        =============================== */
-        input.addEventListener('input', function () {
-            if (this.value !== selectedPemeriksaNama) {
-                selectedPemeriksaId = null;
-                selectedPemeriksaNama = null;
-            }
-        });
-
-        /* ===============================
-        CLICK OUTSIDE DROPDOWN
-        =============================== */
-        document.addEventListener('click', function (e) {
-            if (!e.target.closest('#pemeriksaInput') &&
-                !e.target.closest('#pemeriksaDropdown')) {
-                hideDropdown();
-            }
-        });
-
-        /* ===============================
-        FUNGSI SHOW / HIDE DROPDOWN
-        =============================== */
-        function showDropdown() {
-            dropdownMenu.style.display = 'block';
-            dropdownMenu.style.position = 'absolute';
-            dropdownMenu.style.top = input.offsetHeight + 'px';
-            dropdownMenu.style.left = '0';
-            dropdownMenu.style.width = '100%';
-            dropdownMenu.style.zIndex = '1050';
-        }
-
-        function hideDropdown() {
-            dropdownMenu.style.display = 'none';
-        }
-
-        /* ===============================
-        ENTER KEY TO SAVE
-        =============================== */
-        input.addEventListener('keydown', function (e) {
+        // Enter key
+        input.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 saveValidator();
             }
         });
 
-        /* ===============================
-        INISIALISASI DATA AWAL
-        =============================== */
-        function initializeValidatorData() {
-            const currentValue = input.value.trim();
-            const currentId = input.dataset.pemeriksaId;
+        // Klik di luar untuk hide dropdown
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#pemeriksaInput') &&
+                !e.target.closest('#pemeriksaDropdown')) {
+                hideDropdown();
+            }
+        });
 
-            if (currentValue && currentId) {
+        // Initialize
+        function initializeValidator() {
+            const currentId = input.dataset.pemeriksaId;
+            const currentNama = input.dataset.pemeriksaNama;
+
+            if (currentId && currentNama) {
                 selectedPemeriksaId = currentId;
-                selectedPemeriksaNama = currentValue;
+                selectedPemeriksaNama = currentNama;
+                console.log('Initialized with:', { id: selectedPemeriksaId, nama: selectedPemeriksaNama });
             }
         }
 
         // Jalankan inisialisasi
-        initializeValidatorData();
+        setTimeout(initializeValidator, 100);
 
-        console.log('✅ Script pemeriksa autocomplete siap dengan toast global');
+        console.log('✅ Validator System Ready');
     });
 </script>
 
@@ -2871,7 +3027,456 @@
     $(document).ready(function() {
         const csrfToken = $('#csrf_token').val();
 
-        // Function untuk update kode display
+        // ============================================
+        // FUNGSI UNTUK MENDAPATKAN RUJUKAN BERDASARKAN KONDISI
+        // ============================================
+
+        function getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien) {
+            return new Promise((resolve, reject) => {
+                if (!idDataPemeriksaan) {
+                    resolve(null);
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ route("pasien.get-rujukan-by-kondisi") }}',
+                    method: 'GET',
+                    data: {
+                        id_data_pemeriksaan: idDataPemeriksaan,
+                        jenis_kelamin: jenisKelamin,
+                        umur_pasien: umurPasien
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            resolve(response.data);
+                        } else {
+                            console.error('Gagal mendapatkan rujukan:', response.message);
+                            resolve(null);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error mendapatkan rujukan:', error);
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
+        // ============================================
+        // FUNGSI UNTUK UPDATE KETERANGAN KIMIA DENGAN KONDISI
+        // ============================================
+
+        async function updateKimiaKeterangan($input) {
+            const hasil = $input.val();
+            const $row = $input.closest('tr');
+            const $keteranganDisplay = $row.find('.keterangan-display');
+            const $hiddenInput = $row.find('input[name*="[keterangan]"]');
+
+            console.log('=== KIMIA - updateKeterangan ===');
+            console.log('Hasil:', hasil);
+
+            // Clear jika kosong
+            if (!hasil || hasil.trim() === '') {
+                console.log('Hasil kosong, reset keterangan');
+                updateKeteranganDisplay($keteranganDisplay, '');
+                $hiddenInput.val('');
+                return;
+            }
+
+            // Dapatkan data kondisi pasien
+            const idDataPemeriksaan = $input.data('id-data-pemeriksaan');
+            const jenisKelamin = $input.data('jenis-kelamin') || '{{ $pasien->jenis_kelamin }}';
+            const umurPasien = $input.data('umur') || '{{ $data["umur_format"] ?? "" }}';
+
+            let rujukan = $input.data('rujukan') || $input.attr('data-rujukan') || '';
+            let ch = $input.data('ch') || $input.attr('data-ch') || '';
+            let cl = $input.data('cl') || $input.attr('data-cl') || '';
+
+            // Jika ada ID data pemeriksaan, coba dapatkan rujukan berdasarkan kondisi
+            if (idDataPemeriksaan) {
+                try {
+                    const rujukanData = await getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien);
+
+                    if (rujukanData) {
+                        // Update data pada input
+                        rujukan = rujukanData.rujukan || rujukan;
+                        ch = rujukanData.ch || ch;
+                        cl = rujukanData.cl || cl;
+
+                        // Update tampilan di tabel
+                        const rujukanDisplay = rujukan +
+                            (rujukanData.is_from_detail ?
+                                ' <span class="badge bg-info ms-1" title="CH/CL khusus kondisi">K</span>' :
+                                '');
+
+                        $row.find('.rujukan-display').html(rujukanDisplay);
+
+                        // // Update CH dengan indikator detail jika ada
+                        // const chDisplay = ch || '-';
+                        // const chDetail = (rujukanData.is_from_detail && ch !== '-' && ch !== '') ?
+                        //     '<br><small class="text-info">detail</small>' : '';
+                        // $row.find('.ch-cell').html(chDisplay + chDetail);
+
+                        // // Update CL dengan indikator detail jika ada
+                        // const clDisplay = cl || '-';
+                        // const clDetail = (rujukanData.is_from_detail && cl !== '-' && cl !== '') ?
+                        //     '<br><small class="text-info">detail</small>' : '';
+                        // $row.find('.cl-cell').html(clDisplay + clDetail);
+
+                        // Jika rujukan dari detail kondisi, highlight row
+                        if (rujukanData.is_from_detail) {
+                            $row.addClass('table-info');
+                        } else {
+                            $row.removeClass('table-info');
+                        }
+
+                        // Update data pada input untuk perhitungan selanjutnya
+                        $input.data('rujukan', rujukan);
+                        $input.data('ch', ch);
+                        $input.data('cl', cl);
+
+                        console.log('Rujukan Kimia diupdate berdasarkan kondisi:', rujukanData);
+                    }
+                } catch (error) {
+                    console.error('Error mendapatkan rujukan berdasarkan kondisi (Kimia):', error);
+                }
+            }
+
+            // Gunakan rujukan yang sudah diupdate untuk perhitungan
+            calculateAndUpdateKeteranganKimia($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl);
+        }
+
+        function calculateAndUpdateKeteranganKimia($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl) {
+            console.log('Kimia - Perhitungan dengan:', { hasil, rujukan, ch, cl });
+
+            if (!rujukan || rujukan.trim() === '' || rujukan.trim() === '-') {
+                console.log('Rujukan tidak tersedia atau "-"');
+                updateKeteranganDisplay($keteranganDisplay, '-');
+                $hiddenInput.val('-');
+                return;
+            }
+
+            try {
+                const rujukanStr = rujukan.toString().trim();
+                const hasilStr = hasil.toString().trim();
+                const hasilNum = parseFloat(hasilStr.replace(',', '.'));
+
+                console.log('Kimia - Data untuk perhitungan:', {
+                    rujukan: rujukanStr,
+                    hasil: hasilStr,
+                    hasilNum: hasilNum
+                });
+
+                // Jika bukan angka, cek kualitatif
+                if (isNaN(hasilNum)) {
+                    const hasilLower = hasilStr.toLowerCase();
+                    const rujukanLower = rujukanStr.toLowerCase();
+
+                    if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
+                        if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
+                            hasilLower.includes('non-reactive') || hasilLower.includes('nonreactive')) {
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            updateKeteranganDisplay($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
+                        }
+                        return;
+                    } else if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
+                        if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
+                            hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            updateKeteranganDisplay($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
+                        }
+                        return;
+                    } else {
+                        updateKeteranganDisplay($keteranganDisplay, '-');
+                        $hiddenInput.val('-');
+                    }
+                    return;
+                }
+
+                // CEK CRITICAL HIGH (CH)
+                if (ch && ch !== '' && ch !== '-' && ch !== 'null') {
+                    let chNum;
+                    if (ch.includes('>')) {
+                        chNum = parseFloat(ch.replace('>', '').trim());
+                    } else {
+                        chNum = parseFloat(ch);
+                    }
+
+                    if (!isNaN(chNum) && hasilNum > chNum) {
+                        console.log(`✅ KIMIA CH DETECTED: ${hasilNum} > ${chNum}`);
+                        updateKeteranganDisplay($keteranganDisplay, 'CH');
+                        $hiddenInput.val('CH');
+                        return;
+                    }
+                }
+
+                // CEK CRITICAL LOW (CL)
+                if (cl && cl !== '' && cl !== '-' && cl !== 'null') {
+                    let clNum;
+                    if (cl.includes('<')) {
+                        clNum = parseFloat(cl.replace('<', '').trim());
+                    } else {
+                        clNum = parseFloat(cl);
+                    }
+
+                    if (!isNaN(clNum) && hasilNum < clNum) {
+                        console.log(`✅ KIMIA CL DETECTED: ${hasilNum} < ${clNum}`);
+                        updateKeteranganDisplay($keteranganDisplay, 'CL');
+                        $hiddenInput.val('CL');
+                        return;
+                    }
+                }
+
+                // CEK RUJUKAN NORMAL
+                // Format range: "1 - 90"
+                if (rujukanStr.includes('-') && !rujukanStr.includes('<') && !rujukanStr.includes('>')) {
+                    const parts = rujukanStr.split('-');
+                    if (parts.length === 2) {
+                        const min = parseFloat(parts[0].trim());
+                        const max = parseFloat(parts[1].trim());
+
+                        if (!isNaN(min) && !isNaN(max)) {
+                            if (hasilNum < min) {
+                                console.log(`✅ KIMIA L DETECTED: ${hasilNum} < ${min}`);
+                                updateKeteranganDisplay($keteranganDisplay, 'L');
+                                $hiddenInput.val('L');
+                            } else if (hasilNum > max) {
+                                console.log(`✅ KIMIA H DETECTED: ${hasilNum} > ${max}`);
+                                updateKeteranganDisplay($keteranganDisplay, 'H');
+                                $hiddenInput.val('H');
+                            } else {
+                                console.log(`✅ KIMIA NORMAL: ${hasilNum} dalam range ${min}-${max}`);
+                                updateKeteranganDisplay($keteranganDisplay, '-');
+                                $hiddenInput.val('-');
+                            }
+                            return;
+                        }
+                    }
+                }
+
+                // Format: "< X"
+                if (rujukanStr.startsWith('<')) {
+                    const batas = parseFloat(rujukanStr.replace('<', '').trim());
+                    if (!isNaN(batas)) {
+                        if (hasilNum >= batas) {
+                            console.log(`✅ KIMIA H DETECTED: ${hasilNum} ≥ ${batas}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
+                        } else {
+                            console.log(`✅ KIMIA NORMAL: ${hasilNum} < ${batas}`);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        }
+                        return;
+                    }
+                }
+
+                // Format: "> X"
+                if (rujukanStr.startsWith('>')) {
+                    const batas = parseFloat(rujukanStr.replace('>', '').trim());
+                    if (!isNaN(batas)) {
+                        if (hasilNum <= batas) {
+                            console.log(`✅ KIMIA L DETECTED: ${hasilNum} ≤ ${batas}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
+                        } else {
+                            console.log(`✅ KIMIA NORMAL: ${hasilNum} > ${batas}`);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        }
+                        return;
+                    }
+                }
+
+                // Default
+                console.log('Tidak ada pola yang cocok');
+                updateKeteranganDisplay($keteranganDisplay, '-');
+                $hiddenInput.val('-');
+
+            } catch (e) {
+                console.error('KIMIA - Error:', e);
+                updateKeteranganDisplay($keteranganDisplay, '-');
+                $hiddenInput.val('-');
+            }
+        }
+
+        // Function untuk update keterangan display
+        function updateKeteranganDisplay($display, keterangan) {
+            if (!$display.length) {
+                console.error('Display element tidak ditemukan');
+                return;
+            }
+
+            // Reset semua kelas
+            $display.removeClass(
+                'bg-danger bg-opacity-10 ' +
+                'bg-primary bg-opacity-10 ' +
+                'bg-success bg-opacity-10 ' +
+                'text-danger text-primary text-success'
+            );
+
+            // Set kelas berdasarkan keterangan
+            let bgClass = '';
+            let textClass = '';
+            let displayText = '';
+
+            switch (keterangan) {
+                case 'CH':
+                case 'H':
+                    bgClass = 'bg-danger bg-opacity-10';
+                    textClass = 'text-danger';
+                    displayText = keterangan;
+                    break;
+
+                case 'CL':
+                case 'L':
+                    bgClass = 'bg-primary bg-opacity-10';
+                    textClass = 'text-primary';
+                    displayText = keterangan;
+                    break;
+
+                case '-':
+                    bgClass = 'bg-success bg-opacity-10';
+                    textClass = 'text-success';
+                    displayText = '';
+                    break;
+
+                default:
+                    bgClass = 'bg-light';
+                    textClass = 'text-muted';
+                    displayText = '-';
+                    keterangan = '-';
+            }
+
+            // Apply classes
+            $display.addClass(bgClass + ' ' + textClass);
+            $display.html('<strong>' + displayText + '</strong>');
+            $display.data('keterangan', keterangan);
+        }
+
+        // ============================================
+        // EVENT HANDLER UNTUK INPUT KIMIA
+        // ============================================
+
+        $(document).on('input', '.hasil-input[data-type="kimia"]', function() {
+            const $input = $(this);
+            const value = $input.val();
+
+            console.log('====== KIMIA - INPUT BERUBAH ======');
+            console.log('Nilai baru:', value);
+
+            // Update keterangan Kimia secara real-time
+            updateKimiaKeterangan($input);
+        });
+
+        // ============================================
+        // EXCEL NAVIGATION KHUSUS UNTUK KIMIA
+        // ============================================
+
+        function initKimiaExcelNavigation() {
+            // Select all inputs on focus
+            $('.hasil-input[data-type="kimia"]').on('focus', function() {
+                $(this).select();
+                $(this).closest('td').addClass('table-warning');
+            });
+
+            // Remove highlight on blur
+            $('.hasil-input[data-type="kimia"]').on('blur', function() {
+                $(this).closest('td').removeClass('table-warning');
+            });
+
+            // Excel-like keyboard navigation
+            $('.hasil-input[data-type="kimia"]').on('keydown', function(e) {
+                const $current = $(this);
+                const $row = $current.closest('tr');
+                const $cell = $current.closest('td');
+                const cellIndex = $cell.index();
+                const $rows = $row.closest('tbody').find('tr');
+                const rowIndex = $rows.index($row);
+
+                switch (e.key) {
+                    case 'Enter':
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        const $nextRow = $rows.eq(rowIndex + 1);
+                        if ($nextRow.length) {
+                            const $nextInput = $nextRow.find('td').eq(cellIndex).find('.hasil-input[data-type="kimia"]');
+                            if ($nextInput.length) {
+                                $nextInput.focus().select();
+                            }
+                        }
+                        break;
+
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        const $upRow = $rows.eq(rowIndex - 1);
+                        if ($upRow.length) {
+                            const $upInput = $upRow.find('td').eq(cellIndex).find('.hasil-input[data-type="kimia"]');
+                            if ($upInput.length) {
+                                $upInput.focus().select();
+                            }
+                        }
+                        break;
+
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        const $nextCell = $row.find('td').eq(cellIndex + 1).find('.hasil-input[data-type="kimia"]');
+                        if ($nextCell.length) {
+                            $nextCell.focus().select();
+                        }
+                        break;
+
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        const $prevCell = $row.find('td').eq(cellIndex - 1).find('.hasil-input[data-type="kimia"]');
+                        if ($prevCell.length) {
+                            $prevCell.focus().select();
+                        }
+                        break;
+                }
+            });
+        }
+
+        // ============================================
+        // INISIALISASI DATA RUJUKAN SAAT PAGE LOAD
+        // ============================================
+
+        console.log('Initializing kimia rujukan data...');
+        $('.hasil-input[data-type="kimia"]').each(function() {
+            const $input = $(this);
+            const $row = $input.closest('tr');
+            const rujukanDisplay = $row.find('.rujukan-display').text().trim().replace(' K', '');
+
+            // Jika rujukan display valid, set data-rujukan
+            if (rujukanDisplay && rujukanDisplay !== '-') {
+                $input.data('rujukan', rujukanDisplay);
+                $input.attr('data-rujukan', rujukanDisplay);
+
+                console.log('Kimia initialized rujukan:', {
+                    analysis: $row.find('input[name*="[analysis]"]').val(),
+                    rujukan: rujukanDisplay
+                });
+
+                // Juga update keterangan berdasarkan nilai yang ada
+                if ($input.val()) {
+                    updateKimiaKeterangan($input);
+                }
+            }
+        });
+
+        // Initialize Excel navigation untuk Kimia
+        initKimiaExcelNavigation();
+
+        // ============================================
+        // FUNGSI UNTUK UPDATE KODE DISPLAY (TIDAK DIUBAH)
+        // ============================================
+
         function updateKodeDisplay($row, kode, dataPemeriksaan, isMapped = true) {
             const rowIndex = $row.data('index');
             const kimiaId = $row.data('kimia-id');
@@ -2884,14 +3489,14 @@
                     <div class="position-relative">
                         <input type="text"
                             class="form-control form-control-sm kode-edit-input"
-                            placeholder="Cari kode pemeriksaan..."
+                            placeholder="Cari data pemeriksaan..."
                             value="${dataPemeriksaan || kode}"
                             data-kimia-id="${kimiaId}"
                             data-analysis="${analysis}"
                             data-current-kode="${kode}"
                             autocomplete="off">
                         <div class="kode-search-results dropdown-menu w-100"
-                             style="display: none; max-height: 200px; overflow-y: auto;">
+                            style="display: none; max-height: 200px; overflow-y: auto;">
                         </div>
                         <input type="hidden"
                             name="kimia[${rowIndex}][id_data_pemeriksaan]"
@@ -2916,7 +3521,7 @@
                             data-analysis="${analysis}"
                             autocomplete="off">
                         <div class="kode-search-results dropdown-menu w-100"
-                             style="display: none; max-height: 200px; overflow-y: auto;">
+                            style="display: none; max-height: 200px; overflow-y: auto;">
                         </div>
                         <input type="hidden"
                             name="kimia[${rowIndex}][id_data_pemeriksaan]"
@@ -2934,7 +3539,10 @@
             $row.find('.search-cell').html(html);
         }
 
-        // Function untuk reset mapping kode
+        // ============================================
+        // FUNGSI UNTUK RESET MAPPING KODE (TIDAK DIUBAH)
+        // ============================================
+
         function resetKodeMapping(kimiaId) {
             if (!confirm('Yakin ingin menghapus mapping kode pemeriksaan ini?')) {
                 return;
@@ -2948,7 +3556,6 @@
                     id_pemeriksaan_kimia: kimiaId
                 },
                 beforeSend: function() {
-                    // Gunakan showToast dari global scope
                     if (typeof showToast === 'function') {
                         showToast('info', 'Menghapus mapping...');
                     }
@@ -2976,10 +3583,7 @@
                         if ($hasilInput.val()) {
                             const $keteranganDisplay = $row.find('.keterangan-display');
 
-                            // Gunakan fungsi updateKeteranganDisplay dari global scope
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, '-');
-                            }
+                            updateKeteranganDisplay($keteranganDisplay, '-');
 
                             // AJAX untuk update keterangan di database
                             $.ajax({
@@ -2999,7 +3603,6 @@
                             });
                         }
 
-                        // Gunakan showToast dari global scope
                         if (typeof showToast === 'function') {
                             showToast('success', 'Mapping berhasil direset');
                         }
@@ -3018,14 +3621,16 @@
             });
         }
 
-        // Function untuk handle search kode
-        // Function untuk handle search kode pemeriksaan - MENGGUNAKAN id_data_pemeriksaan
+        // ============================================
+        // FUNGSI UNTUK HANDLE SEARCH KODE (TIDAK DIUBAH)
+        // ============================================
+
         function handleKodeSearch($input) {
             const searchTerm = $input.val().trim();
             const $results = $input.next('.kode-search-results');
             const kimiaId = $input.data('kimia-id');
             const analysis = $input.data('analysis');
-            const currentId = $input.data('current-id'); // UBAH DARI data-current-kode
+            const currentId = $input.data('current-id');
 
             if (searchTerm.length < 2) {
                 $results.hide().empty();
@@ -3041,7 +3646,7 @@
                         _token: csrfToken,
                         search: searchTerm,
                         analysis: analysis,
-                        exclude_current: currentId // GUNAKAN ID, bukan kode
+                        exclude_current: currentId
                     },
                     beforeSend: function() {
                         $results.html('<div class="dropdown-item text-center py-2"><i class="ri-loader-4-line spin"></i> Mencari data pemeriksaan...</div>').show();
@@ -3062,7 +3667,7 @@
                                             data-metode="${item.metode || ''}">
                                         <div class="d-flex justify-content-between align-items-center">
                                             <div>
-                                                <strong>${item.id_data_pemeriksaan}</strong> <!-- TAMPILKAN ID -->
+                                                <strong>${item.id_data_pemeriksaan}</strong>
                                                 <div class="small text-muted">${item.data_pemeriksaan}</div>
                                             </div>
                                             <i class="ri-arrow-right-s-line"></i>
@@ -3097,16 +3702,19 @@
             }, 500));
         }
 
+        // ============================================
+        // EVENT HANDLERS YANG SUDAH ADA (TIDAK DIUBAH)
+        // ============================================
+
         // Real-time search untuk kode pemeriksaan
         $(document).on('input', '.kode-search-input, .kode-edit-input', function() {
             handleKodeSearch($(this));
         });
 
         // Pilih kode pemeriksaan
-        // Pilih kode pemeriksaan - MENGGUNAKAN id_data_pemeriksaan
         $(document).on('click', '.kode-option', function() {
             const $option = $(this);
-            const id = $option.data('id'); // AMBIL id_data_pemeriksaan
+            const id = $option.data('id');
             const dataPemeriksaan = $option.data('data-pemeriksaan');
             const satuan = $option.data('satuan');
             const rujukan = $option.data('rujukan');
@@ -3130,14 +3738,14 @@
             $input.val(dataPemeriksaan);
             $results.hide().empty();
 
-            // Kirim ke server untuk update dan mapping - GUNAKAN id_data_pemeriksaan
+            // Kirim ke server untuk update dan mapping
             $.ajax({
                 url: '{{ route("kimia.update-kode-pemeriksaan") }}',
                 method: 'POST',
                 data: {
                     _token: csrfToken,
                     id_pemeriksaan_kimia: kimiaId,
-                    id_data_pemeriksaan: id, // GUNAKAN id_data_pemeriksaan
+                    id_data_pemeriksaan: id,
                     analysis: analysis,
                     method: metode,
                     satuan: satuan,
@@ -3150,7 +3758,7 @@
                     if (response.success) {
                         $row.removeClass('table-warning').addClass('table-success');
 
-                        // Update display dengan mode edit - TAMPILKAN ID dan NAMA
+                        // Update display dengan mode edit
                         const displayText = `${id} - ${dataPemeriksaan}`;
                         updateKodeDisplay($row, id, dataPemeriksaan, true);
 
@@ -3159,45 +3767,21 @@
                         $row.find('.rujukan-display').text(rujukan || '-');
                         $row.find('.method-cell').text(metode || '-');
 
-                        // UPDATE data-rujukan pada input hasil
+                        // UPDATE data pada input hasil untuk kondisi pasien
                         const $hasilInput = $row.find('.hasil-input');
                         $hasilInput.data('rujukan', rujukan);
                         $hasilInput.attr('data-rujukan', rujukan);
+                        $hasilInput.data('id-data-pemeriksaan', id);
 
-                        console.log('Updated rujukan on hasil-input:', {
+                        console.log('Updated rujukan dan id-data-pemeriksaan on hasil-input:', {
                             id: $hasilInput.data('id'),
+                            id_data_pemeriksaan: id,
                             rujukan: rujukan
                         });
 
-                        // Jika sudah ada nilai hasil, hitung ulang keterangan dan simpan ke database
+                        // Jika sudah ada nilai hasil, hitung ulang keterangan dengan kondisi baru
                         if ($hasilInput.val()) {
-                            // Panggil fungsi updateKeteranganClientSide dari global scope
-                            if (typeof updateKeteranganClientSide === 'function') {
-                                updateKeteranganClientSide($hasilInput);
-
-                                // Ambil keterangan terbaru setelah dihitung
-                                const $hiddenInput = $row.find('input[name*="[keterangan]"]');
-                                const keterangan = $hiddenInput.val();
-
-                                // Langsung simpan ke database
-                                if (keterangan) {
-                                    $.ajax({
-                                        url: '{{ route("hasil-lab.update-field-ajax") }}',
-                                        method: 'POST',
-                                        data: {
-                                            _token: csrfToken,
-                                            type: 'kimia',
-                                            id: $hasilInput.data('id'),
-                                            field: 'hasil_pengujian',
-                                            value: $hasilInput.val(),
-                                            keterangan: keterangan
-                                        },
-                                        success: function(resp) {
-                                            console.log('Keterangan updated after data pemeriksaan mapping:', resp);
-                                        }
-                                    });
-                                }
-                            }
+                            updateKimiaKeterangan($hasilInput);
                         }
 
                         if (typeof showToast === 'function') {
@@ -3278,40 +3862,115 @@
         const csrfToken = $('#csrf_token').val();
 
         // ============================================
-        // HEMATOLOGY REAL-TIME UPDATES - QUEUE SISTEM KHUSUS
+        // FUNGSI UNTUK MENDAPATKAN RUJUKAN BERDASARKAN KONDISI
         // ============================================
 
-        // Queue system khusus untuk Hematology
-        let hematologyQueue = [];
-        let isProcessingHematologyQueue = false;
+        function getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien) {
+            return new Promise((resolve, reject) => {
+                if (!idDataPemeriksaan) {
+                    resolve(null);
+                    return;
+                }
 
-        // Function untuk update keterangan Hematology
-        window.updateHematologyKeterangan = function($input) {
+                $.ajax({
+                    url: '{{ route("pasien.get-rujukan-by-kondisi") }}',
+                    method: 'GET',
+                    data: {
+                        id_data_pemeriksaan: idDataPemeriksaan,
+                        jenis_kelamin: jenisKelamin,
+                        umur_pasien: umurPasien
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            resolve(response.data);
+                        } else {
+                            console.error('Gagal mendapatkan rujukan:', response.message);
+                            resolve(null);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error mendapatkan rujukan:', error);
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
+        // ============================================
+        // UPDATE HEMATOLOGY KETERANGAN DENGAN KONDISI
+        // ============================================
+
+        window.updateHematologyKeterangan = async function($input) {
             const hasil = $input.val();
-            const rujukan = $input.data('rujukan') || $input.attr('data-rujukan') || '';
             const $row = $input.closest('tr');
             const $keteranganDisplay = $row.find('.keterangan-display');
             const $hiddenInput = $row.find('input[name*="[keterangan]"]');
 
             console.log('=== HEMATOLOGY - updateKeterangan ===');
             console.log('Hasil:', hasil);
-            console.log('Rujukan:', rujukan);
 
             // Clear jika kosong
             if (!hasil || hasil.trim() === '') {
                 console.log('Hasil kosong, reset keterangan');
-                if (typeof updateKeteranganDisplay === 'function') {
-                    updateKeteranganDisplay($keteranganDisplay, '');
-                }
+                updateKeteranganDisplay($keteranganDisplay, '');
                 $hiddenInput.val('');
                 return;
             }
 
+            // Dapatkan data kondisi pasien
+            const idDataPemeriksaan = $input.data('id-data-pemeriksaan');
+            const jenisKelamin = $input.data('jenis-kelamin') || '{{ $pasien->jenis_kelamin }}';
+            const umurPasien = $input.data('umur') || '{{ $data["umur_format"] ?? "" }}';
+
+            let rujukan = $input.data('rujukan') || $input.attr('data-rujukan') || '';
+            let ch = $input.data('ch') || $input.attr('data-ch') || '';
+            let cl = $input.data('cl') || $input.attr('data-cl') || '';
+
+            // Jika ada ID data pemeriksaan, coba dapatkan rujukan berdasarkan kondisi
+            if (idDataPemeriksaan) {
+                try {
+                    const rujukanData = await getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien);
+
+                    if (rujukanData) {
+                        // Update data pada input
+                        rujukan = rujukanData.rujukan || rujukan;
+                        ch = rujukanData.ch || ch;
+                        cl = rujukanData.cl || cl;
+
+                        // Update tampilan di tabel
+                        $row.find('.rujukan-cell').html(
+                            rujukan +
+                            (rujukanData.is_from_detail ?
+                                ' <span class="badge bg-info ms-1" title="Rujukan khusus kondisi">K</span>' :
+                                '')
+                        );
+                        $row.find('.ch-cell').text(ch || '-');
+                        $row.find('.cl-cell').text(cl || '-');
+
+                        // Jika rujukan dari detail kondisi, highlight row
+                        if (rujukanData.is_from_detail) {
+                            $row.addClass('table-info');
+                        } else {
+                            $row.removeClass('table-info');
+                        }
+
+                        console.log('Rujukan diupdate berdasarkan kondisi:', rujukanData);
+                    }
+                } catch (error) {
+                    console.error('Error mendapatkan rujukan berdasarkan kondisi:', error);
+                }
+            }
+
+            // Gunakan rujukan yang sudah diupdate untuk perhitungan
+            calculateAndUpdateKeterangan($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl);
+        };
+
+        function calculateAndUpdateKeterangan($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl) {
+            console.log('Perhitungan dengan:', { hasil, rujukan, ch, cl });
+
             if (!rujukan || rujukan.trim() === '' || rujukan.trim() === '-') {
                 console.log('Rujukan tidak tersedia atau "-"');
-                if (typeof updateKeteranganDisplay === 'function') {
-                    updateKeteranganDisplay($keteranganDisplay, '-');
-                }
+                updateKeteranganDisplay($keteranganDisplay, '-');
                 $hiddenInput.val('-');
                 return;
             }
@@ -3321,10 +3980,11 @@
                 const hasilStr = hasil.toString().trim();
                 const hasilNum = parseFloat(hasilStr.replace(',', '.'));
 
-                console.log('=== HEMATOLOGY - Data untuk perhitungan ===');
-                console.log('Rujukan string:', rujukanStr);
-                console.log('Hasil string:', hasilStr);
-                console.log('Hasil number:', hasilNum);
+                console.log('Data untuk perhitungan:', {
+                    rujukan: rujukanStr,
+                    hasil: hasilStr,
+                    hasilNum: hasilNum
+                });
 
                 // Jika bukan angka, cek kualitatif
                 if (isNaN(hasilNum)) {
@@ -3334,41 +3994,66 @@
                     if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
                         if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
                             hasilLower.includes('non-reactive') || hasilLower.includes('nonreactive')) {
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, '-');
-                            }
+                            updateKeteranganDisplay($keteranganDisplay, '-');
                             $hiddenInput.val('-');
                         } else {
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, 'H');
-                            }
+                            updateKeteranganDisplay($keteranganDisplay, 'H');
                             $hiddenInput.val('H');
                         }
                         return;
                     } else if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
                         if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
                             hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, '-');
-                            }
+                            updateKeteranganDisplay($keteranganDisplay, '-');
                             $hiddenInput.val('-');
                         } else {
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, 'L');
-                            }
+                            updateKeteranganDisplay($keteranganDisplay, 'L');
                             $hiddenInput.val('L');
                         }
                         return;
                     } else {
-                        if (typeof updateKeteranganDisplay === 'function') {
-                            updateKeteranganDisplay($keteranganDisplay, '-');
-                        }
+                        updateKeteranganDisplay($keteranganDisplay, '-');
                         $hiddenInput.val('-');
                     }
                     return;
                 }
 
-                // 1. FORMAT RANGE: "1 - 90" atau "1-90"
+                // CEK CRITICAL HIGH (CH)
+                if (ch && ch !== '' && ch !== '-' && ch !== 'null') {
+                    let chNum;
+                    if (ch.includes('>')) {
+                        chNum = parseFloat(ch.replace('>', '').trim());
+                    } else {
+                        chNum = parseFloat(ch);
+                    }
+
+                    if (!isNaN(chNum) && hasilNum > chNum) {
+                        console.log(`✅ CH DETECTED: ${hasilNum} > ${chNum}`);
+                        updateKeteranganDisplay($keteranganDisplay, 'CH');
+                        $hiddenInput.val('CH');
+                        return;
+                    }
+                }
+
+                // CEK CRITICAL LOW (CL)
+                if (cl && cl !== '' && cl !== '-' && cl !== 'null') {
+                    let clNum;
+                    if (cl.includes('<')) {
+                        clNum = parseFloat(cl.replace('<', '').trim());
+                    } else {
+                        clNum = parseFloat(cl);
+                    }
+
+                    if (!isNaN(clNum) && hasilNum < clNum) {
+                        console.log(`✅ CL DETECTED: ${hasilNum} < ${clNum}`);
+                        updateKeteranganDisplay($keteranganDisplay, 'CL');
+                        $hiddenInput.val('CL');
+                        return;
+                    }
+                }
+
+                // CEK RUJUKAN NORMAL
+                // Format range: "1 - 90"
                 if (rujukanStr.includes('-') && !rujukanStr.includes('<') && !rujukanStr.includes('>')) {
                     const parts = rujukanStr.split('-');
                     if (parts.length === 2) {
@@ -3376,26 +4061,17 @@
                         const max = parseFloat(parts[1].trim());
 
                         if (!isNaN(min) && !isNaN(max)) {
-                            console.log('=== HEMATOLOGY - FORMAT RANGE ===');
-                            console.log('Min:', min, 'Max:', max, 'Hasil:', hasilNum);
-
                             if (hasilNum < min) {
-                                console.log(`Hasil (${hasilNum}) < Min (${min}) → L`);
-                                if (typeof updateKeteranganDisplay === 'function') {
-                                    updateKeteranganDisplay($keteranganDisplay, 'L');
-                                }
+                                console.log(`✅ L DETECTED: ${hasilNum} < ${min}`);
+                                updateKeteranganDisplay($keteranganDisplay, 'L');
                                 $hiddenInput.val('L');
                             } else if (hasilNum > max) {
-                                console.log(`Hasil (${hasilNum}) > Max (${max}) → H`);
-                                if (typeof updateKeteranganDisplay === 'function') {
-                                    updateKeteranganDisplay($keteranganDisplay, 'H');
-                                }
+                                console.log(`✅ H DETECTED: ${hasilNum} > ${max}`);
+                                updateKeteranganDisplay($keteranganDisplay, 'H');
                                 $hiddenInput.val('H');
                             } else {
-                                console.log(`Hasil (${hasilNum}) dalam range ${min}-${max} → -`);
-                                if (typeof updateKeteranganDisplay === 'function') {
-                                    updateKeteranganDisplay($keteranganDisplay, '-');
-                                }
+                                console.log(`✅ NORMAL: ${hasilNum} dalam range ${min}-${max}`);
+                                updateKeteranganDisplay($keteranganDisplay, '-');
                                 $hiddenInput.val('-');
                             }
                             return;
@@ -3403,314 +4079,49 @@
                     }
                 }
 
-                // 2. FORMAT "< 90" (Normal di ATAS 90)
+                // Format: "< X"
                 if (rujukanStr.startsWith('<')) {
                     const batas = parseFloat(rujukanStr.replace('<', '').trim());
                     if (!isNaN(batas)) {
-                        console.log('=== HEMATOLOGY - FORMAT "< batas" ===');
-                        console.log('Batas:', batas, 'Hasil:', hasilNum);
-
                         if (hasilNum >= batas) {
-                            console.log(`Hasil (${hasilNum}) ≥ Batas (${batas}) → - (Normal)`);
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, '-');
-                            }
-                            $hiddenInput.val('-');
+                            console.log(`✅ H DETECTED: ${hasilNum} ≥ ${batas}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
                         } else {
-                            console.log(`Hasil (${hasilNum}) < Batas (${batas}) → L (Low)`);
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, 'L');
-                            }
-                            $hiddenInput.val('L');
+                            console.log(`✅ NORMAL: ${hasilNum} < ${batas}`);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
                         }
                         return;
                     }
                 }
 
-                // 3. FORMAT "> 90" (Normal di BAWAH 90)
+                // Format: "> X"
                 if (rujukanStr.startsWith('>')) {
                     const batas = parseFloat(rujukanStr.replace('>', '').trim());
                     if (!isNaN(batas)) {
-                        console.log('=== HEMATOLOGY - FORMAT "> batas" ===');
-                        console.log('Batas:', batas, 'Hasil:', hasilNum);
-
                         if (hasilNum <= batas) {
-                            console.log(`Hasil (${hasilNum}) ≤ Batas (${batas}) → - (Normal)`);
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, '-');
-                            }
-                            $hiddenInput.val('-');
+                            console.log(`✅ L DETECTED: ${hasilNum} ≤ ${batas}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
                         } else {
-                            console.log(`Hasil (${hasilNum}) > Batas (${batas}) → H (High)`);
-                            if (typeof updateKeteranganDisplay === 'function') {
-                                updateKeteranganDisplay($keteranganDisplay, 'H');
-                            }
-                            $hiddenInput.val('H');
+                            console.log(`✅ NORMAL: ${hasilNum} > ${batas}`);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
                         }
                         return;
                     }
                 }
 
-                // Default: tidak ada pola yang cocok
-                console.log('=== HEMATOLOGY - Tidak ada pola yang cocok ===');
-                if (typeof updateKeteranganDisplay === 'function') {
-                    updateKeteranganDisplay($keteranganDisplay, '-');
-                }
+                // Default
+                console.log('Tidak ada pola yang cocok');
+                updateKeteranganDisplay($keteranganDisplay, '-');
                 $hiddenInput.val('-');
 
             } catch (e) {
                 console.error('HEMATOLOGY - Error:', e);
-                if (typeof updateKeteranganDisplay === 'function') {
-                    updateKeteranganDisplay($keteranganDisplay, '-');
-                }
+                updateKeteranganDisplay($keteranganDisplay, '-');
                 $hiddenInput.val('-');
-            }
-        };
-
-        // ============================================
-        // FUNGSI calculateKeterangan - LENGKAP
-        // ============================================
-
-        function calculateKeterangan(value, $element) {
-            console.log('=== calculateKeterangan START ===');
-
-            // Validasi input
-            if (!$element || !$element.length) {
-                console.error('Element tidak valid');
-                return '-';
-            }
-
-            const hasilStr = value ? value.toString().trim() : '';
-
-            // Jika hasil kosong
-            if (!hasilStr || hasilStr === '') {
-                console.log('Hasil kosong, return -');
-                return '-';
-            }
-
-            // Ambil data dari element
-            const rujukan = $element.data('rujukan') || $element.attr('data-rujukan') || '';
-            const ch = $element.data('ch') || $element.attr('data-ch') || '';
-            const cl = $element.data('cl') || $element.attr('data-cl') || '';
-
-            console.log('Input data:', {
-                hasil: hasilStr,
-                rujukan: rujukan,
-                ch: ch,
-                cl: cl
-            });
-
-            // Coba parse sebagai angka
-            const hasilNum = parseFloat(hasilStr.replace(',', '.'));
-            const isNumeric = !isNaN(hasilNum);
-
-            console.log('Parsed result:', {
-                hasilNum: hasilNum,
-                isNumeric: isNumeric
-            });
-
-            // ============================================
-            // PRIORITAS 1: CEK JIKA NUMERIC
-            // ============================================
-            if (isNumeric) {
-                console.log('Hasil numeric, checking CH/CL/Rujukan...');
-
-                // 1. CEK CRITICAL HIGH (CH)
-                if (ch && ch !== '' && ch !== '-' && ch !== 'null') {
-                    console.log('Checking CH:', ch);
-
-                    // Parse CH value
-                    let chNum;
-                    if (ch.includes('>')) {
-                        // Format: "> 170"
-                        chNum = parseFloat(ch.replace('>', '').trim());
-                        console.log('CH parsed (> format):', chNum);
-                    } else {
-                        // Format langsung: "170"
-                        chNum = parseFloat(ch);
-                        console.log('CH parsed (direct):', chNum);
-                    }
-
-                    if (!isNaN(chNum) && hasilNum > chNum) {
-                        console.log(`✅ CH DETECTED: ${hasilNum} > ${chNum}`);
-                        return 'CH';
-                    }
-
-                    console.log('CH not matched or invalid');
-                }
-
-                // 2. CEK CRITICAL LOW (CL)
-                if (cl && cl !== '' && cl !== '-' && cl !== 'null') {
-                    console.log('Checking CL:', cl);
-
-                    // Parse CL value
-                    let clNum;
-                    if (cl.includes('<')) {
-                        // Format: "< 90"
-                        clNum = parseFloat(cl.replace('<', '').trim());
-                        console.log('CL parsed (< format):', clNum);
-                    } else {
-                        // Format langsung: "90"
-                        clNum = parseFloat(cl);
-                        console.log('CL parsed (direct):', clNum);
-                    }
-
-                    if (!isNaN(clNum) && hasilNum < clNum) {
-                        console.log(`✅ CL DETECTED: ${hasilNum} < ${clNum}`);
-                        return 'CL';
-                    }
-
-                    console.log('CL not matched or invalid');
-                }
-
-                // 3. CEK RUJUKAN (jika CH/CL tidak match)
-                if (rujukan && rujukan !== '' && rujukan !== '-' && rujukan !== 'null') {
-                    console.log('Checking rujukan:', rujukan);
-
-                    // Format range: "13 - 50"
-                    if (rujukan.includes('-') && !rujukan.includes('<') && !rujukan.includes('>')) {
-                        const parts = rujukan.split('-');
-                        if (parts.length === 2) {
-                            const min = parseFloat(parts[0].trim());
-                            const max = parseFloat(parts[1].trim());
-
-                            if (!isNaN(min) && !isNaN(max)) {
-                                console.log('Range rujukan:', { min, max });
-
-                                if (hasilNum < min) {
-                                    console.log(`✅ L DETECTED: ${hasilNum} < ${min}`);
-                                    return 'L';
-                                } else if (hasilNum > max) {
-                                    console.log(`✅ H DETECTED: ${hasilNum} > ${max}`);
-                                    return 'H';
-                                } else {
-                                    console.log(`✅ NORMAL: ${hasilNum} dalam range ${min}-${max}`);
-                                    return '-';
-                                }
-                            }
-                        }
-                    }
-
-                    // Format: "< X" (Normal jika < X, High jika ≥ X)
-                    if (rujukan.startsWith('<')) {
-                        const batas = parseFloat(rujukan.replace('<', '').trim());
-                        if (!isNaN(batas)) {
-                            console.log('Rujukan < format, batas:', batas);
-
-                            if (hasilNum < batas) {
-                                console.log(`✅ NORMAL: ${hasilNum} < ${batas}`);
-                                return '-';
-                            } else {
-                                console.log(`✅ H DETECTED: ${hasilNum} ≥ ${batas}`);
-                                return 'H';
-                            }
-                        }
-                    }
-
-                    // Format: "> X" (Normal jika > X, Low jika ≤ X)
-                    if (rujukan.startsWith('>')) {
-                        const batas = parseFloat(rujukan.replace('>', '').trim());
-                        if (!isNaN(batas)) {
-                            console.log('Rujukan > format, batas:', batas);
-
-                            if (hasilNum > batas) {
-                                console.log(`✅ NORMAL: ${hasilNum} > ${batas}`);
-                                return '-';
-                            } else {
-                                console.log(`✅ L DETECTED: ${hasilNum} ≤ ${batas}`);
-                                return 'L';
-                            }
-                        }
-                    }
-
-                    console.log('Rujukan format not recognized');
-                }
-
-                console.log('No conditions matched for numeric, return -');
-                return '-';
-            }
-
-            // ============================================
-            // PRIORITAS 2: CEK JIKA NON-NUMERIC
-            // ============================================
-            else {
-                console.log('Hasil non-numeric, checking qualitative...');
-
-                if (!rujukan || rujukan === '' || rujukan === '-' || rujukan === 'null') {
-                    console.log('Rujukan tidak ada untuk non-numeric, return -');
-                    return '-';
-                }
-
-                const hasilLower = hasilStr.toLowerCase();
-                const rujukanLower = rujukan.toLowerCase();
-
-                console.log('Non-numeric comparison:', {
-                    hasil: hasilLower,
-                    rujukan: rujukanLower
-                });
-
-                // Cek untuk negative/positive
-                if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
-                    if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
-                        hasilLower.includes('non-reactive') || hasilLower.includes('nonreactive')) {
-                        console.log('✅ NORMAL: Negative result for negative reference');
-                        return '-';
-                    } else {
-                        console.log('✅ H DETECTED: Non-negative result for negative reference');
-                        return 'H';
-                    }
-                }
-
-                if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
-                    if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
-                        hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
-                        console.log('✅ NORMAL: Positive result for positive reference');
-                        return '-';
-                    } else {
-                        console.log('✅ L DETECTED: Non-positive result for positive reference');
-                        return 'L';
-                    }
-                }
-
-                console.log('No qualitative conditions matched, return -');
-                return '-';
-            }
-        }
-
-        // Function untuk menambah request ke queue Hematology
-        // Function untuk menambah request ke queue Hematology
-        function addToHematologyQueue(type, id, field, value, $element) {
-            if (!id) {
-                console.error('addToHematologyQueue: ID tidak valid', id);
-                return;
-            }
-
-            const $row = $element.closest('tr');
-            const $keteranganDisplay = $row.find('.keterangan-display');
-            const $hiddenInput = $row.find('input[name*="[keterangan]"]');
-
-            // Hitung keterangan
-            const keterangan = calculateKeterangan(value, $element);
-
-            console.log('addToHematologyQueue - Keterangan:', keterangan);
-
-            // Update UI
-            updateKeteranganDisplay($keteranganDisplay, keterangan);
-            $hiddenInput.val(keterangan);
-
-            // Tambah ke queue
-            hematologyQueue.push({
-                type: type,
-                id: id,
-                field: field,
-                value: value,
-                $element: $element,
-                keterangan: keterangan, // PASTIKAN INI ADA
-                timestamp: Date.now()
-            });
-
-            if (!isProcessingHematologyQueue) {
-                processHematologyQueue();
             }
         }
 
@@ -3759,137 +4170,61 @@
                     bgClass = 'bg-light';
                     textClass = 'text-muted';
                     displayText = '-';
-                    keterangan = '-'; // Normalize
+                    keterangan = '-';
             }
 
             // Apply classes
             $display.addClass(bgClass + ' ' + textClass);
             $display.html('<strong>' + displayText + '</strong>');
             $display.data('keterangan', keterangan);
-
-            console.log('Display updated:', {
-                keterangan: keterangan,
-                displayText: displayText,
-                bgClass: bgClass,
-                textClass: textClass
-            });
         }
 
-        // Function untuk memproses queue Hematology
-        function processHematologyQueue() {
-            if (hematologyQueue.length === 0 || isProcessingHematologyQueue) {
-                return;
-            }
+        // ============================================
+        // INISIALISASI DATA RUJUKAN SAAT PAGE LOAD
+        // ============================================
 
-            isProcessingHematologyQueue = true;
-            const request = hematologyQueue.shift();
+        console.log('Initializing hematology rujukan data...');
+        $('.hasil-input[data-type="hematology"]').each(function() {
+            const $input = $(this);
+            const $row = $input.closest('tr');
+            const rujukanDisplay = $row.find('.rujukan-cell').text().trim().replace(' K', '');
 
-            if (!request.$element || !request.$element.length) {
-                isProcessingHematologyQueue = false;
-                processHematologyQueue();
-                return;
-            }
+            // Jika rujukan display valid, set data-rujukan
+            if (rujukanDisplay && rujukanDisplay !== '-') {
+                $input.data('rujukan', rujukanDisplay);
+                $input.attr('data-rujukan', rujukanDisplay);
 
-            console.log('processHematologyQueue - Processing:', {
-                id: request.id,
-                field: request.field,
-                value: request.value,
-                keterangan: request.keterangan
-            });
+                console.log('Hematology initialized rujukan:', {
+                    jenis: $row.find('td:first strong').text(),
+                    rujukan: rujukanDisplay
+                });
 
-            const postData = {
-                _token: csrfToken,
-                type: request.type,
-                id: request.id,
-                field: request.field,
-                value: request.value,
-                keterangan: request.keterangan
-            };
-
-            $.ajax({
-                url: '{{ route("hasil-lab.update-field-ajax") }}',
-                method: 'POST',
-                data: postData,
-                beforeSend: function() {
-                    request.$element.addClass('is-changing');
-                },
-                success: function(response) {
-                    console.log('processHematologyQueue - Success:', response);
-                    if (response.success) {
-                        request.$element.removeClass('is-changing').addClass('is-changed');
-                        request.$element.data('original', request.value);
-
-                        // Update save status jika ada
-                        if (typeof updateSaveStatus === 'function') {
-                            updateSaveStatus();
-                        }
-
-                        if (response.data.updated_at) {
-                            $('#lastSaved').text(`Terakhir disimpan: ${response.data.updated_at}`);
-                        }
-
-                        request.$element.closest('td').addClass('table-success');
-                        setTimeout(() => {
-                            request.$element.closest('td').removeClass('table-success');
-                        }, 1000);
-
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('success', 'Data Hematology berhasil disimpan');
-                        }
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('processHematologyQueue - Error:', {
-                        status: status,
-                        error: error,
-                        response: xhr.responseText
-                    });
-                    request.$element.removeClass('is-changing').addClass('has-error');
-
-                    let errorMessage = 'Gagal menyimpan perubahan Hematology';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    }
-
-                    if (xhr.status === 419) {
-                        errorMessage = 'Session expired. Silakan refresh halaman.';
-                    }
-
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('danger', errorMessage);
-                    }
-                },
-                complete: function() {
-                    isProcessingHematologyQueue = false;
-                    setTimeout(processHematologyQueue, 100);
+                // Juga update keterangan berdasarkan nilai yang ada
+                if ($input.val()) {
+                    updateHematologyKeterangan($input);
                 }
-            });
-        }
+            }
+        });
 
-        // Event handler khusus untuk input Hematology
+        // ============================================
+        // EVENT HANDLER UNTUK INPUT HEMATOLOGY
+        // ============================================
+
         $(document).on('input', '.hasil-input[data-type="hematology"]', function() {
             const $input = $(this);
-            const id = $input.data('id');
             const value = $input.val();
 
             console.log('====== HEMATOLOGY - INPUT BERUBAH ======');
-            console.log('ID:', id, 'Type: hematology');
             console.log('Nilai baru:', value);
 
             // Update keterangan Hematology secara real-time
             updateHematologyKeterangan($input);
-
-            // Debounce untuk AJAX call
-            clearTimeout($input.data('timer'));
-            $input.data('timer', setTimeout(() => {
-                if (id) {
-                    // Gunakan queue system khusus Hematology
-                    addToHematologyQueue('hematology', id, 'hasil_pengujian', value, $input);
-                }
-            }, 800));
         });
 
-        // Excel navigation khusus untuk Hematology
+        // ============================================
+        // EXCEL NAVIGATION KHUSUS UNTUK HEMATOLOGY
+        // ============================================
+
         function initHematologyExcelNavigation() {
             // Select all inputs on focus
             $('.hasil-input[data-type="hematology"]').on('focus', function() {
@@ -3902,7 +4237,7 @@
                 $(this).closest('td').removeClass('table-warning');
             });
 
-            // Excel-like keyboard navigation khusus untuk tabel Hematology
+            // Excel-like keyboard navigation
             $('.hasil-input[data-type="hematology"]').on('keydown', function(e) {
                 const $current = $(this);
                 const $row = $current.closest('tr');
@@ -3913,23 +4248,13 @@
 
                 switch (e.key) {
                     case 'Enter':
+                    case 'ArrowDown':
                         e.preventDefault();
                         const $nextRow = $rows.eq(rowIndex + 1);
                         if ($nextRow.length) {
                             const $nextInput = $nextRow.find('td').eq(cellIndex).find('.hasil-input[data-type="hematology"]');
                             if ($nextInput.length) {
                                 $nextInput.focus().select();
-                            }
-                        }
-                        break;
-
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        const $downRow = $rows.eq(rowIndex + 1);
-                        if ($downRow.length) {
-                            const $downInput = $downRow.find('td').eq(cellIndex).find('.hasil-input[data-type="hematology"]');
-                            if ($downInput.length) {
-                                $downInput.focus().select();
                             }
                         }
                         break;
@@ -3962,76 +4287,10 @@
                         break;
                 }
             });
-
-            // Double click to clear
-            $('.hasil-input[data-type="hematology"]').on('dblclick', function() {
-                $(this).val('').trigger('input');
-            });
         }
-
-        // Function untuk save all perubahan Hematology
-        $('#saveAllBtn').on('click', function() {
-            // SAVE ALL KHUSUS HEMATOLOGY
-            const $hematologyInputs = $('.hasil-input[data-type="hematology"]');
-            const hematologyChanges = $hematologyInputs.filter('.is-changed');
-
-            if (hematologyChanges.length > 0) {
-                console.log('Menyimpan semua perubahan Hematology:', hematologyChanges.length);
-            }
-        });
-
-        // Inisialisasi data rujukan untuk Hematology saat page load
-        console.log('Initializing hematology rujukan data...');
-        $('.hasil-input[data-type="hematology"]').each(function() {
-            const $input = $(this);
-            const $row = $input.closest('tr');
-            const rujukanDisplay = $row.find('.rujukan-cell').text().trim();
-
-            // Jika rujukan display valid, set data-rujukan
-            if (rujukanDisplay && rujukanDisplay !== '-') {
-                $input.data('rujukan', rujukanDisplay);
-                $input.attr('data-rujukan', rujukanDisplay);
-
-                console.log('Hematology initialized rujukan:', {
-                    jenis: $row.find('td:first strong').text(),
-                    rujukan: rujukanDisplay
-                });
-
-                // Juga update keterangan berdasarkan nilai yang ada
-                if ($input.val()) {
-                    updateHematologyKeterangan($input);
-                }
-            }
-        });
 
         // Initialize Excel navigation untuk Hematology
         initHematologyExcelNavigation();
-
-        // Auto-focus first input Hematology jika ada
-        if ($('.hasil-input[data-type="hematology"]').length > 0) {
-            $('.hasil-input[data-type="hematology"]').first().focus();
-        }
-
-        // Tambahkan update save status function jika tidak ada
-        if (typeof updateSaveStatus === 'undefined') {
-            window.updateSaveStatus = function() {
-                const $status = $('#saveStatus');
-                // Hitung semua perubahan dari semua tipe
-                const hematologyChanges = $('.hasil-input[data-type="hematology"].is-changed').length;
-                const kimiaChanges = $('.hasil-input[data-type="kimia"].is-changed').length;
-                const hasilLainChanges = $('.hasil-input-lain.is-changed').length;
-
-                const totalChanges = hematologyChanges + kimiaChanges + hasilLainChanges;
-
-                if (totalChanges > 0) {
-                    $status.removeClass('bg-secondary').addClass('bg-warning');
-                    $status.html(`<i class="ri-edit-line me-1"></i>${totalChanges} perubahan`);
-                } else {
-                    $status.removeClass('bg-warning').addClass('bg-secondary');
-                    $status.html('<i class="ri-check-line me-1"></i>Tersimpan');
-                }
-            };
-        }
     });
 </script>
 
@@ -5976,382 +6235,598 @@
 
 <script>
     $(document).ready(function() {
-        console.log('=== INITIALIZE KETERANGAN FOR EXISTING RESULTS ===');
+        const csrfToken = $('#csrf_token').val();
 
-        // Function untuk initialize keterangan untuk hasil_lain yang sudah ada
-        function initializeKeteranganHasilLain() {
-            console.log('🔄 Initializing keterangan for existing hasil_lain rows...');
+        // ============================================
+        // FUNGSI UNTUK MENDAPATKAN RUJUKAN BERDASARKAN KONDISI
+        // ============================================
 
-            $('.hasil-input-lain').each(function(index) {
-                const $input = $(this);
-                const value = $input.val();
-                const rujukan = $input.data('rujukan') || $input.attr('data-rujukan') || '';
-                const $row = $input.closest('tr');
-                const $hiddenInput = $row.find('input[name*="[keterangan]"]');
-                const currentKeterangan = $hiddenInput.val();
+        function getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien) {
+            return new Promise((resolve, reject) => {
+                if (!idDataPemeriksaan) {
+                    resolve(null);
+                    return;
+                }
 
-                console.log(`Row ${index}:`, {
-                    value: value,
-                    rujukan: rujukan,
-                    currentKeterangan: currentKeterangan,
-                    hasRujukan: !!rujukan && rujukan !== '-'
+                $.ajax({
+                    url: '{{ route("pasien.get-rujukan-by-kondisi") }}',
+                    method: 'GET',
+                    data: {
+                        id_data_pemeriksaan: idDataPemeriksaan,
+                        jenis_kelamin: jenisKelamin,
+                        umur_pasien: umurPasien
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            resolve(response.data);
+                        } else {
+                            console.error('Gagal mendapatkan rujukan:', response.message);
+                            resolve(null);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error mendapatkan rujukan:', error);
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
+        // ============================================
+        // FUNGSI UNTUK UPDATE KETERANGAN HASIL LAIN DENGAN KONDISI
+        // ============================================
+
+        async function updateHasilLainKeterangan($input) {
+            const hasil = $input.val();
+            const $row = $input.closest('tr');
+            const $keteranganDisplay = $row.find('.keterangan-display-hasil-lain');
+            const $hiddenInput = $row.find('.keterangan-input-hasil-lain');
+
+            console.log('=== HASIL LAIN - updateKeterangan ===');
+            console.log('Hasil:', hasil);
+
+            // Clear jika kosong
+            if (!hasil || hasil.trim() === '') {
+                console.log('Hasil kosong, reset keterangan');
+                updateKeteranganDisplayHasilLain($keteranganDisplay, '');
+                $hiddenInput.val('');
+                return;
+            }
+
+            // Dapatkan data kondisi pasien
+            const idDataPemeriksaan = $row.find('.id-data-pemeriksaan-input').val();
+            const jenisKelamin = '{{ $pasien->jenis_kelamin }}';
+            const umurPasien = '{{ $data["umur_format"] ?? "" }}';
+
+            let rujukan = $row.find('.rujukan-display-hasil-lain').text().trim();
+            let ch = $row.find('.ch-display-hasil-lain').text().trim();
+            let cl = $row.find('.cl-display-hasil-lain').text().trim();
+
+            // Jika ada ID data pemeriksaan, coba dapatkan rujukan berdasarkan kondisi
+            if (idDataPemeriksaan) {
+                try {
+                    const rujukanData = await getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien);
+
+                    if (rujukanData) {
+                        // Update data pada display
+                        rujukan = rujukanData.rujukan || rujukan;
+                        ch = rujukanData.ch || ch;
+                        cl = rujukanData.cl || cl;
+                        const satuan = rujukanData.satuan || $row.find('.satuan-display-hasil-lain').text().trim();
+
+                        // Update tampilan di tabel
+                        const rujukanDisplay = rujukan +
+                            (rujukanData.is_from_detail ?
+                                ' <span class="badge bg-info ms-1" title="CH/CL khusus kondisi">K</span>' :
+                                '');
+
+                        $row.find('.rujukan-display-hasil-lain').html(rujukanDisplay);
+                        $row.find('.satuan-display-hasil-lain').text(satuan);
+
+                        // Update CH dengan indikator detail jika ada
+                        const chDisplay = ch || '-';
+                        const chDetail = (rujukanData.is_from_detail && ch !== '-' && ch !== '') ?
+                            '<br><small class="text-info">detail</small>' : '';
+                        $row.find('.ch-display-hasil-lain').html(chDisplay + chDetail);
+                        $row.find('.ch-input-hasil-lain').val(ch);
+
+                        // Update CL dengan indikator detail jika ada
+                        const clDisplay = cl || '-';
+                        const clDetail = (rujukanData.is_from_detail && cl !== '-' && cl !== '') ?
+                            '<br><small class="text-info">detail</small>' : '';
+                        $row.find('.cl-display-hasil-lain').html(clDisplay + clDetail);
+                        $row.find('.cl-input-hasil-lain').val(cl);
+
+                        // Jika rujukan dari detail kondisi, highlight row
+                        if (rujukanData.is_from_detail) {
+                            $row.addClass('table-info');
+                        } else {
+                            $row.removeClass('table-info');
+                        }
+
+                        console.log('Rujukan Hasil Lain diupdate berdasarkan kondisi:', rujukanData);
+                    }
+                } catch (error) {
+                    console.error('Error mendapatkan rujukan berdasarkan kondisi (Hasil Lain):', error);
+                }
+            }
+
+            // Gunakan rujukan yang sudah diupdate untuk perhitungan
+            calculateAndUpdateKeteranganHasilLain($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl);
+        }
+
+        function calculateAndUpdateKeteranganHasilLain($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl) {
+            console.log('Hasil Lain - Perhitungan dengan:', { hasil, rujukan, ch, cl });
+
+            if (!rujukan || rujukan.trim() === '' || rujukan.trim() === '-') {
+                console.log('Rujukan tidak tersedia atau "-"');
+                updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                $hiddenInput.val('-');
+                return;
+            }
+
+            try {
+                const rujukanStr = rujukan.toString().trim();
+                const hasilStr = hasil.toString().trim();
+                const hasilNum = parseFloat(hasilStr.replace(',', '.'));
+
+                console.log('Hasil Lain - Data untuk perhitungan:', {
+                    rujukan: rujukanStr,
+                    hasil: hasilStr,
+                    hasilNum: hasilNum
                 });
 
-                // HANYA update jika ada hasil dan rujukan valid
-                if (value && value.trim() !== '' && rujukan && rujukan !== '-' && rujukan !== '') {
-                    // Jika keterangan sudah ada di database, tampilkan
-                    if (currentKeterangan && (currentKeterangan === 'H' || currentKeterangan === 'L' || currentKeterangan === '-')) {
-                        console.log(`Row ${index} already has keterangan:`, currentKeterangan);
+                // Jika bukan angka, cek kualitatif
+                if (isNaN(hasilNum)) {
+                    const hasilLower = hasilStr.toLowerCase();
+                    const rujukanLower = rujukanStr.toLowerCase();
 
-                        const $keteranganDisplay = $row.find('.keterangan-display');
-
-                        // Update display sesuai dengan keterangan yang ada
-                        if (typeof window.updateKeteranganDisplay === 'function') {
-                            window.updateKeteranganDisplay($keteranganDisplay, currentKeterangan);
+                    if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
+                        if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
+                            hasilLower.includes('non-reactive') || hasilLower.includes('nonreactive')) {
+                            updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            updateKeteranganDisplayHasilLain($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
                         }
+                        return;
+                    } else if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
+                        if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
+                            hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
+                            updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            updateKeteranganDisplayHasilLain($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
+                        }
+                        return;
                     } else {
-                        // Jika belum ada keterangan, hitung ulang
-                        console.log(`Row ${index} calculating new keterangan...`);
+                        updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                        $hiddenInput.val('-');
+                    }
+                    return;
+                }
 
-                        if (typeof window.updateKeteranganClientSide === 'function') {
-                            window.updateKeteranganClientSide($input);
+                // CEK CRITICAL HIGH (CH)
+                if (ch && ch !== '' && ch !== '-' && ch !== 'null') {
+                    let chNum;
+                    if (ch.includes('>')) {
+                        chNum = parseFloat(ch.replace('>', '').trim());
+                    } else {
+                        chNum = parseFloat(ch);
+                    }
+
+                    if (!isNaN(chNum) && hasilNum > chNum) {
+                        console.log(`✅ HASIL LAIN CH DETECTED: ${hasilNum} > ${chNum}`);
+                        updateKeteranganDisplayHasilLain($keteranganDisplay, 'CH');
+                        $hiddenInput.val('CH');
+                        return;
+                    }
+                }
+
+                // CEK CRITICAL LOW (CL)
+                if (cl && cl !== '' && cl !== '-' && cl !== 'null') {
+                    let clNum;
+                    if (cl.includes('<')) {
+                        clNum = parseFloat(cl.replace('<', '').trim());
+                    } else {
+                        clNum = parseFloat(cl);
+                    }
+
+                    if (!isNaN(clNum) && hasilNum < clNum) {
+                        console.log(`✅ HASIL LAIN CL DETECTED: ${hasilNum} < ${clNum}`);
+                        updateKeteranganDisplayHasilLain($keteranganDisplay, 'CL');
+                        $hiddenInput.val('CL');
+                        return;
+                    }
+                }
+
+                // CEK RUJUKAN NORMAL
+                // Format range: "1 - 90"
+                if (rujukanStr.includes('-') && !rujukanStr.includes('<') && !rujukanStr.includes('>')) {
+                    const parts = rujukanStr.split('-');
+                    if (parts.length === 2) {
+                        const min = parseFloat(parts[0].trim());
+                        const max = parseFloat(parts[1].trim());
+
+                        if (!isNaN(min) && !isNaN(max)) {
+                            if (hasilNum < min) {
+                                console.log(`✅ HASIL LAIN L DETECTED: ${hasilNum} < ${min}`);
+                                updateKeteranganDisplayHasilLain($keteranganDisplay, 'L');
+                                $hiddenInput.val('L');
+                            } else if (hasilNum > max) {
+                                console.log(`✅ HASIL LAIN H DETECTED: ${hasilNum} > ${max}`);
+                                updateKeteranganDisplayHasilLain($keteranganDisplay, 'H');
+                                $hiddenInput.val('H');
+                            } else {
+                                console.log(`✅ HASIL LAIN NORMAL: ${hasilNum} dalam range ${min}-${max}`);
+                                updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                                $hiddenInput.val('-');
+                            }
+                            return;
                         }
                     }
-                } else {
-                    // Reset keterangan jika tidak ada hasil atau rujukan tidak valid
-                    console.log(`Row ${index} resetting keterangan...`);
-
-                    const $keteranganDisplay = $row.find('.keterangan-display');
-                    if (typeof window.updateKeteranganDisplay === 'function') {
-                        window.updateKeteranganDisplay($keteranganDisplay, '-');
-                    }
-                    $hiddenInput.val('-');
                 }
-            });
 
-            console.log('✅ Keterangan initialization complete');
-        }
-
-        // Function untuk initialize rujukan data dari display
-        function initializeRujukanData() {
-            console.log('🔄 Initializing rujukan data for hasil_lain...');
-
-            $('.hasil-input-lain').each(function(index) {
-                const $input = $(this);
-                const $row = $input.closest('tr');
-                const rujukanDisplay = $row.find('.rujukan-display').text().trim();
-
-                // Jika rujukan display valid, set data-rujukan
-                if (rujukanDisplay && rujukanDisplay !== '-' && rujukanDisplay !== '') {
-                    $input.data('rujukan', rujukanDisplay);
-                    $input.attr('data-rujukan', rujukanDisplay);
-
-                    console.log(`Row ${index} rujukan set to:`, rujukanDisplay);
-                } else {
-                    // Coba dari data-pemeriksaan jika ada
-                    const $kodeInput = $row.find('.kode-pemeriksaan-input');
-                    const kodePemeriksaan = $kodeInput.val();
-
-                    if (kodePemeriksaan) {
-                        console.log(`Row ${index} fetching rujukan for kode:`, kodePemeriksaan);
-
-                        // AJAX untuk mendapatkan data rujukan berdasarkan kode
-                        $.ajax({
-                            url: '{{ route("hasil-lain.get-pemeriksaan-by-kode") }}',
-                            method: 'GET',
-                            data: { id_data_pemeriksaan: kodePemeriksaan },
-                            success: function(response) {
-                                if (response.success && response.data) {
-                                    const rujukan = response.data.rujukan || '-';
-                                    const satuan = response.data.satuan || '-';
-
-                                    // Update UI
-                                    $input.data('rujukan', rujukan);
-                                    $input.attr('data-rujukan', rujukan);
-                                    $row.find('.rujukan-display').text(rujukan);
-                                    $row.find('.satuan-display').text(satuan);
-
-                                    console.log(`Row ${index} rujukan updated via AJAX:`, rujukan);
-
-                                    // Hitung ulang keterangan setelah rujukan diperbarui
-                                    if (typeof window.updateKeteranganClientSide === 'function') {
-                                        window.updateKeteranganClientSide($input);
-                                    }
-                                }
-                            }
-                        });
+                // Format: "< X"
+                if (rujukanStr.startsWith('<')) {
+                    const batas = parseFloat(rujukanStr.replace('<', '').trim());
+                    if (!isNaN(batas)) {
+                        if (hasilNum >= batas) {
+                            console.log(`✅ HASIL LAIN H DETECTED: ${hasilNum} ≥ ${batas}`);
+                            updateKeteranganDisplayHasilLain($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
+                        } else {
+                            console.log(`✅ HASIL LAIN NORMAL: ${hasilNum} < ${batas}`);
+                            updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        }
+                        return;
                     }
                 }
-            });
 
-            console.log('✅ Rujukan initialization complete');
+                // Format: "> X"
+                if (rujukanStr.startsWith('>')) {
+                    const batas = parseFloat(rujukanStr.replace('>', '').trim());
+                    if (!isNaN(batas)) {
+                        if (hasilNum <= batas) {
+                            console.log(`✅ HASIL LAIN L DETECTED: ${hasilNum} ≤ ${batas}`);
+                            updateKeteranganDisplayHasilLain($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
+                        } else {
+                            console.log(`✅ HASIL LAIN NORMAL: ${hasilNum} > ${batas}`);
+                            updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        }
+                        return;
+                    }
+                }
+
+                // Default
+                console.log('Tidak ada pola yang cocok');
+                updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                $hiddenInput.val('-');
+
+            } catch (e) {
+                console.error('HASIL LAIN - Error:', e);
+                updateKeteranganDisplayHasilLain($keteranganDisplay, '-');
+                $hiddenInput.val('-');
+            }
         }
 
-        // Function untuk cek dan fix missing satuan/rujukan
-        function fixMissingData() {
-            console.log('🔧 Checking for missing data...');
+        // Function untuk update keterangan display khusus Hasil Lain
+        function updateKeteranganDisplayHasilLain($display, keterangan) {
+            if (!$display.length) {
+                console.error('Display element tidak ditemukan');
+                return;
+            }
 
-            $('.hasil-input-lain').each(function() {
-                const $input = $(this);
-                const $row = $input.closest('tr');
-                const satuan = $row.find('.satuan-display').text().trim();
-                const rujukan = $row.find('.rujukan-display').text().trim();
-                const kodePemeriksaan = $row.find('.kode-pemeriksaan-input').val();
-                const hasil = $input.val();
+            // Reset semua kelas
+            $display.removeClass(
+                'bg-danger bg-opacity-10 ' +
+                'bg-primary bg-opacity-10 ' +
+                'bg-success bg-opacity-10 ' +
+                'text-danger text-primary text-success'
+            );
 
-                // Jika ada kode tapi satuan/rujukan kosong, coba fetch
-                if (kodePemeriksaan && (satuan === '-' || rujukan === '-') && hasil && hasil.trim() !== '') {
-                    console.log('Missing satuan/rujukan detected, fetching...');
+            // Set kelas berdasarkan keterangan
+            let bgClass = '';
+            let textClass = '';
+            let displayText = '';
 
-                    $.ajax({
-                        url: '{{ route("hasil-lain.get-pemeriksaan-by-kode") }}',
-                        method: 'GET',
-                        data: { id_data_pemeriksaan: kodePemeriksaan },
-                        success: function(response) {
-                            if (response.success && response.data) {
-                                // Update UI
-                                $row.find('.satuan-display').text(response.data.satuan || '-');
-                                $row.find('.rujukan-display').text(response.data.rujukan || '-');
+            switch (keterangan) {
+                case 'CH':
+                case 'H':
+                    bgClass = 'bg-danger bg-opacity-10';
+                    textClass = 'text-danger';
+                    displayText = keterangan === 'CH' ? 'CH' : 'H';
+                    break;
 
-                                // Update input data
-                                $input.data('rujukan', response.data.rujukan || '-');
-                                $input.attr('data-rujukan', response.data.rujukan || '-');
+                case 'CL':
+                case 'L':
+                    bgClass = 'bg-primary bg-opacity-10';
+                    textClass = 'text-primary';
+                    displayText = keterangan === 'CL' ? 'CL' : 'L';
+                    break;
 
-                                console.log('Missing data fixed for kode:', kodePemeriksaan);
+                case '-':
+                    bgClass = 'bg-success bg-opacity-10';
+                    textClass = 'text-success';
+                    displayText = '-';
+                    break;
 
-                                // Hitung ulang keterangan
-                                if (typeof window.updateKeteranganClientSide === 'function') {
-                                    window.updateKeteranganClientSide($input);
-                                }
+                default:
+                    bgClass = 'bg-light';
+                    textClass = 'text-muted';
+                    displayText = '-';
+                    keterangan = '-';
+            }
+
+            // Apply classes
+            $display.addClass(bgClass + ' ' + textClass);
+            $display.html('<strong>' + displayText + '</strong>');
+            $display.data('keterangan', keterangan);
+        }
+
+        // ============================================
+        // EVENT HANDLER UNTUK INPUT HASIL LAIN
+        // ============================================
+
+        $(document).on('input', '.hasil-input-hasil-lain', function() {
+            const $input = $(this);
+            const value = $input.val();
+
+            console.log('====== HASIL LAIN - INPUT BERUBAH ======');
+            console.log('Nilai baru:', value);
+
+            // Update keterangan Hasil Lain secara real-time
+            updateHasilLainKeterangan($input);
+        });
+
+        // ============================================
+        // EXCEL NAVIGATION KHUSUS UNTUK HASIL LAIN
+        // ============================================
+
+        function initHasilLainExcelNavigation() {
+            // Select all inputs on focus
+            $('.hasil-input-hasil-lain').on('focus', function() {
+                $(this).select();
+                $(this).closest('td').addClass('table-warning');
+            });
+
+            // Remove highlight on blur
+            $('.hasil-input-hasil-lain').on('blur', function() {
+                $(this).closest('td').removeClass('table-warning');
+            });
+
+            // Excel-like keyboard navigation
+            $('.hasil-input-hasil-lain').on('keydown', function(e) {
+                const $current = $(this);
+                const $row = $current.closest('tr');
+                const $cell = $current.closest('td');
+                const cellIndex = $cell.index();
+                const $rows = $row.closest('tbody').find('tr');
+                const rowIndex = $rows.index($row);
+
+                switch (e.key) {
+                    case 'Enter':
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        const $nextRow = $rows.eq(rowIndex + 1);
+                        if ($nextRow.length) {
+                            const $nextInput = $nextRow.find('td').eq(cellIndex).find('.hasil-input-hasil-lain');
+                            if ($nextInput.length) {
+                                $nextInput.focus().select();
                             }
                         }
-                    });
+                        break;
+
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        const $upRow = $rows.eq(rowIndex - 1);
+                        if ($upRow.length) {
+                            const $upInput = $upRow.find('td').eq(cellIndex).find('.hasil-input-hasil-lain');
+                            if ($upInput.length) {
+                                $upInput.focus().select();
+                            }
+                        }
+                        break;
+
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        const $nextCell = $row.find('td').eq(cellIndex + 1).find('.hasil-input-hasil-lain');
+                        if ($nextCell.length) {
+                            $nextCell.focus().select();
+                        }
+                        break;
+
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        const $prevCell = $row.find('td').eq(cellIndex - 1).find('.hasil-input-hasil-lain');
+                        if ($prevCell.length) {
+                            $prevCell.focus().select();
+                        }
+                        break;
                 }
             });
         }
 
-        // Function utama untuk initialize semua data
-        function initializeAllData() {
-            console.log('=== COMPLETE DATA INITIALIZATION ===');
+        // ============================================
+        // INISIALISASI DATA RUJUKAN SAAT PAGE LOAD
+        // ============================================
 
-            // Inisialisasi CH dan CL untuk hasil_lain yang sudah ada
-            $('.hasil-input-lain').each(function(index) {
-                const $input = $(this);
-                const $row = $input.closest('tr');
-                const rujukan = $row.find('.rujukan-display').text().trim();
-                const satuan = $row.find('.satuan-display').text().trim();
-                const ch = $row.find('.ch-display').text().trim();
-                const cl = $row.find('.cl-display').text().trim();
-                const kodePemeriksaan = $row.find('.kode-pemeriksaan-input').val();
+        console.log('Initializing hasil lain rujukan data...');
 
-                // Set data attributes
-                $input.data('rujukan', rujukan);
-                $input.attr('data-rujukan', rujukan);
-                $input.data('ch', ch);
-                $input.attr('data-ch', ch);
-                $input.data('cl', cl);
-                $input.attr('data-cl', cl);
-
-                console.log(`HasilLain Row ${index} initialized:`, {
-                    rujukan,
-                    ch,
-                    cl
-                });
-            });
-
-            // 1. Inisialisasi rujukan data
-            initializeRujukanData();
-
-            // 2. Fix missing data
-            setTimeout(fixMissingData, 500);
-
-            // 3. Inisialisasi keterangan
-            setTimeout(initializeKeteranganHasilLain, 1000);
-
-            // 4. Log semua data untuk debugging
-            setTimeout(function() {
-                console.log('=== FINAL DATA CHECK ===');
-                $('.hasil-input-lain').each(function(index) {
-                    const $input = $(this);
-                    const $row = $input.closest('tr');
-                    const $keteranganDisplay = $row.find('.keterangan-display');
-                    const $hiddenInput = $row.find('input[name*="[keterangan]"]');
-
-                    console.log(`Final Row ${index}:`, {
-                        id: $input.data('id'),
-                        hasil: $input.val(),
-                        rujukan: $input.data('rujukan'),
-                        keteranganDisplay: $keteranganDisplay.data('keterangan'),
-                        keteranganHidden: $hiddenInput.val(),
-                        satuan: $row.find('.satuan-display').text(),
-                        kode: $row.find('.kode-pemeriksaan-input').val()
-                    });
-                });
-            }, 1500);
-        }
-
-        // Jalankan saat document ready
+        // Inisialisasi saat page load
         $(window).on('load', function() {
-            setTimeout(initializeAllData, 2000); // Tunggu 2 detik untuk semua script selesai load
+            setTimeout(function() {
+                $('.hasil-input-hasil-lain').each(function() {
+                    const $input = $(this);
+
+                    // Juga update keterangan berdasarkan nilai yang ada
+                    if ($input.val() && $input.val().trim() !== '') {
+                        updateHasilLainKeterangan($input);
+                    }
+                });
+
+                // Initialize Excel navigation untuk Hasil Lain
+                initHasilLainExcelNavigation();
+
+                console.log('Hasil Lain initialization complete');
+            }, 2000);
         });
 
-        // Juga jalankan saat modal pemeriksaan lain ditutup (jika ada penambahan baru)
-        $(document).on('hidden.bs.modal', '#pilihPemeriksaanModal', function() {
-            setTimeout(initializeKeteranganHasilLain, 500);
+        // ============================================
+        // FUNGSI UNTUK SEARCH DATA PEMERIKSAAN (MODAL)
+        // ============================================
+
+        function handleSearchHasilLain($input) {
+            const $row = $input.closest('tr'); // ✅ FIX UTAMA
+
+            const searchTerm = $input.val().trim();
+            const $results = $input.next('.search-results-hasil-lain');
+            const jenisPemeriksaan = $input.data('jenis-pemeriksaan');
+            const rowId = $input.data('row-id');
+
+            const currentId = $row.find('.id-data-pemeriksaan-input').val();
+
+            if (searchTerm.length < 2) {
+                $results.hide().empty();
+                return;
+            }
+
+            clearTimeout($input.data('searchTimer'));
+            $input.data('searchTimer', setTimeout(() => {
+                $.ajax({
+                    url: '{{ route("hasil-lain.search-kode-pemeriksaan") }}',
+                    method: 'GET',
+                    data: {
+                        search: searchTerm,
+                        jenis_pemeriksaan: jenisPemeriksaan,
+                        exclude_current: currentId
+                    },
+                    beforeSend: function() {
+                        $results
+                            .html('<div class="dropdown-item text-center py-2">Mencari data...</div>')
+                            .show();
+                    },
+                    success: function(response) {
+                        $results.empty();
+
+                        if (response.success && response.data.length > 0) {
+                            response.data.forEach(item => {
+                                $results.append(`
+                                    <button type="button"
+                                        class="dropdown-item kode-option-hasil-lain"
+                                        data-id="${item.id_data_pemeriksaan}"
+                                        data-nama="${item.data_pemeriksaan}"
+                                        data-satuan="${item.satuan || ''}"
+                                        data-rujukan="${item.rujukan || ''}"
+                                        data-ch="${item.ch || ''}"
+                                        data-cl="${item.cl || ''}">
+                                        <strong>${item.data_pemeriksaan}</strong>
+                                    </button>
+                                `);
+                            });
+                        } else {
+                            $results.html('<div class="dropdown-item text-muted">Tidak ditemukan</div>');
+                        }
+
+                        $results.show();
+                    },
+                    error: function() {
+                        $results
+                            .html('<div class="dropdown-item text-danger">Error</div>')
+                            .show();
+                    }
+                });
+            }, 500));
+        }
+
+
+        // Event handler untuk search input hasil lain
+        $(document).on('input', '.search-data-pemeriksaan-hasil-lain', function() {
+            handleSearchHasilLain($(this));
         });
 
-        // Dan saat row baru ditambahkan
+        // Event handler untuk memilih kode pemeriksaan
+        $(document).on('click', '.kode-option-hasil-lain', function() {
+            const $option = $(this);
+            const id = $option.data('id');
+            const nama = $option.data('nama');
+            const satuan = $option.data('satuan');
+            const rujukan = $option.data('rujukan');
+            const metode = $option.data('metode');
+            const ch = $option.data('ch');
+            const cl = $option.data('cl');
+
+            const $row = $option.closest('tr');
+            const $input = $row.find('.search-data-pemeriksaan-hasil-lain');
+            const $results = $row.find('.search-results-hasil-lain');
+
+            // Update UI
+            $input.val(nama);
+            $results.hide().empty();
+
+            // Update hidden inputs
+            $row.find('.id-data-pemeriksaan-input').val(id);
+            $row.find('.jenis-pengujian-input').val(nama);
+
+            // Update display
+            $row.find('.satuan-display-hasil-lain').text(satuan || '-');
+            $row.find('.rujukan-display-hasil-lain').text(rujukan || '-');
+            $row.find('.ch-display-hasil-lain').text(ch || '-');
+            $row.find('.cl-display-hasil-lain').text(cl || '-');
+            $row.find('.ch-input-hasil-lain').val(ch || '-');
+            $row.find('.cl-input-hasil-lain').val(cl || '-');
+
+            // Highlight row
+            $row.addClass('table-success');
+            setTimeout(() => {
+                $row.removeClass('table-success');
+            }, 2000);
+
+            // Jika sudah ada nilai hasil, hitung ulang keterangan dengan kondisi baru
+            const $hasilInput = $row.find('.hasil-input-hasil-lain');
+            if ($hasilInput.val() && $hasilInput.val().trim() !== '') {
+                updateHasilLainKeterangan($hasilInput);
+            }
+        });
+
+        // ============================================
+        // EVENT HANDLERS TAMBAHAN (TIDAK MENGUBAH YANG LAMA)
+        // ============================================
+
+        // Tutup dropdown saat klik di luar
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.search-data-pemeriksaan-hasil-lain, .search-results-hasil-lain').length) {
+                $('.search-results-hasil-lain').hide();
+            }
+        });
+
+        // Event handler untuk row baru yang ditambahkan
         $(document).on('DOMNodeInserted', '.pemeriksaan-lain-table tbody tr', function() {
             const $row = $(this);
-            const $input = $row.find('.hasil-input-lain');
+            const $input = $row.find('.hasil-input-hasil-lain');
 
             // Beri waktu untuk element benar-benar ready
             setTimeout(function() {
-                if (typeof window.updateKeteranganClientSide === 'function') {
-                    window.updateKeteranganClientSide($input);
-                }
-            }, 300);
-        });
-
-        console.log('🔄 Keterangan initialization system ready');
-    });
-</script>
-
-<script>
-    $(document).ready(function() {
-        console.log('🔧 CH/CL Fix for Hasil Lain Loading...');
-
-        // Fungsi untuk perbaikan khusus hasil lain
-        function fixHasilLainCHCL() {
-            console.log('=== FIXING HASIL LAIN CH/CL ===');
-
-            // 1. Pastikan semua input hasil_lain memiliki data CH dan CL
-            $('.hasil-input-lain').each(function(index) {
-                const $input = $(this);
-                const $row = $input.closest('tr');
-
-                // Ambil dari kolom display
-                const chDisplay = $row.find('.ch-display').text().trim();
-                const clDisplay = $row.find('.cl-display').text().trim();
-                const rujukanDisplay = $row.find('.rujukan-display').text().trim();
-
-                // Set data attributes jika belum ada
-                if (!$input.attr('data-ch') || $input.attr('data-ch') === '') {
-                    $input.data('ch', chDisplay);
-                    $input.attr('data-ch', chDisplay);
-                    console.log(`Row ${index}: Set CH to "${chDisplay}"`);
-                }
-
-                if (!$input.attr('data-cl') || $input.attr('data-cl') === '') {
-                    $input.data('cl', clDisplay);
-                    $input.attr('data-cl', clDisplay);
-                    console.log(`Row ${index}: Set CL to "${clDisplay}"`);
-                }
-
-                if (!$input.attr('data-rujukan') || $input.attr('data-rujukan') === '') {
-                    $input.data('rujukan', rujukanDisplay);
-                    $input.attr('data-rujukan', rujukanDisplay);
-                }
-
-                // Hitung ulang keterangan jika ada nilai
-                if ($input.val() && $input.val().trim() !== '') {
-                    console.log(`Row ${index}: Recalculating keterangan...`);
-                    if (typeof window.updateKeteranganClientSide === 'function') {
-                        window.updateKeteranganClientSide($input);
-                    }
-                }
-            });
-
-            // 2. Update event handler untuk input hasil_lain
-            $(document).off('input', '.hasil-input-lain').on('input', '.hasil-input-lain', function() {
-                const $input = $(this);
-                const $row = $input.closest('tr');
-
-                // Ambil CH dan CL terbaru dari display (mungkin berubah)
-                const chDisplay = $row.find('.ch-display').text().trim();
-                const clDisplay = $row.find('.cl-display').text().trim();
-                const rujukanDisplay = $row.find('.rujukan-display').text().trim();
-
-                // Update data attributes
-                $input.data('ch', chDisplay);
-                $input.attr('data-ch', chDisplay);
-                $input.data('cl', clDisplay);
-                $input.attr('data-cl', clDisplay);
-                $input.data('rujukan', rujukanDisplay);
-                $input.attr('data-rujukan', rujukanDisplay);
-
-                console.log('HasilLain Input Changed:', {
-                    hasil: $input.val(),
-                    ch: chDisplay,
-                    cl: clDisplay,
-                    rujukan: rujukanDisplay
-                });
-
-                // Hitung keterangan
-                if (typeof window.updateKeteranganClientSide === 'function') {
-                    window.updateKeteranganClientSide($input);
-                }
-
-                // AJAX save (dari kode sebelumnya)
-                const id = $input.data('id');
-                const value = $input.val();
-
-                clearTimeout($input.data('timer'));
-                $input.data('timer', setTimeout(() => {
-                    if (id) {
-                        // Panggil fungsi addToQueueHasilPemeriksaanLain
-                        if (typeof addToQueueHasilPemeriksaanLain === 'function') {
-                            const $hiddenInput = $row.find('input[name*="[keterangan]"]');
-                            const keterangan = $hiddenInput.val() || '-';
-
-                            console.log('Saving to queue:', {
-                                id: id,
-                                hasil: value,
-                                keterangan: keterangan
-                            });
-
-                            addToQueueHasilPemeriksaanLain('hasil_lain', id, 'hasil_pengujian', value, $input);
-                        }
-                    }
-                }, 800));
-            });
-
-            console.log('✅ CH/CL fix applied to Hasil Lain');
-        }
-
-        // Jalankan perbaikan
-        setTimeout(fixHasilLainCHCL, 1500);
-
-        // Juga jalankan saat modal ditutup atau row baru ditambahkan
-        $(document).on('hidden.bs.modal', '#pilihPemeriksaanModal', function() {
-            setTimeout(fixHasilLainCHCL, 500);
-        });
-
-        $(document).on('DOMNodeInserted', '.pemeriksaan-lain-table tbody tr', function() {
-            setTimeout(function() {
-                const $row = $(this);
-                const $input = $row.find('.hasil-input-lain');
-
                 if ($input.length) {
-                    const chDisplay = $row.find('.ch-display').text().trim();
-                    const clDisplay = $row.find('.cl-display').text().trim();
-                    const rujukanDisplay = $row.find('.rujukan-display').text().trim();
+                    initHasilLainExcelNavigation();
 
-                    $input.data('ch', chDisplay);
-                    $input.attr('data-ch', chDisplay);
-                    $input.data('cl', clDisplay);
-                    $input.attr('data-cl', clDisplay);
-                    $input.data('rujukan', rujukanDisplay);
-                    $input.attr('data-rujukan', rujukanDisplay);
-
-                    console.log('New row initialized with CH/CL:', {
-                        ch: chDisplay,
-                        cl: clDisplay,
-                        rujukan: rujukanDisplay
-                    });
+                    // Jika sudah ada nilai, hitung keterangan
+                    if ($input.val() && $input.val().trim() !== '') {
+                        updateHasilLainKeterangan($input);
+                    }
                 }
             }, 300);
         });
+
+        // Auto-focus first input Hasil Lain jika ada
+        if ($('.hasil-input-hasil-lain').length > 0) {
+            $('.hasil-input-hasil-lain').first().focus();
+        }
     });
 </script>
 
@@ -7450,6 +7925,41 @@
         let tabelYangAkanDihapus = null;
 
         // ============================================
+        // FUNGSI UNTUK MENDAPATKAN RUJUKAN BERDASARKAN KONDISI
+        // ============================================
+
+        function getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien) {
+            return new Promise(function(resolve, reject) {
+                if (!idDataPemeriksaan) {
+                    resolve(null);
+                    return;
+                }
+
+                $.ajax({
+                    url: '{{ route("pasien.get-rujukan-by-kondisi") }}',
+                    method: 'GET',
+                    data: {
+                        id_data_pemeriksaan: idDataPemeriksaan,
+                        jenis_kelamin: jenisKelamin,
+                        umur_pasien: umurPasien
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            resolve(response.data);
+                        } else {
+                            console.error('Gagal mendapatkan rujukan:', response.message);
+                            resolve(null);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error mendapatkan rujukan:', error);
+                        resolve(null);
+                    }
+                });
+            });
+        }
+
+        // ============================================
         // 1. TAMBAH TABEL PEMERIKSAAN BARU
         // ============================================
         // Versi yang lebih sederhana:
@@ -7464,9 +7974,9 @@
             }
 
             // Cek apakah tabel sudah ada
-            if ($(`.pemeriksaan-lain-section[data-jenis-pemeriksaan="${jenisPemeriksaan}"]`).length > 0) {
+            if ($('.pemeriksaan-lain-section[data-jenis-pemeriksaan="' + jenisPemeriksaan + '"]').length > 0) {
                 if (typeof window.showToast === 'function') {
-                    window.showToast('warning', `Tabel ${jenisPemeriksaan} sudah ada`);
+                    window.showToast('warning', 'Tabel ' + jenisPemeriksaan + ' sudah ada');
                 }
                 return;
             }
@@ -7474,95 +7984,92 @@
             const $allSections = $('.pemeriksaan-lain-section');
             const slug = jenisPemeriksaan.toLowerCase().replace(/[^a-z0-9]+/g, '_');
 
-            // ============================================
-            // PERUBAHAN: Ganti mt-4 dengan pt-3 border-top
-            // ============================================
-            const newTableSection = `
-                <div class="pt-3 border-top pemeriksaan-lain-section"
-                    data-jenis-pemeriksaan="${jenisPemeriksaan}"
-                    id="section_${slug}">
-                    <div class="row">
-                        <div class="col-lg-9 col-md-12">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h6 class="mb-0 border-bottom pb-2">
-                                    <i class="ri-list-check me-2"></i>${jenisPemeriksaan}
-                                </h6>
-                                <div>
-                                    <!-- TOMBOL 1: TAMBAH ROW KOSONG -->
-                                    <button type="button" class="btn btn-sm btn-outline-primary tambah-row-btn-hasil-lain"
-                                            data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                                        <i class="ri-add-line me-1"></i>Tambah Row
-                                    </button>
-
-                                    <!-- TOMBOL 2: TAMBAH DENGAN MODAL -->
-                                    <button type="button" class="btn btn-sm btn-outline-success modal-hasil-lain-btn ms-2"
-                                            data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                                        <i class="ri-list-check me-1"></i>Pilih dari Daftar
-                                    </button>
-
-                                    <!-- TOMBOL 3: HAPUS TABEL -->
-                                    <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn-hasil-lain ms-2"
-                                            data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                                        <i class="ri-delete-bin-line me-1"></i>Hapus Tabel
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div class="table-responsive overflow-visible">
-                                <table class="table table-bordered table-sm pemeriksaan-lain-table" id="tabel_${slug}">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th width="20%" class="bg-light">Pilih Jenis Pemeriksaan</th>
-                                            <th width="10%" class="bg-light">Satuan</th>
-                                            <th width="15%" class="bg-light">Rujukan</th>
-                                            <th width="5%" class="bg-light">CH</th>
-                                            <th width="5%" class="bg-light">CL</th>
-                                            <th width="15%">Hasil Pengujian</th>
-                                            <th width="10%">Keterangan</th>
-                                            <th width="5%">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Rows akan ditambahkan di sini -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- History Panel -->
-                        <div class="col-lg-3 col-md-12">
-                            <div class="card h-100 border-start border-primary history-panel-card">
-                                <div class="card-header bg-light py-2">
-                                    <h6 class="card-title mb-0 small">
-                                        <i class="ri-history-line me-2 text-primary"></i>History ${jenisPemeriksaan}
-                                    </h6>
-                                </div>
-                                <div class="card-body p-0">
-                                    <div class="p-2 border-bottom bg-primary bg-opacity-5" id="currentHoverInfo_${slug}">
-                                        <div class="text-center">
-                                            <div class="text-primary mb-1 small" id="hoverJenisPemeriksaan_${slug}">
-                                                <i class="ri-history-line me-1"></i>
-                                                <span>History Pemeriksaan</span>
-                                            </div>
-                                            <div class="small text-muted" id="hoverTypeInfo_${slug}">
-                                                Klik pada kolom "Hasil"
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="p-2" id="historyPanelContent_${slug}"
-                                        style="height: 300px; overflow-y: auto; font-size: 0.85rem;">
-                                        <div class="text-center text-muted py-4">
-                                            <i class="ri-file-list-3-line display-6 mb-3 opacity-50"></i>
-                                            <p class="mb-1 small">History akan muncul di sini</p>
-                                            <small class="text-muted">Klik pada hasil</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
+            const newTableSection =
+                '<div class="pt-3 border-top pemeriksaan-lain-section"' +
+                '    data-jenis-pemeriksaan="' + jenisPemeriksaan + '"' +
+                '    id="section_' + slug + '">' +
+                '    <div class="row">' +
+                '        <div class="col-lg-9 col-md-12">' +
+                '            <div class="d-flex justify-content-between align-items-center mb-3">' +
+                '                <h6 class="mb-0 border-bottom pb-2">' +
+                '                    <i class="ri-list-check me-2"></i>' + jenisPemeriksaan +
+                '                    <span class="badge bg-info ms-2">Kondisi: {{ $pasien->jenis_kelamin }} | {{ $data["umur_format"] }}</span>' +
+                '                </h6>' +
+                '                <div>' +
+                '                    <!-- TOMBOL 1: TAMBAH ROW KOSONG -->' +
+                '                    <button type="button" class="btn btn-sm btn-outline-primary tambah-row-btn-hasil-lain"' +
+                '                            data-jenis-pemeriksaan="' + jenisPemeriksaan + '">' +
+                '                        <i class="ri-add-line me-1"></i>Tambah Row' +
+                '                    </button>' +
+                '' +
+                '                    <!-- TOMBOL 2: TAMBAH DENGAN MODAL -->' +
+                '                    <button type="button" class="btn btn-sm btn-outline-success modal-hasil-lain-btn ms-2"' +
+                '                            data-jenis-pemeriksaan="' + jenisPemeriksaan + '">' +
+                '                        <i class="ri-list-check me-1"></i>Pilih dari Daftar' +
+                '                    </button>' +
+                '' +
+                '                    <!-- TOMBOL 3: HAPUS TABEL -->' +
+                '                    <button type="button" class="btn btn-sm btn-outline-danger hapus-tabel-btn-hasil-lain ms-2"' +
+                '                            data-jenis-pemeriksaan="' + jenisPemeriksaan + '">' +
+                '                        <i class="ri-delete-bin-line me-1"></i>Hapus Tabel' +
+                '                    </button>' +
+                '                </div>' +
+                '            </div>' +
+                '' +
+                '            <div class="table-responsive overflow-visible">' +
+                '                <table class="table table-bordered table-sm pemeriksaan-lain-table" id="tabel_' + slug + '">' +
+                '                    <thead class="table-light">' +
+                '                        <tr>' +
+                '                            <th width="20%" class="bg-light">Pilih Jenis Pemeriksaan</th>' +
+                '                            <th width="10%" class="bg-light">Satuan</th>' +
+                '                            <th width="15%" class="bg-light">Rujukan</th>' +
+                '                            <th width="5%" class="bg-light">CH</th>' +
+                '                            <th width="5%" class="bg-light">CL</th>' +
+                '                            <th width="15%">Hasil Pengujian</th>' +
+                '                            <th width="10%">Keterangan</th>' +
+                '                            <th width="5%">Aksi</th>' +
+                '                        </tr>' +
+                '                    </thead>' +
+                '                    <tbody>' +
+                '                        <!-- Rows akan ditambahkan di sini -->' +
+                '                    </tbody>' +
+                '                </table>' +
+                '            </div>' +
+                '        </div>' +
+                '' +
+                '        <!-- History Panel -->' +
+                '        <div class="col-lg-3 col-md-12">' +
+                '            <div class="card h-100 border-start border-primary history-panel-card">' +
+                '                <div class="card-header bg-light py-2">' +
+                '                    <h6 class="card-title mb-0 small">' +
+                '                        <i class="ri-history-line me-2 text-primary"></i>History ' + jenisPemeriksaan +
+                '                    </h6>' +
+                '                </div>' +
+                '                <div class="card-body p-0">' +
+                '                    <div class="p-2 border-bottom bg-primary bg-opacity-5" id="currentHoverInfo_' + slug + '">' +
+                '                        <div class="text-center">' +
+                '                            <div class="text-primary mb-1 small" id="hoverJenisPemeriksaan_' + slug + '">' +
+                '                                <i class="ri-history-line me-1"></i>' +
+                '                                <span>History Pemeriksaan</span>' +
+                '                            </div>' +
+                '                            <div class="small text-muted" id="hoverTypeInfo_' + slug + '">' +
+                '                                Klik pada kolom "Hasil"' +
+                '                            </div>' +
+                '                        </div>' +
+                '                    </div>' +
+                '                    <div class="p-2" id="historyPanelContent_' + slug + '"' +
+                '                        style="height: 300px; overflow-y: auto; font-size: 0.85rem;">' +
+                '                        <div class="text-center text-muted py-4">' +
+                '                            <i class="ri-file-list-3-line display-6 mb-3 opacity-50"></i>' +
+                '                            <p class="mb-1 small">History akan muncul di sini</p>' +
+                '                            <small class="text-muted">Klik pada hasil</small>' +
+                '                        </div>' +
+                '                    </div>' +
+                '                </div>' +
+                '            </div>' +
+                '        </div>' +
+                '    </div>' +
+                '</div>';
 
             $('#tambahTabelBtn').closest('.card').before(newTableSection);
 
@@ -7570,10 +8077,10 @@
             $('#jenisPemeriksaanSelect').val('');
 
             if (typeof window.showToast === 'function') {
-                window.showToast('success', `Tabel ${jenisPemeriksaan} berhasil ditambahkan`);
+                window.showToast('success', 'Tabel ' + jenisPemeriksaan + ' berhasil ditambahkan');
             }
 
-            console.log(`Tabel ${jenisPemeriksaan} ditambahkan`);
+            console.log('Tabel ' + jenisPemeriksaan + ' ditambahkan');
         });
 
         // ============================================
@@ -7600,17 +8107,17 @@
             updateSelectedCountModal();
 
             // Update modal title
-            $('#modalTitleJenisPemisah').text(`Pilih Data Pemeriksaan - ${jenisPemeriksaan}`);
+            $('#modalTitleJenisPemisah').text('Pilih Data Pemeriksaan - ' + jenisPemeriksaan);
 
             // Tampilkan loading
-            $('#modalDataPemeriksaanList').html(`
-                <tr>
-                    <td colspan="5" class="text-center py-4">
-                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>
-                        Memuat data pemeriksaan...
-                    </td>
-                </tr>
-            `);
+            $('#modalDataPemeriksaanList').html(
+                '<tr>' +
+                '    <td colspan="5" class="text-center py-4">' +
+                '        <div class="spinner-border spinner-border-sm text-primary me-2"></div>' +
+                '        Memuat data pemeriksaan...' +
+                '    </td>' +
+                '</tr>'
+            );
 
             // Load data
             loadModalDataPemeriksaan(jenisPemeriksaan);
@@ -7636,31 +8143,32 @@
                         modalDataPemeriksaanList = response.data;
                         renderModalDataPemeriksaanList();
                     } else {
-                        $('#modalDataPemeriksaanList').html(`
-                            <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">
-                                    <i class="ri-inbox-line me-2"></i>
-                                    Tidak ada data pemeriksaan untuk jenis ini
-                                </td>
-                            </tr>
-                        `);
+                        $('#modalDataPemeriksaanList').html(
+                            '<tr>' +
+                            '    <td colspan="5" class="text-center py-4 text-muted">' +
+                            '        <i class="ri-inbox-line me-2"></i>' +
+                            '        Tidak ada data pemeriksaan untuk jenis ini' +
+                            '    </td>' +
+                            '</tr>'
+                        );
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('Modal load error:', error);
-                    $('#modalDataPemeriksaanList').html(`
-                        <tr>
-                            <td colspan="5" class="text-center py-4 text-danger">
-                                <i class="ri-error-warning-line me-2"></i>
-                                Gagal memuat data
-                            </td>
-                        </tr>
-                    `);
+                    $('#modalDataPemeriksaanList').html(
+                        '<tr>' +
+                        '    <td colspan="5" class="text-center py-4 text-danger">' +
+                        '        <i class="ri-error-warning-line me-2"></i>' +
+                        '        Gagal memuat data' +
+                        '    </td>' +
+                        '</tr>'
+                    );
                 }
             });
         }
 
-        function renderModalDataPemeriksaanList(filterTerm = '') {
+        function renderModalDataPemeriksaanList(filterTerm) {
+            if (filterTerm === undefined) filterTerm = '';
             const $list = $('#modalDataPemeriksaanList');
             $list.empty();
 
@@ -7669,50 +8177,51 @@
             // Filter jika ada search term
             if (filterTerm) {
                 const term = filterTerm.toLowerCase();
-                filteredData = modalDataPemeriksaanList.filter(item => {
+                filteredData = modalDataPemeriksaanList.filter(function(item) {
                     const searchText = (item.id_data_pemeriksaan + ' ' + item.data_pemeriksaan + ' ' + (item.rujukan || '')).toLowerCase();
                     return searchText.includes(term);
                 });
             }
 
             if (filteredData.length === 0) {
-                $list.html(`
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">
-                            <i class="ri-search-line me-2"></i>
-                            Tidak ditemukan data
-                        </td>
-                    </tr>
-                `);
+                $list.html(
+                    '<tr>' +
+                    '    <td colspan="5" class="text-center py-4 text-muted">' +
+                    '        <i class="ri-search-line me-2"></i>' +
+                    '        Tidak ditemukan data' +
+                    '    </td>' +
+                    '</tr>'
+                );
                 return;
             }
 
-            filteredData.forEach((item, index) => {
-                const isSelected = modalSelectedData.some(selected => selected.id === item.id_data_pemeriksaan);
+            filteredData.forEach(function(item, index) {
+                const isSelected = modalSelectedData.some(function(selected) {
+                    return selected.id === item.id_data_pemeriksaan;
+                });
 
-                const row = `
-                    <tr class="${isSelected ? 'table-primary' : ''}">
-                        <td>
-                            <div class="form-check">
-                                <input class="form-check-input modal-data-checkbox"
-                                    type="checkbox"
-                                    data-id="${item.id_data_pemeriksaan}"
-                                    data-nama="${item.data_pemeriksaan}"
-                                    data-satuan="${item.satuan || ''}"
-                                    data-rujukan="${item.rujukan || ''}"
-                                    data-ch="${item.ch || ''}"
-                                    data-cl="${item.cl || ''}"
-                                    ${isSelected ? 'checked' : ''}>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="badge bg-light text-dark">${item.id_data_pemeriksaan}</span>
-                        </td>
-                        <td>${item.data_pemeriksaan}</td>
-                        <td>${item.satuan || '-'}</td>
-                        <td>${item.rujukan || '-'}</td>
-                    </tr>
-                `;
+                const row =
+                    '<tr class="' + (isSelected ? 'table-primary' : '') + '">' +
+                    '    <td>' +
+                    '        <div class="form-check">' +
+                    '            <input class="form-check-input modal-data-checkbox"' +
+                    '                type="checkbox"' +
+                    '                data-id="' + item.id_data_pemeriksaan + '"' +
+                    '                data-nama="' + item.data_pemeriksaan + '"' +
+                    '                data-satuan="' + (item.satuan || '') + '"' +
+                    '                data-rujukan="' + (item.rujukan || '') + '"' +
+                    '                data-ch="' + (item.ch || '') + '"' +
+                    '                data-cl="' + (item.cl || '') + '"' +
+                    '                ' + (isSelected ? 'checked' : '') + '>' +
+                    '        </div>' +
+                    '    </td>' +
+                    '    <td>' +
+                    '        <span class="badge bg-light text-dark">' + item.id_data_pemeriksaan + '</span>' +
+                    '    </td>' +
+                    '    <td>' + item.data_pemeriksaan + '</td>' +
+                    '    <td>' + (item.satuan || '-') + '</td>' +
+                    '    <td>' + (item.rujukan || '-') + '</td>' +
+                    '</tr>';
 
                 $list.append(row);
             });
@@ -7780,18 +8289,22 @@
             };
 
             // Cek apakah sudah ada
-            const existingIndex = modalSelectedData.findIndex(item => item.id === data.id);
+            const existingIndex = modalSelectedData.findIndex(function(item) {
+                return item.id === data.id;
+            });
             if (existingIndex === -1) {
                 modalSelectedData.push(data);
             }
         }
 
         function removeFromModalSelected(id) {
-            modalSelectedData = modalSelectedData.filter(item => item.id !== id);
+            modalSelectedData = modalSelectedData.filter(function(item) {
+                return item.id !== id;
+            });
         }
 
         function updateSelectedCountModal() {
-            $('#selectedCountModal').text(`${modalSelectedData.length} item dipilih`);
+            $('#selectedCountModal').text(modalSelectedData.length + ' item dipilih');
         }
 
         // Tambah data ke tabel dari modal
@@ -7817,85 +8330,85 @@
             console.log('Current row count:', currentRowCount);
             console.log('Jenis pemeriksaan:', currentJenisPemeriksaanModal);
 
-            modalSelectedData.forEach((item, index) => {
+            modalSelectedData.forEach(function(item, index) {
                 const rowIndex = currentRowCount + index;
 
-                const newRow = `
-                    <tr data-index="${rowIndex}" data-jenis-pemeriksaan="${currentJenisPemeriksaanModal}">
-                        <td class="search-cell-hasil-lain">
-                            <div class="position-relative">
-                                <input type="text"
-                                    class="form-control form-control-sm search-data-pemeriksaan-hasil-lain"
-                                    placeholder="Cari data pemeriksaan..."
-                                    value="${item.nama}"
-                                    data-jenis-pemeriksaan="${currentJenisPemeriksaanModal}"
-                                    data-index="${rowIndex}"
-                                    autocomplete="off"
-                                    readonly>
-
-                                <div class="search-results-hasil-lain dropdown-menu"
-                                    style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">
-                                </div>
-
-                                <input type="hidden" class="id-data-pemeriksaan-input" value="${item.id}">
-                                <input type="hidden" class="jenis-pengujian-input" value="${item.nama}">
-                                <input type="hidden" class="row-id-input" value="">
-                            </div>
-                        </td>
-
-                        <td class="bg-light satuan-cell-hasil-lain">
-                            <span class="satuan-display-hasil-lain">${item.satuan || '-'}</span>
-                        </td>
-
-                        <td class="bg-light rujukan-cell-hasil-lain">
-                            <span class="rujukan-display-hasil-lain">${item.rujukan || '-'}</span>
-                        </td>
-
-                        <td class="bg-light ch-cell-hasil-lain">
-                            <span class="ch-display-hasil-lain">${item.ch || '-'}</span>
-                        </td>
-
-                        <td class="bg-light cl-cell-hasil-lain">
-                            <span class="cl-display-hasil-lain">${item.cl || '-'}</span>
-                        </td>
-
-                        <td class="hasil-cell-hasil-lain">
-                            <input type="text"
-                                class="form-control form-control-sm hasil-input-hasil-lain"
-                                value=""
-                                placeholder="Hasil"
-                                data-id=""
-                                data-type="hasil_lain"
-                                data-rujukan="${item.rujukan || ''}"
-                                data-ch="${item.ch || ''}"
-                                data-cl="${item.cl || ''}"
-                                autocomplete="off">
-                        </td>
-
-                        <td class="keterangan-cell-hasil-lain">
-                            <div class="keterangan-display-hasil-lain bg-success bg-opacity-10 text-success rounded py-1 px-2 text-center"
-                                data-keterangan="-">
-                                <strong>-</strong>
-                            </div>
-                            <input type="hidden" class="keterangan-input-hasil-lain" value="-">
-                        </td>
-
-                        <td>
-                            <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn-hasil-lain">
-                                <i class="ri-delete-bin-line"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
+                const newRow =
+                    '<tr data-index="' + rowIndex + '" data-jenis-pemeriksaan="' + currentJenisPemeriksaanModal + '">' +
+                    '    <td class="search-cell-hasil-lain">' +
+                    '        <div class="position-relative">' +
+                    '            <input type="text"' +
+                    '                class="form-control form-control-sm search-data-pemeriksaan-hasil-lain"' +
+                    '                placeholder="Cari data pemeriksaan..."' +
+                    '                value="' + item.nama + '"' +
+                    '                data-jenis-pemeriksaan="' + currentJenisPemeriksaanModal + '"' +
+                    '                data-index="' + rowIndex + '"' +
+                    '                autocomplete="off"' +
+                    '                readonly>' +
+                    '' +
+                    '            <div class="search-results-hasil-lain dropdown-menu"' +
+                    '                style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">' +
+                    '            </div>' +
+                    '' +
+                    '            <input type="hidden" class="id-data-pemeriksaan-input" value="' + item.id + '">' +
+                    '            <input type="hidden" class="jenis-pengujian-input" value="' + item.nama + '">' +
+                    '            <input type="hidden" class="row-id-input" value="">' +
+                    '        </div>' +
+                    '    </td>' +
+                    '' +
+                    '    <td class="bg-light satuan-cell-hasil-lain">' +
+                    '        <span class="satuan-display-hasil-lain">' + (item.satuan || '-') + '</span>' +
+                    '    </td>' +
+                    '' +
+                    '    <td class="bg-light rujukan-cell-hasil-lain">' +
+                    '        <span class="rujukan-display-hasil-lain">' + (item.rujukan || '-') + '</span>' +
+                    '    </td>' +
+                    '' +
+                    '    <td class="bg-light ch-cell-hasil-lain">' +
+                    '        <span class="ch-display-hasil-lain">' + (item.ch || '-') + '</span>' +
+                    '    </td>' +
+                    '' +
+                    '    <td class="bg-light cl-cell-hasil-lain">' +
+                    '        <span class="cl-display-hasil-lain">' + (item.cl || '-') + '</span>' +
+                    '    </td>' +
+                    '' +
+                    '    <td class="hasil-cell-hasil-lain">' +
+                    '        <input type="text"' +
+                    '            class="form-control form-control-sm hasil-input-hasil-lain"' +
+                    '            value=""' +
+                    '            placeholder="Hasil"' +
+                    '            data-id=""' +
+                    '            data-type="hasil_lain"' +
+                    '            data-id-data-pemeriksaan="' + item.id + '"' +
+                    '            data-rujukan="' + (item.rujukan || '') + '"' +
+                    '            data-ch="' + (item.ch || '') + '"' +
+                    '            data-cl="' + (item.cl || '') + '"' +
+                    '            autocomplete="off">' +
+                    '    </td>' +
+                    '' +
+                    '    <td class="keterangan-cell-hasil-lain">' +
+                    '        <div class="keterangan-display-hasil-lain bg-success bg-opacity-10 text-success rounded py-1 px-2 text-center"' +
+                    '            data-keterangan="-">' +
+                    '            <strong>-</strong>' +
+                    '        </div>' +
+                    '        <input type="hidden" class="keterangan-input-hasil-lain" value="-">' +
+                    '    </td>' +
+                    '' +
+                    '    <td>' +
+                    '        <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn-hasil-lain">' +
+                    '            <i class="ri-delete-bin-line"></i>' +
+                    '        </button>' +
+                    '    </td>' +
+                    '</tr>';
 
                 $tbody.append(newRow);
                 const $lastRow = $tbody.find('tr:last-child');
                 updateFormNames($lastRow);
 
-                console.log(`Row ${index} ditambahkan untuk ${item.nama}`);
+                console.log('Row ' + index + ' ditambahkan untuk ' + item.nama);
 
                 // Simpan ke database
-                setTimeout(() => {
+                setTimeout(function() {
                     saveDataPemeriksaanToDatabase(
                         $lastRow,
                         item.id,
@@ -7916,7 +8429,7 @@
             modalSelectedData = [];
 
             if (typeof window.showToast === 'function') {
-                window.showToast('success', `${count} data pemeriksaan berhasil ditambahkan`);
+                window.showToast('success', count + ' data pemeriksaan berhasil ditambahkan');
             }
         });
 
@@ -7946,20 +8459,16 @@
             modal.show();
         });
 
-
-
         // Konfirmasi hapus tabel
-        // ============================================
-        // KONFIRMASI HAPUS TABEL (FIX FINAL)
-        // ============================================
-        $(document).on('click', '#konfirmasiHapusTabelBtn', function () {
+        $(document).on('click', '#konfirmasiHapusTabelBtn', function() {
             if (!tabelYangAkanDihapus) return;
 
-            const { $section, jenisPemeriksaan } = tabelYangAkanDihapus;
+            const $section = tabelYangAkanDihapus.$section;
+            const jenisPemeriksaan = tabelYangAkanDihapus.jenisPemeriksaan;
 
             // Ambil semua ID hasil_lain di tabel
             const ids = [];
-            $section.find('tr[data-id]').each(function () {
+            $section.find('tr[data-id]').each(function() {
                 const id = $(this).data('id');
                 if (id) ids.push(id);
             });
@@ -7971,7 +8480,9 @@
                     document.getElementById('modalKonfirmasiHapusTabel')
                 ).hide();
 
-                window.showToast?.('success', `Tabel ${jenisPemeriksaan} berhasil dihapus`);
+                if (window.showToast) {
+                    window.showToast('success', 'Tabel ' + jenisPemeriksaan + ' berhasil dihapus');
+                }
                 tabelYangAkanDihapus = null;
                 return;
             }
@@ -7983,19 +8494,25 @@
                 headers: {
                     'X-CSRF-TOKEN': csrfToken
                 },
-                data: { ids },
-                success: function (res) {
+                data: { ids: ids },
+                success: function(res) {
                     if (res.success) {
                         $section.remove();
-                        window.showToast?.('success', res.message);
+                        if (window.showToast) {
+                            window.showToast('success', res.message);
+                        }
                     } else {
-                        window.showToast?.('danger', res.message || 'Gagal menghapus tabel');
+                        if (window.showToast) {
+                            window.showToast('danger', res.message || 'Gagal menghapus tabel');
+                        }
                     }
                 },
-                error: function () {
-                    window.showToast?.('danger', 'Terjadi kesalahan saat menghapus tabel');
+                error: function() {
+                    if (window.showToast) {
+                        window.showToast('danger', 'Terjadi kesalahan saat menghapus tabel');
+                    }
                 },
-                complete: function () {
+                complete: function() {
                     bootstrap.Modal.getInstance(
                         document.getElementById('modalKonfirmasiHapusTabel')
                     ).hide();
@@ -8018,74 +8535,73 @@
 
             console.log('Adding row for jenis:', jenisPemeriksaan, 'rowCount:', rowCount);
 
-            const newRow = `
-                <tr data-index="${rowCount}" data-jenis-pemeriksaan="${jenisPemeriksaan}">
-                    <td class="search-cell-hasil-lain">
-                        <div class="position-relative">
-                            <input type="text"
-                                class="form-control form-control-sm search-data-pemeriksaan-hasil-lain"
-                                placeholder="Cari data pemeriksaan..."
-                                data-jenis-pemeriksaan="${jenisPemeriksaan}"
-                                data-index="${rowCount}"
-                                autocomplete="off">
-
-                            <div class="search-results-hasil-lain dropdown-menu"
-                                style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">
-                            </div>
-
-                            <input type="hidden" class="id-data-pemeriksaan-input" value="">
-                            <input type="hidden" class="jenis-pengujian-input" value="">
-                            <input type="hidden" class="row-id-input" value="">
-                        </div>
-                    </td>
-
-                    <td class="bg-light satuan-cell-hasil-lain">
-                        <span class="satuan-display-hasil-lain">-</span>
-                    </td>
-
-                    <td class="bg-light rujukan-cell-hasil-lain">
-                        <span class="rujukan-display-hasil-lain">-</span>
-                    </td>
-
-                    <td class="bg-light ch-cell-hasil-lain">
-                        <span class="ch-display-hasil-lain">-</span>
-                    </td>
-
-                    <td class="bg-light cl-cell-hasil-lain">
-                        <span class="cl-display-hasil-lain">-</span>
-                    </td>
-
-                    <td class="hasil-cell-hasil-lain">
-                        <input type="text"
-                            class="form-control form-control-sm hasil-input-hasil-lain"
-                            value=""
-                            placeholder="Hasil"
-                            data-id=""
-                            data-type="hasil_lain"
-                            autocomplete="off">
-                    </td>
-
-                    <td class="keterangan-cell-hasil-lain">
-                        <div class="keterangan-display-hasil-lain bg-success bg-opacity-10 text-success rounded py-1 px-2 text-center"
-                            data-keterangan="-">
-                            <strong>-</strong>
-                        </div>
-                        <input type="hidden" class="keterangan-input-hasil-lain" value="-">
-                    </td>
-
-                    <td>
-                        <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn-hasil-lain">
-                            <i class="ri-delete-bin-line"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
+            const newRow =
+                '<tr data-index="' + rowCount + '" data-jenis-pemeriksaan="' + jenisPemeriksaan + '">' +
+                '    <td class="search-cell-hasil-lain">' +
+                '        <div class="position-relative">' +
+                '            <input type="text"' +
+                '                class="form-control form-control-sm search-data-pemeriksaan-hasil-lain"' +
+                '                placeholder="Cari data pemeriksaan..."' +
+                '                data-jenis-pemeriksaan="' + jenisPemeriksaan + '"' +
+                '                data-index="' + rowCount + '"' +
+                '                autocomplete="off">' +
+                '' +
+                '            <div class="search-results-hasil-lain dropdown-menu"' +
+                '                style="display: none; max-height: 200px; overflow-y: auto; z-index: 1050;">' +
+                '            </div>' +
+                '' +
+                '            <input type="hidden" class="id-data-pemeriksaan-input" value="">' +
+                '            <input type="hidden" class="jenis-pengujian-input" value="">' +
+                '            <input type="hidden" class="row-id-input" value="">' +
+                '        </div>' +
+                '    </td>' +
+                '' +
+                '    <td class="bg-light satuan-cell-hasil-lain">' +
+                '        <span class="satuan-display-hasil-lain">-</span>' +
+                '    </td>' +
+                '' +
+                '    <td class="bg-light rujukan-cell-hasil-lain">' +
+                '        <span class="rujukan-display-hasil-lain">-</span>' +
+                '    </td>' +
+                '' +
+                '    <td class="bg-light ch-cell-hasil-lain">' +
+                '        <span class="ch-display-hasil-lain">-</span>' +
+                '    </td>' +
+                '' +
+                '    <td class="bg-light cl-cell-hasil-lain">' +
+                '        <span class="cl-display-hasil-lain">-</span>' +
+                '    </td>' +
+                '' +
+                '    <td class="hasil-cell-hasil-lain">' +
+                '        <input type="text"' +
+                '            class="form-control form-control-sm hasil-input-hasil-lain"' +
+                '            value=""' +
+                '            placeholder="Hasil"' +
+                '            data-id=""' +
+                '            data-type="hasil_lain"' +
+                '            autocomplete="off">' +
+                '    </td>' +
+                '' +
+                '    <td class="keterangan-cell-hasil-lain">' +
+                '        <div class="keterangan-display-hasil-lain bg-success bg-opacity-10 text-success rounded py-1 px-2 text-center"' +
+                '            data-keterangan="-">' +
+                '            <strong>-</strong>' +
+                '        </div>' +
+                '        <input type="hidden" class="keterangan-input-hasil-lain" value="-">' +
+                '    </td>' +
+                '' +
+                '    <td>' +
+                '        <button type="button" class="btn btn-sm btn-outline-danger hapus-row-btn-hasil-lain">' +
+                '            <i class="ri-delete-bin-line"></i>' +
+                '        </button>' +
+                '    </td>' +
+                '</tr>';
 
             $tbody.append(newRow);
             console.log('Row added successfully');
 
             // Focus ke input search
-            setTimeout(() => {
+            setTimeout(function() {
                 $tbody.find('tr:last-child .search-data-pemeriksaan-hasil-lain').focus();
             }, 100);
         });
@@ -8106,7 +8622,7 @@
                 return;
             }
 
-            $input.data('searchTimer', setTimeout(() => {
+            $input.data('searchTimer', setTimeout(function() {
                 console.log('Searching for:', searchTerm, 'in jenis:', jenisPemeriksaan);
 
                 $.ajax({
@@ -8128,25 +8644,24 @@
 
                         if (response.success && response.data && response.data.length > 0) {
                             response.data.forEach(function(item) {
-                                const option = `
-                                    <button type="button" class="dropdown-item pilih-data-pemeriksaan-option"
-                                            data-id="${item.id_data_pemeriksaan}"
-                                            data-nama="${item.data_pemeriksaan}"
-                                            data-satuan="${item.satuan || ''}"
-                                            data-rujukan="${item.rujukan || ''}"
-                                            data-ch="${item.ch || ''}"
-                                            data-cl="${item.cl || ''}">
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <strong>${item.data_pemeriksaan}</strong>
-                                                <div class="small text-muted">
-                                                    ${item.satuan || ''} | ${item.rujukan || ''}
-                                                </div>
-                                            </div>
-                                            <i class="ri-arrow-right-s-line text-muted"></i>
-                                        </div>
-                                    </button>
-                                `;
+                                const option =
+                                    '<button type="button" class="dropdown-item pilih-data-pemeriksaan-option"' +
+                                    '        data-id="' + item.id_data_pemeriksaan + '"' +
+                                    '        data-nama="' + item.data_pemeriksaan + '"' +
+                                    '        data-satuan="' + (item.satuan || '') + '"' +
+                                    '        data-rujukan="' + (item.rujukan || '') + '"' +
+                                    '        data-ch="' + (item.ch || '') + '"' +
+                                    '        data-cl="' + (item.cl || '') + '">' +
+                                    '    <div class="d-flex justify-content-between align-items-center">' +
+                                    '        <div>' +
+                                    '            <strong>' + item.data_pemeriksaan + '</strong>' +
+                                    '            <div class="small text-muted">' +
+                                    '                ' + (item.satuan || '') + ' | ' + (item.rujukan || '') +
+                                    '            </div>' +
+                                    '        </div>' +
+                                    '        <i class="ri-arrow-right-s-line text-muted"></i>' +
+                                    '    </div>' +
+                                    '</button>';
                                 $results.append(option);
                             });
                         } else {
@@ -8181,7 +8696,7 @@
             const ch = $option.data('ch') || '-';
             const cl = $option.data('cl') || '-';
 
-            console.log('Selected data:', { idDataPemeriksaan, nama, satuan, rujukan });
+            console.log('Selected data:', { idDataPemeriksaan: idDataPemeriksaan, nama: nama, satuan: satuan, rujukan: rujukan });
 
             // Update row
             $row.find('.search-data-pemeriksaan-hasil-lain').val(nama).attr('readonly', true);
@@ -8197,22 +8712,102 @@
 
             // Update hasil input
             const $hasilInput = $row.find('.hasil-input-hasil-lain');
-            $hasilInput.data('rujukan', rujukan);
-            $hasilInput.data('ch', ch);
-            $hasilInput.data('cl', cl);
+            $hasilInput.attr('data-id-data-pemeriksaan', idDataPemeriksaan)
+                      .attr('data-rujukan', rujukan)
+                      .attr('data-ch', ch)
+                      .attr('data-cl', cl);
 
             // Update form names
             updateFormNames($row);
+
+            // REAL-TIME: Update rujukan berdasarkan kondisi pasien
+            updateRujukanBerdasarkanKondisi($row, idDataPemeriksaan);
 
             // Save to database
             saveDataPemeriksaanToDatabase($row, idDataPemeriksaan, nama, satuan, rujukan);
         });
 
+        // ============================================
+        // FUNGSI UPDATE RUJUKAN BERDASARKAN KONDISI PASIEN
+        // ============================================
+        function updateRujukanBerdasarkanKondisi($row, idDataPemeriksaan) {
+            const jenisKelamin = '{{ $pasien->jenis_kelamin }}';
+            const umurPasien = '{{ $data["umur_format"] ?? "" }}';
+
+            console.log('Update rujukan berdasarkan kondisi:', {
+                idDataPemeriksaan: idDataPemeriksaan,
+                jenisKelamin: jenisKelamin,
+                umurPasien: umurPasien
+            });
+
+            getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien)
+                .then(function(rujukanData) {
+                    if (rujukanData) {
+                        // Update data pada display dengan data baru berdasarkan kondisi
+                        const rujukan = rujukanData.rujukan || $row.find('.rujukan-display-hasil-lain').text().trim();
+                        const ch = rujukanData.ch || $row.find('.ch-display-hasil-lain').text().trim();
+                        const cl = rujukanData.cl || $row.find('.cl-display-hasil-lain').text().trim();
+                        const satuan = rujukanData.satuan || $row.find('.satuan-display-hasil-lain').text().trim();
+
+                        // Update tampilan di tabel
+                        let rujukanDisplay = rujukan;
+                        if (rujukanData.is_from_detail) {
+                            rujukanDisplay += ' <span class="badge bg-info ms-1" title="CH/CL khusus kondisi">K</span>';
+                        }
+
+                        $row.find('.rujukan-display-hasil-lain').html(rujukanDisplay);
+                        $row.find('.satuan-display-hasil-lain').text(satuan);
+
+                        // Update CH dengan indikator detail jika ada
+                        let chDisplay = ch || '-';
+                        if (rujukanData.is_from_detail && ch !== '-' && ch !== '') {
+                            chDisplay += '<br><small class="text-info">detail</small>';
+                        }
+                        $row.find('.ch-display-hasil-lain').html(chDisplay);
+                        $row.find('.ch-input-hidden').val(ch);
+
+                        // Update CL dengan indikator detail jika ada
+                        let clDisplay = cl || '-';
+                        if (rujukanData.is_from_detail && cl !== '-' && cl !== '') {
+                            clDisplay += '<br><small class="text-info">detail</small>';
+                        }
+                        $row.find('.cl-display-hasil-lain').html(clDisplay);
+                        $row.find('.cl-input-hidden').val(cl);
+
+                        // Update data attributes pada input hasil
+                        const $hasilInput = $row.find('.hasil-input-hasil-lain');
+                        $hasilInput.attr('data-rujukan', rujukan)
+                                  .attr('data-ch', ch)
+                                  .attr('data-cl', cl);
+
+                        // Jika rujukan dari detail kondisi, highlight row
+                        if (rujukanData.is_from_detail) {
+                            $row.addClass('table-info');
+                        } else {
+                            $row.removeClass('table-info');
+                        }
+
+                        console.log('Rujukan diupdate berdasarkan kondisi:', rujukanData);
+
+                        // Update keterangan jika sudah ada hasil
+                        const hasil = $hasilInput.val();
+                        if (hasil && hasil.trim() !== '') {
+                            updateKeteranganHasilLain($hasilInput);
+                        }
+                    } else {
+                        console.log('Tidak ada rujukan khusus untuk kondisi ini');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error mendapatkan rujukan berdasarkan kondisi:', error);
+                });
+        }
+
         function saveDataPemeriksaanToDatabase($row, idDataPemeriksaan, jenisPengujian, satuan, rujukan) {
             const noLab = window.pasienNoLab || '{{ $pasien->no_lab }}';
             const jenisPemeriksaan = $row.data('jenis-pemeriksaan');
 
-            console.log('Saving to database:', { noLab, jenisPemeriksaan, idDataPemeriksaan });
+            console.log('Saving to database:', { noLab: noLab, jenisPemeriksaan: jenisPemeriksaan, idDataPemeriksaan: idDataPemeriksaan });
 
             if (!noLab) {
                 console.error('No Lab tidak ditemukan');
@@ -8249,9 +8844,14 @@
                         // Update form inputs dengan format yang benar
                         updateFormInputs($row, response.data.id_hasil_lain);
 
-                        setTimeout(() => {
+                        // REAL-TIME: Update rujukan berdasarkan kondisi setelah data disimpan
+                        updateRujukanBerdasarkanKondisi($row, idDataPemeriksaan);
+
+                        setTimeout(function() {
                             $row.removeClass('table-warning').addClass('table-success');
-                            setTimeout(() => $row.removeClass('table-success'), 2000);
+                            setTimeout(function() {
+                                $row.removeClass('table-success');
+                            }, 2000);
                         }, 100);
 
                         if (typeof window.showToast === 'function') {
@@ -8280,21 +8880,21 @@
             const rowIndex = $row.data('index');
             const jenisPemeriksaan = $row.data('jenis-pemeriksaan');
 
-            $row.find('.id-data-pemeriksaan-input').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][id_data_pemeriksaan]`);
-            $row.find('.jenis-pengujian-input').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][jenis_pengujian]`);
-            $row.find('.row-id-input').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][id]`);
-            $row.find('.hasil-input-hasil-lain').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][hasil_pengujian]`);
-            $row.find('.keterangan-input-hasil-lain').attr('name', `hasil_lain[${jenisPemeriksaan}][${rowIndex}][keterangan]`);
+            $row.find('.id-data-pemeriksaan-input').attr('name', 'hasil_lain[' + jenisPemeriksaan + '][' + rowIndex + '][id_data_pemeriksaan]');
+            $row.find('.jenis-pengujian-input').attr('name', 'hasil_lain[' + jenisPemeriksaan + '][' + rowIndex + '][jenis_pengujian]');
+            $row.find('.row-id-input').attr('name', 'hasil_lain[' + jenisPemeriksaan + '][' + rowIndex + '][id]');
+            $row.find('.hasil-input-hasil-lain').attr('name', 'hasil_lain[' + jenisPemeriksaan + '][' + rowIndex + '][hasil_pengujian]');
+            $row.find('.keterangan-input-hasil-lain').attr('name', 'hasil_lain[' + jenisPemeriksaan + '][' + rowIndex + '][keterangan]');
 
             // Update ch dan cl jika ada
             const chValue = $row.find('.ch-display-hasil-lain').text();
             const clValue = $row.find('.cl-display-hasil-lain').text();
 
             if (!$row.find('.ch-input-hidden').length) {
-                $row.find('.ch-cell-hasil-lain').append(`<input type="hidden" class="ch-input-hidden" name="hasil_lain[${jenisPemeriksaan}][${rowIndex}][ch]" value="${chValue}">`);
+                $row.find('.ch-cell-hasil-lain').append('<input type="hidden" class="ch-input-hidden" name="hasil_lain[' + jenisPemeriksaan + '][' + rowIndex + '][ch]" value="' + chValue + '">');
             }
             if (!$row.find('.cl-input-hidden').length) {
-                $row.find('.cl-cell-hasil-lain').append(`<input type="hidden" class="cl-input-hidden" name="hasil_lain[${jenisPemeriksaan}][${rowIndex}][cl]" value="${clValue}">`);
+                $row.find('.cl-cell-hasil-lain').append('<input type="hidden" class="cl-input-hidden" name="hasil_lain[' + jenisPemeriksaan + '][' + rowIndex + '][cl]" value="' + clValue + '">');
             }
         }
 
@@ -8329,89 +8929,277 @@
 
             // Save after delay
             clearTimeout($input.data('saveTimer'));
-            $input.data('saveTimer', setTimeout(() => {
+            $input.data('saveTimer', setTimeout(function() {
                 saveHasilPengujian(id, value, $input);
             }, 800));
         });
 
+        // ============================================
+        // FUNGSI UPDATE KETERANGAN DENGAN RUJUKAN KONDISI
+        // ============================================
         function updateKeteranganHasilLain($input) {
             const value = $input.val();
-            const rujukan = $input.data('rujukan') || '';
-            const ch = $input.data('ch') || '';
-            const cl = $input.data('cl') || '';
             const $row = $input.closest('tr');
             const $display = $row.find('.keterangan-display-hasil-lain');
             const $hidden = $row.find('.keterangan-input-hasil-lain');
 
-            console.log('Updating keterangan:', { value, rujukan, ch, cl });
+            console.log('=== HASIL LAIN - updateKeterangan ===');
+            console.log('Hasil:', value);
 
-            // Gunakan fungsi calculateKeterangan jika ada
-            if (typeof window.calculateKeterangan === 'function') {
-                const keterangan = window.calculateKeterangan(value, $input);
-                console.log('Keterangan calculated:', keterangan);
+            // Clear jika kosong
+            if (!value || value.trim() === '') {
+                console.log('Hasil kosong, reset keterangan');
+                updateKeteranganDisplay($display, '');
+                $hidden.val('');
+                return;
+            }
 
-                // Update display
-                updateKeteranganDisplay($display, keterangan);
-                $hidden.val(keterangan);
+            // Dapatkan data kondisi pasien
+            const idDataPemeriksaan = $row.find('.id-data-pemeriksaan-input').val();
+            const jenisKelamin = '{{ $pasien->jenis_kelamin }}';
+            const umurPasien = '{{ $data["umur_format"] ?? "" }}';
+
+            let rujukan = $row.find('.rujukan-display-hasil-lain').text().replace(/<[^>]*>/g, '').trim();
+            let ch = $row.find('.ch-display-hasil-lain').text().replace(/<[^>]*>/g, '').trim();
+            let cl = $row.find('.cl-display-hasil-lain').text().replace(/<[^>]*>/g, '').trim();
+
+            // Jika ada ID data pemeriksaan, coba dapatkan rujukan berdasarkan kondisi
+            if (idDataPemeriksaan) {
+                getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien)
+                    .then(function(rujukanData) {
+                        if (rujukanData) {
+                            // Update data untuk perhitungan
+                            rujukan = rujukanData.rujukan || rujukan;
+                            ch = rujukanData.ch || ch;
+                            cl = rujukanData.cl || cl;
+
+                            console.log('Rujukan Hasil Lain diupdate berdasarkan kondisi:', rujukanData);
+                        }
+
+                        // Gunakan rujukan yang sudah diupdate untuk perhitungan
+                        calculateAndUpdateKeteranganHasilLain($input, $display, $hidden, value, rujukan, ch, cl);
+                    })
+                    .catch(function(error) {
+                        console.error('Error mendapatkan rujukan berdasarkan kondisi (Hasil Lain):', error);
+                        // Gunakan data default jika error
+                        calculateAndUpdateKeteranganHasilLain($input, $display, $hidden, value, rujukan, ch, cl);
+                    });
             } else {
-                // Fallback logic
-                let keterangan = '-';
+                // Gunakan data default jika tidak ada ID
+                calculateAndUpdateKeteranganHasilLain($input, $display, $hidden, value, rujukan, ch, cl);
+            }
+        }
 
-                if (value && value.trim() !== '') {
-                    const numValue = parseFloat(value);
-                    if (!isNaN(numValue)) {
-                        // Cek critical values
-                        if (ch && ch !== '-' && ch !== '') {
-                            const chNum = parseFloat(ch);
-                            if (!isNaN(chNum) && numValue > chNum) {
-                                keterangan = 'CH';
-                            }
+        function calculateAndUpdateKeteranganHasilLain($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl) {
+            console.log('Hasil Lain - Perhitungan dengan:', { hasil: hasil, rujukan: rujukan, ch: ch, cl: cl });
+
+            if (!rujukan || rujukan.trim() === '' || rujukan.trim() === '-') {
+                console.log('Rujukan tidak tersedia atau "-"');
+                updateKeteranganDisplay($keteranganDisplay, '-');
+                $hiddenInput.val('-');
+                return;
+            }
+
+            try {
+                const rujukanStr = rujukan.toString().trim();
+                const hasilStr = hasil.toString().trim();
+                const hasilNum = parseFloat(hasilStr.replace(',', '.'));
+
+                console.log('Hasil Lain - Data untuk perhitungan:', {
+                    rujukan: rujukanStr,
+                    hasil: hasilStr,
+                    hasilNum: hasilNum
+                });
+
+                // Jika bukan angka, cek kualitatif
+                if (isNaN(hasilNum)) {
+                    const hasilLower = hasilStr.toLowerCase();
+                    const rujukanLower = rujukanStr.toLowerCase();
+
+                    if (rujukanLower.includes('negative') || rujukanLower.includes('negatif')) {
+                        if (hasilLower.includes('negative') || hasilLower.includes('negatif') ||
+                            hasilLower.includes('non-reactive') || hasilLower.includes('nonreactive')) {
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            updateKeteranganDisplay($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
                         }
-
-                        if (cl && cl !== '-' && cl !== '') {
-                            const clNum = parseFloat(cl);
-                            if (!isNaN(clNum) && numValue < clNum) {
-                                keterangan = 'CL';
-                            }
+                        return;
+                    } else if (rujukanLower.includes('positive') || rujukanLower.includes('positif')) {
+                        if (hasilLower.includes('positive') || hasilLower.includes('positif') ||
+                            hasilLower.includes('reactive') || hasilLower.includes('reaktif')) {
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            updateKeteranganDisplay($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
                         }
+                        return;
+                    } else {
+                        updateKeteranganDisplay($keteranganDisplay, '-');
+                        $hiddenInput.val('-');
+                    }
+                    return;
+                }
 
-                        // Cek rujukan
-                        if (rujukan && rujukan !== '-' && rujukan !== '' && keterangan === '-') {
-                            if (rujukan.includes('-')) {
-                                const parts = rujukan.split('-');
-                                if (parts.length === 2) {
-                                    const min = parseFloat(parts[0]);
-                                    const max = parseFloat(parts[1]);
+                // CEK CRITICAL HIGH (CH)
+                if (ch && ch !== '' && ch !== '-' && ch !== 'null') {
+                    let chNum;
+                    if (ch.includes('>')) {
+                        chNum = parseFloat(ch.replace('>', '').trim());
+                    } else {
+                        chNum = parseFloat(ch);
+                    }
 
-                                    if (!isNaN(min) && !isNaN(max)) {
-                                        if (numValue < min) keterangan = 'L';
-                                        else if (numValue > max) keterangan = 'H';
-                                    }
-                                }
+                    if (!isNaN(chNum) && hasilNum > chNum) {
+                        console.log('✅ HASIL LAIN CH DETECTED: ' + hasilNum + ' > ' + chNum);
+                        updateKeteranganDisplay($keteranganDisplay, 'CH');
+                        $hiddenInput.val('CH');
+                        return;
+                    }
+                }
+
+                // CEK CRITICAL LOW (CL)
+                if (cl && cl !== '' && cl !== '-' && cl !== 'null') {
+                    let clNum;
+                    if (cl.includes('<')) {
+                        clNum = parseFloat(cl.replace('<', '').trim());
+                    } else {
+                        clNum = parseFloat(cl);
+                    }
+
+                    if (!isNaN(clNum) && hasilNum < clNum) {
+                        console.log('✅ HASIL LAIN CL DETECTED: ' + hasilNum + ' < ' + clNum);
+                        updateKeteranganDisplay($keteranganDisplay, 'CL');
+                        $hiddenInput.val('CL');
+                        return;
+                    }
+                }
+
+                // CEK RUJUKAN NORMAL
+                // Format range: "1 - 90"
+                if (rujukanStr.includes('-') && !rujukanStr.includes('<') && !rujukanStr.includes('>')) {
+                    const parts = rujukanStr.split('-');
+                    if (parts.length === 2) {
+                        const min = parseFloat(parts[0].trim());
+                        const max = parseFloat(parts[1].trim());
+
+                        if (!isNaN(min) && !isNaN(max)) {
+                            if (hasilNum < min) {
+                                console.log('✅ HASIL LAIN L DETECTED: ' + hasilNum + ' < ' + min);
+                                updateKeteranganDisplay($keteranganDisplay, 'L');
+                                $hiddenInput.val('L');
+                            } else if (hasilNum > max) {
+                                console.log('✅ HASIL LAIN H DETECTED: ' + hasilNum + ' > ' + max);
+                                updateKeteranganDisplay($keteranganDisplay, 'H');
+                                $hiddenInput.val('H');
+                            } else {
+                                console.log('✅ HASIL LAIN NORMAL: ' + hasilNum + ' dalam range ' + min + '-' + max);
+                                updateKeteranganDisplay($keteranganDisplay, '-');
+                                $hiddenInput.val('-');
                             }
+                            return;
                         }
                     }
                 }
 
-                // Update display
-                updateKeteranganDisplay($display, keterangan);
-                $hidden.val(keterangan);
+                // Format: "< X"
+                if (rujukanStr.startsWith('<')) {
+                    const batas = parseFloat(rujukanStr.replace('<', '').trim());
+                    if (!isNaN(batas)) {
+                        if (hasilNum >= batas) {
+                            console.log('✅ HASIL LAIN H DETECTED: ' + hasilNum + ' ≥ ' + batas);
+                            updateKeteranganDisplay($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
+                        } else {
+                            console.log('✅ HASIL LAIN NORMAL: ' + hasilNum + ' < ' + batas);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        }
+                        return;
+                    }
+                }
 
-                console.log('Keterangan updated to:', keterangan);
+                // Format: "> X"
+                if (rujukanStr.startsWith('>')) {
+                    const batas = parseFloat(rujukanStr.replace('>', '').trim());
+                    if (!isNaN(batas)) {
+                        if (hasilNum <= batas) {
+                            console.log('✅ HASIL LAIN L DETECTED: ' + hasilNum + ' ≤ ' + batas);
+                            updateKeteranganDisplay($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
+                        } else {
+                            console.log('✅ HASIL LAIN NORMAL: ' + hasilNum + ' > ' + batas);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        }
+                        return;
+                    }
+                }
+
+                // Default
+                console.log('Tidak ada pola yang cocok');
+                updateKeteranganDisplay($keteranganDisplay, '-');
+                $hiddenInput.val('-');
+
+            } catch (e) {
+                console.error('HASIL LAIN - Error:', e);
+                updateKeteranganDisplay($keteranganDisplay, '-');
+                $hiddenInput.val('-');
             }
         }
 
         function updateKeteranganDisplay($display, keterangan) {
-            $display.removeClass('bg-danger bg-opacity-10 bg-primary bg-opacity-10 bg-success bg-opacity-10 text-danger text-primary text-success');
-
-            if (keterangan === 'CH' || keterangan === 'H') {
-                $display.addClass('bg-danger bg-opacity-10 text-danger').html('<strong>' + keterangan + '</strong>');
-            } else if (keterangan === 'CL' || keterangan === 'L') {
-                $display.addClass('bg-primary bg-opacity-10 text-primary').html('<strong>' + keterangan + '</strong>');
-            } else {
-                $display.addClass('bg-success bg-opacity-10 text-success').html('<strong>-</strong>');
+            if (!$display.length) {
+                console.error('Display element tidak ditemukan');
+                return;
             }
 
+            // Reset semua kelas
+            $display.removeClass(
+                'bg-danger bg-opacity-10 ' +
+                'bg-primary bg-opacity-10 ' +
+                'bg-success bg-opacity-10 ' +
+                'text-danger text-primary text-success'
+            );
+
+            // Set kelas berdasarkan keterangan
+            let bgClass = '';
+            let textClass = '';
+            let displayText = '';
+
+            switch (keterangan) {
+                case 'CH':
+                case 'H':
+                    bgClass = 'bg-danger bg-opacity-10';
+                    textClass = 'text-danger';
+                    displayText = keterangan === 'CH' ? 'CH' : 'H';
+                    break;
+
+                case 'CL':
+                case 'L':
+                    bgClass = 'bg-primary bg-opacity-10';
+                    textClass = 'text-primary';
+                    displayText = keterangan === 'CL' ? 'CL' : 'L';
+                    break;
+
+                case '-':
+                    bgClass = 'bg-success bg-opacity-10';
+                    textClass = 'text-success';
+                    displayText = '-';
+                    break;
+
+                default:
+                    bgClass = 'bg-light';
+                    textClass = 'text-muted';
+                    displayText = '-';
+                    keterangan = '-';
+            }
+
+            // Apply classes
+            $display.addClass(bgClass + ' ' + textClass);
+            $display.html('<strong>' + displayText + '</strong>');
             $display.data('keterangan', keterangan);
         }
 
@@ -8463,7 +9251,7 @@
         // ============================================
         // 8. HAPUS ROW INDIVIDUAL
         // ============================================
-        $(document).on('click', '.hapus-row-btn-hasil-lain', function () {
+        $(document).on('click', '.hapus-row-btn-hasil-lain', function() {
             const $row = $(this).closest('tr');
             const rowId = $row.data('id');
 
@@ -8480,20 +9268,25 @@
                 headers: {
                     'X-CSRF-TOKEN': csrfToken
                 },
-                success: function (res) {
+                success: function(res) {
                     if (res.success) {
                         $row.remove();
-                        window.showToast?.('success', res.message);
+                        if (window.showToast) {
+                            window.showToast('success', res.message);
+                        }
                     } else {
-                        window.showToast?.('danger', res.message || 'Gagal menghapus data');
+                        if (window.showToast) {
+                            window.showToast('danger', res.message || 'Gagal menghapus data');
+                        }
                     }
                 },
-                error: function () {
-                    window.showToast?.('danger', 'Gagal menghapus data');
+                error: function() {
+                    if (window.showToast) {
+                        window.showToast('danger', 'Gagal menghapus data');
+                    }
                 }
             });
         });
-
 
         // ============================================
         // 9. CLOSE DROPDOWN SAAT KLIK DI LUAR
@@ -8513,6 +9306,34 @@
             }
         });
 
+        // ============================================
+        // 11. INISIALISASI DATA SAAT PAGE LOAD
+        // ============================================
+        $(window).on('load', function() {
+            setTimeout(function() {
+                console.log('Initializing existing hasil lain data...');
+
+                // Untuk setiap hasil input yang sudah ada, update dengan kondisi
+                $('.hasil-input-hasil-lain').each(function() {
+                    const $input = $(this);
+                    const $row = $input.closest('tr');
+                    const idDataPemeriksaan = $row.find('.id-data-pemeriksaan-input').val();
+
+                    // Update rujukan berdasarkan kondisi untuk data yang sudah ada
+                    if (idDataPemeriksaan) {
+                        updateRujukanBerdasarkanKondisi($row, idDataPemeriksaan);
+                    }
+
+                    // Update keterangan jika sudah ada hasil
+                    if ($input.val() && $input.val().trim() !== '') {
+                        updateKeteranganHasilLain($input);
+                    }
+                });
+
+                console.log('Hasil Lain initialization complete');
+            }, 2000);
+        });
+
         console.log('✅ Hasil Lain System Complete Version Loaded');
         console.log('Fitur yang tersedia:');
         console.log('1. Tambah tabel baru dari dropdown');
@@ -8521,8 +9342,9 @@
         console.log('4. Tombol "Hapus Tabel" dengan konfirmasi');
         console.log('5. Search realtime data pemeriksaan');
         console.log('6. Auto-save ke database');
-        console.log('7. Auto-calculate keterangan');
+        console.log('7. Auto-calculate keterangan dengan kondisi pasien');
         console.log('8. History panel untuk setiap tabel');
+        console.log('9. REAL-TIME: Update rujukan berdasarkan kondisi pasien');
     });
 </script>
 

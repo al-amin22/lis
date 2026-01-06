@@ -14,6 +14,7 @@ use App\Http\Controllers\KelasController;
 use App\Http\Controllers\PemeriksaController;
 use App\Http\Controllers\RuanganController;
 use App\Http\Controllers\LogActivityController;
+use App\Http\Controllers\DetailDataPemeriksaanController;
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -34,7 +35,33 @@ Route::prefix('hasil-lab')->group(function () {
     Route::put('/{no_lab}', [PasienController::class, 'update'])->name('hasil-lab.update');
     Route::post('/update-field-ajax', [PasienController::class, 'updateFieldAjax'])->name('hasil-lab.update-field-ajax');
     Route::post('/get-data-pemeriksaan', [PasienController::class, 'getDataPemeriksaan'])->name('hasil-lab.get-data-pemeriksaan');
+    Route::post('/get-rujukan-hematology', [PasienController::class, 'getRujukanHematologyByKondisi'])->name('hasil-lab.get-rujukan-hematology');
 });
+
+Route::get('/pasien/rujukan-by-kondisi', [PasienController::class, 'getRujukanHematologyByKondisi'])->name('pasien.get-rujukan-by-kondisi');
+
+// AJAX & custom routes WAJIB di atas
+Route::get(
+    '/detail-data-pemeriksaan/data-pemeriksaan',
+    [DetailDataPemeriksaanController::class, 'getDataPemeriksaan']
+)->name('detail-data-pemeriksaan.get-data-pemeriksaan');
+
+Route::post(
+    '/detail-data-pemeriksaan/store-multiple',
+    [DetailDataPemeriksaanController::class, 'storeMultiple']
+)->name('detail-data-pemeriksaan.store-multiple');
+
+Route::delete(
+    '/detail-data-pemeriksaan/destroy-multiple',
+    [DetailDataPemeriksaanController::class, 'destroyMultiple']
+)->name('detail-data-pemeriksaan.destroy-multiple');
+
+// TERAKHIR BARU resource
+Route::resource('detail-data-pemeriksaan', DetailDataPemeriksaanController::class);
+
+
+// Tambahkan route untuk pencarian pemeriksa
+Route::get('/pemeriksa/search', [PemeriksaController::class, 'search'])->name('pemeriksa.search');
 
 Route::prefix('hasil-lab')->group(function () {
     Route::get('/print/{no_lab}', [PasienController::class, 'cetakHasilLab'])
@@ -55,7 +82,7 @@ Route::prefix('hasil-lain')->group(function () {
     Route::delete('/destroy/{id}', [HasilLainController::class, 'destroy'])->name('hasil-lain.destroy');
     Route::post('/search-kode-pemeriksaan', [HasilLainController::class, 'searchKodePemeriksaan'])->name('hasil-lain.search-kode-pemeriksaan');
 });
-
+Route::get('/jenis-pemeriksaan/search',[JenisPemeriksaanController::class, 'search'])->name('jenis-pemeriksaan.search');
 Route::get('/search/pemeriksa', [PemeriksaController::class, 'searchPemeriksa'])->name('pemeriksa.search');
 Route::post('/hasil-lab/history-hover-detailed', [PasienController::class, 'getHistoryHover'])->name('hasil-lab.get-history-hover');
 Route::post('/hasil-lab/update-keterangan-batch', [PasienController::class, 'updateKeteranganBatch'])->name('hasil-lab.update-keterangan-batch');
@@ -97,6 +124,9 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/logs/{id}', [LogActivityController::class, 'show']);
         Route::get('/logs/modules/list', [LogActivityController::class, 'getModules']);
         Route::get('/logs/actions/list', [LogActivityController::class, 'getActions']);
+        // routes/web.php
+        Route::get('/{no_lab}/barcode', [PasienController::class, 'generate'])->name('barcode');
+
         // INDEX — daftar dokter
         Route::get('/dokter', [DokterController::class, 'index'])->name('dokter.index');
         Route::post('/dokter', [DokterController::class, 'store'])->name('dokter.store');

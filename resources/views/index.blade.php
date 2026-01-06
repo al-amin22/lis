@@ -383,6 +383,11 @@
                                                     Kirim ke Alat
                                                 </button>
                                             </form> -->
+                                            <a href="{{ route('pasien.barcode', $patient->no_lab) }}"
+                                                target="_blank"
+                                                class="btn btn-sm btn-dark">
+                                                    Barcode
+                                            </a>
 
 
                                             <form action="{{ route('pasien.destroy', $patient->no_lab) }}" method="POST" class="d-inline">
