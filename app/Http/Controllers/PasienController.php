@@ -15,6 +15,7 @@ use App\Jobs\GeneratePdfJob;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\DataPemeriksaan;
+use Illuminate\Support\Facades\Cache;
 use App\Models\DetailDataPemeriksaan;
 use App\Models\HasilPemeriksaanLain;
 use Endroid\QrCode\Builder\Builder;
@@ -77,6 +78,7 @@ class PasienController extends Controller
             'barcode'      => $barcode,
         ]);
     }
+
 
     public function index(Request $request)
     {
@@ -733,7 +735,20 @@ class PasienController extends Controller
             ->leftJoin('data_pemeriksaan as dp', 'pemeriksaan_kimia.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
             ->with('dataPemeriksaan.jenisPemeriksaan')
             ->with('dataPemeriksaan.detailConditions') // Tambahkan detailConditions
-            ->orderBy('dp.urutan', 'asc')
+            ->orderByRaw("
+                CASE
+                    WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                    ELSE 1
+                END,
+                CASE
+                    WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                    THEN trim(dp.kode_pemeriksaan)::integer
+                    ELSE NULL
+                END,
+                dp.kode_pemeriksaan
+            ")
+
+
             ->select('pemeriksaan_kimia.*')
             ->get();
 
@@ -812,6 +827,7 @@ class PasienController extends Controller
             ->whereNull('hpl.deleted_at')
             ->select(
                 'hpl.*',
+                'dp.kode_pemeriksaan',
                 'dp.data_pemeriksaan',
                 'dp.satuan as satuan_pemeriksaan',
                 'dp.rujukan as rujukan_pemeriksaan',
@@ -823,7 +839,18 @@ class PasienController extends Controller
                 'jp1.id_jenis_pemeriksaan_1 as jenis_pemeriksaan_id',
                 DB::raw("COALESCE(jp1.nama_pemeriksaan, 'Lainnya') as kelompok_pemeriksaan")
             )
-            ->orderBy('dp.urutan', 'asc')
+            ->orderByRaw("
+                CASE
+                    WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                    ELSE 1
+                END,
+                CASE
+                    WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                    THEN trim(dp.kode_pemeriksaan)::integer
+                    ELSE NULL
+                END,
+                dp.kode_pemeriksaan
+            ")
             ->get();
 
         // Proses setiap item hasil lain untuk menghitung rujukan berdasarkan kondisi
@@ -893,7 +920,6 @@ class PasienController extends Controller
         $hasil_lain_grouped = [];
         $jenis_pemeriksaan_order = [];
 
-        $hasil_lain = $hasil_lain->sortBy('created_at');
 
         foreach ($hasil_lain as $item) {
             $jenis_pemeriksaan = $item->kelompok_pemeriksaan;
@@ -908,26 +934,6 @@ class PasienController extends Controller
             $hasil_lain_grouped[$jenis_pemeriksaan][] = $item;
         }
 
-        uksort($hasil_lain_grouped, function($a, $b) use ($jenis_pemeriksaan_order) {
-            $timeA = $jenis_pemeriksaan_order[$a] ?? Carbon::now();
-            $timeB = $jenis_pemeriksaan_order[$b] ?? Carbon::now();
-            return $timeA <=> $timeB;
-        });
-
-        foreach ($hasil_lain_grouped as &$items) {
-            usort($items, function($a, $b) {
-                $urutan_a = $a->urutan_pemeriksaan ?? 9999;
-                $urutan_b = $b->urutan_pemeriksaan ?? 9999;
-
-                if ($urutan_a != $urutan_b) {
-                    return $urutan_a <=> $urutan_b;
-                }
-
-                return strcmp($a->data_pemeriksaan ?? '', $b->data_pemeriksaan ?? '');
-            });
-        }
-
-
         /* =========================
         * JENIS PEMERIKSAAN LIST
         * ========================= */
@@ -935,6 +941,44 @@ class PasienController extends Controller
             ->whereNull('deleted_at')
             ->orderBy('nama_pemeriksaan')
             ->get();
+
+        $rujukanBatchPayload = [];
+
+        // 1. HEMATOLOGY
+        foreach ($hematology_fix as $item) {
+            if (!empty($item->id_data_pemeriksaan)) {
+                $rujukanBatchPayload[$item->id_data_pemeriksaan] = [
+                    'id_data_pemeriksaan' => (string) $item->id_data_pemeriksaan,
+                    'jenis_kelamin' => $pasien->jenis_kelamin ?? '',
+                    'umur_pasien' => $data['umur_format'] ?? '',
+                ];
+            }
+        }
+
+        // 2. KIMIA
+        foreach ($kimia as $item) {
+            if (!empty($item->id_data_pemeriksaan)) {
+                $rujukanBatchPayload[$item->id_data_pemeriksaan] = [
+                    'id_data_pemeriksaan' => (string) $item->id_data_pemeriksaan,
+                    'jenis_kelamin' => $pasien->jenis_kelamin ?? '',
+                    'umur_pasien' => $data['umur_format'] ?? '',
+                ];
+            }
+        }
+
+        // 3. PEMERIKSAAN LAIN
+        foreach ($hasil_lain as $item) {
+            if (!empty($item->id_data_pemeriksaan)) {
+                $rujukanBatchPayload[$item->id_data_pemeriksaan] = [
+                    'id_data_pemeriksaan' => (string) $item->id_data_pemeriksaan,
+                    'jenis_kelamin' => $pasien->jenis_kelamin ?? '',
+                    'umur_pasien' => $data['umur_format'] ?? '',
+                ];
+            }
+        }
+
+        // reset index agar jadi array bersih
+        $rujukanBatchPayload = array_values($rujukanBatchPayload);
 
         LogActivityService::log(
             action: 'READ',
@@ -950,6 +994,7 @@ class PasienController extends Controller
             'hasil_lain_grouped' => $hasil_lain_grouped,
             'jenis_pemeriksaan_1_list' => $jenis_pemeriksaan_1_list,
             'data' => $data,
+            'rujukanBatchPayload'=> $rujukanBatchPayload,
         ]);
     }
 
@@ -2028,7 +2073,18 @@ class PasienController extends Controller
                 ->leftJoin('data_pemeriksaan as dp', 'pemeriksaan_kimia.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
                 ->with('dataPemeriksaan.jenisPemeriksaan')
                 ->with('dataPemeriksaan.detailConditions')
-                ->orderBy('dp.urutan', 'asc')
+                ->orderByRaw("
+                        CASE
+                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                            ELSE 1
+                        END,
+                        CASE
+                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                            THEN trim(dp.kode_pemeriksaan)::integer
+                            ELSE NULL
+                        END,
+                        dp.kode_pemeriksaan
+                    ")
                 ->select('pemeriksaan_kimia.*')
                 ->get();
 
@@ -2084,6 +2140,7 @@ class PasienController extends Controller
                 ->select(
                     'hpl.*',
                     'dp.data_pemeriksaan',
+                    'dp.kode_pemeriksaan',
                     'dp.satuan as satuan_pemeriksaan',
                     'dp.rujukan as rujukan_pemeriksaan',
                     'dp.metode',
@@ -2095,7 +2152,18 @@ class PasienController extends Controller
                     DB::raw("COALESCE(jp1.nama_pemeriksaan, 'Lainnya') as kelompok_pemeriksaan"),
                     'hpl.created_at'
                 )
-                ->orderBy('dp.urutan', 'asc')
+                ->orderByRaw("
+                        CASE
+                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                            ELSE 1
+                        END,
+                        CASE
+                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                            THEN trim(dp.kode_pemeriksaan)::integer
+                            ELSE NULL
+                        END,
+                        dp.kode_pemeriksaan
+                    ")
                 ->get();
 
             // Map untuk menambahkan rujukan_by_kondisi dan calculated_keterangan
@@ -2163,9 +2231,6 @@ class PasienController extends Controller
             $hasil_lain_grouped = [];
             $jenis_pemeriksaan_order = [];
 
-            // urutkan berdasarkan created_at untuk menentukan urutan kelompok
-            $hasil_lain = $hasil_lain->sortBy('created_at');
-
             foreach ($hasil_lain as $item) {
                 $jenis_pemeriksaan = $item->kelompok_pemeriksaan ?? ($item->jenis_pemeriksaan_nama ?: 'Lainnya');
 
@@ -2178,24 +2243,6 @@ class PasienController extends Controller
 
                 $hasil_lain_grouped[$jenis_pemeriksaan][] = $item;
             }
-
-            uksort($hasil_lain_grouped, function($a, $b) use ($jenis_pemeriksaan_order) {
-                $timeA = $jenis_pemeriksaan_order[$a] ?? Carbon::now();
-                $timeB = $jenis_pemeriksaan_order[$b] ?? Carbon::now();
-                return $timeA <=> $timeB;
-            });
-
-            foreach ($hasil_lain_grouped as &$items) {
-                usort($items, function($a, $b) {
-                    $urutan_a = $a->urutan_pemeriksaan ?? 9999;
-                    $urutan_b = $b->urutan_pemeriksaan ?? 9999;
-                    if ($urutan_a != $urutan_b) {
-                        return $urutan_a <=> $urutan_b;
-                    }
-                    return strcmp($a->data_pemeriksaan ?? '', $b->data_pemeriksaan ?? '');
-                });
-            }
-            unset($items);
 
             /* =========================
             * BUILD DATA UNTUK PENCETAKAN (multi-page)
@@ -4411,6 +4458,99 @@ class PasienController extends Controller
             ], 500);
         }
     }
+
+    public function getRujukanHematologyByKondisiBatch(Request $request)
+    {
+        try {
+            // =========================
+            // VALIDASI
+            // =========================
+            $request->validate([
+                'items' => 'required|array|min:1',
+                'items.*.id_data_pemeriksaan' => 'required|string',
+                'items.*.jenis_kelamin' => 'required|string|in:PRIA,WANITA',
+                'items.*.umur_pasien' => 'required|string',
+            ]);
+
+            $items = $request->items;
+
+            // =========================
+            // CACHE KEY (STABIL)
+            // =========================
+            $cacheKey = 'rujukan_batch_' . md5(json_encode($items));
+
+            return Cache::remember($cacheKey, 3600, function () use ($items) {
+
+                // =========================
+                // AMBIL SEMUA ID SEKALIGUS
+                // =========================
+                $ids = collect($items)
+                    ->pluck('id_data_pemeriksaan')
+                    ->unique()
+                    ->values();
+
+                $dataPemeriksaanMap = DataPemeriksaan::whereIn(
+                    'id_data_pemeriksaan',
+                    $ids
+                )->get()->keyBy('id_data_pemeriksaan');
+
+                // =========================
+                // PROSES RUJUKAN
+                // =========================
+                $result = [];
+
+                foreach ($items as $item) {
+
+                    $id = $item['id_data_pemeriksaan'];
+
+                    $dp = $dataPemeriksaanMap[$id] ?? null;
+
+                    if (!$dp) {
+                        $result[$id] = [
+                            'success' => false,
+                            'message' => 'Data pemeriksaan tidak ditemukan'
+                        ];
+                        continue;
+                    }
+
+                    // 🔥 LOGIKA MEDIS TETAP DIPAKAI
+                    $rujukan = $dp->getRujukanByKondisiPasien(
+                        $item['jenis_kelamin'],
+                        $item['umur_pasien']
+                    );
+
+                    $result[$id] = [
+                        'success' => true,
+                        'data' => $rujukan,
+                        'metadata' => [
+                            'data_pemeriksaan' => $dp->data_pemeriksaan,
+                            'has_detail_conditions' => $dp->hasDetailConditions()
+                        ]
+                    ];
+                }
+
+                // =========================
+                // RESPONSE FINAL
+                // =========================
+                return response()->json([
+                    'success' => true,
+                    'data' => $result
+                ]);
+            });
+
+        } catch (\Throwable $e) {
+
+            Log::error('ERROR BATCH RUJUKAN: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan sistem'
+            ], 500);
+        }
+    }
+
 
 }
 

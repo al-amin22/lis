@@ -18,6 +18,9 @@ use App\Http\Controllers\DetailDataPemeriksaanController;
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/view_lab/home.php', function () {
+    return redirect()->route('login');
+});
 // Route::get('/pasien/kirim-hasil/{no_lab}', [PasienController::class, 'kirimHasilKeSimrs'])
 //     ->withoutMiddleware('*');
 // Route::get('/pasien/ambil-order', [PasienController::class, 'ambilOrderDariSimrs'])
@@ -39,7 +42,7 @@ Route::prefix('hasil-lab')->group(function () {
 });
 
 Route::get('/pasien/rujukan-by-kondisi', [PasienController::class, 'getRujukanHematologyByKondisi'])->name('pasien.get-rujukan-by-kondisi');
-
+Route::post('/pasien/rujukan-by-kondisi/batch',[PasienController::class, 'getRujukanHematologyByKondisiBatch'])->name('pasien.get-rujukan-by-kondisi-batch');
 // AJAX & custom routes WAJIB di atas
 Route::get(
     '/detail-data-pemeriksaan/data-pemeriksaan',

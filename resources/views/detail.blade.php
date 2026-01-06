@@ -1,6 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
+<div
+    id="rujukan-batch-data"
+    data-items='@json($rujukanBatchPayload)'>
+</div>
 <!-- App hero header starts -->
 <div class="app-hero-header d-flex align-items-center">
     <!-- Breadcrumb starts -->
@@ -3032,35 +3036,29 @@
         // ============================================
 
         function getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien) {
-            return new Promise((resolve, reject) => {
+            // Versi queue/cache — menggantikan Ajax lama
+            return new Promise(function(resolve) {
                 if (!idDataPemeriksaan) {
                     resolve(null);
                     return;
                 }
 
-                $.ajax({
-                    url: '{{ route("pasien.get-rujukan-by-kondisi") }}',
-                    method: 'GET',
-                    data: {
-                        id_data_pemeriksaan: idDataPemeriksaan,
-                        jenis_kelamin: jenisKelamin,
-                        umur_pasien: umurPasien
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            resolve(response.data);
-                        } else {
-                            console.error('Gagal mendapatkan rujukan:', response.message);
-                            resolve(null);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error mendapatkan rujukan:', error);
-                        resolve(null);
-                    }
-                });
+                // inisialisasi struktur global
+                window.__rujukanCache = window.__rujukanCache || {};
+                window.__rujukanResolvers = window.__rujukanResolvers || {};
+
+                // Kalau sudah ada di cache, langsung return
+                if (Object.prototype.hasOwnProperty.call(window.__rujukanCache, idDataPemeriksaan)) {
+                    resolve(window.__rujukanCache[idDataPemeriksaan]);
+                    return;
+                }
+
+                // Masukkan resolver ke queue — akan dipanggil ketika batch berhasil
+                window.__rujukanResolvers[idDataPemeriksaan] = window.__rujukanResolvers[idDataPemeriksaan] || [];
+                window.__rujukanResolvers[idDataPemeriksaan].push(resolve);
             });
         }
+
 
         // ============================================
         // FUNGSI UNTUK UPDATE KETERANGAN KIMIA DENGAN KONDISI
@@ -3864,37 +3862,30 @@
         // ============================================
         // FUNGSI UNTUK MENDAPATKAN RUJUKAN BERDASARKAN KONDISI
         // ============================================
-
         function getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien) {
-            return new Promise((resolve, reject) => {
+            // Versi queue/cache — menggantikan Ajax lama
+            return new Promise(function(resolve) {
                 if (!idDataPemeriksaan) {
                     resolve(null);
                     return;
                 }
 
-                $.ajax({
-                    url: '{{ route("pasien.get-rujukan-by-kondisi") }}',
-                    method: 'GET',
-                    data: {
-                        id_data_pemeriksaan: idDataPemeriksaan,
-                        jenis_kelamin: jenisKelamin,
-                        umur_pasien: umurPasien
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            resolve(response.data);
-                        } else {
-                            console.error('Gagal mendapatkan rujukan:', response.message);
-                            resolve(null);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error mendapatkan rujukan:', error);
-                        resolve(null);
-                    }
-                });
+                // inisialisasi struktur global
+                window.__rujukanCache = window.__rujukanCache || {};
+                window.__rujukanResolvers = window.__rujukanResolvers || {};
+
+                // Kalau sudah ada di cache, langsung return
+                if (Object.prototype.hasOwnProperty.call(window.__rujukanCache, idDataPemeriksaan)) {
+                    resolve(window.__rujukanCache[idDataPemeriksaan]);
+                    return;
+                }
+
+                // Masukkan resolver ke queue — akan dipanggil ketika batch berhasil
+                window.__rujukanResolvers[idDataPemeriksaan] = window.__rujukanResolvers[idDataPemeriksaan] || [];
+                window.__rujukanResolvers[idDataPemeriksaan].push(resolve);
             });
         }
+
 
         // ============================================
         // UPDATE HEMATOLOGY KETERANGAN DENGAN KONDISI
@@ -6242,35 +6233,29 @@
         // ============================================
 
         function getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien) {
-            return new Promise((resolve, reject) => {
+            // Versi queue/cache — menggantikan Ajax lama
+            return new Promise(function(resolve) {
                 if (!idDataPemeriksaan) {
                     resolve(null);
                     return;
                 }
 
-                $.ajax({
-                    url: '{{ route("pasien.get-rujukan-by-kondisi") }}',
-                    method: 'GET',
-                    data: {
-                        id_data_pemeriksaan: idDataPemeriksaan,
-                        jenis_kelamin: jenisKelamin,
-                        umur_pasien: umurPasien
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            resolve(response.data);
-                        } else {
-                            console.error('Gagal mendapatkan rujukan:', response.message);
-                            resolve(null);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error mendapatkan rujukan:', error);
-                        resolve(null);
-                    }
-                });
+                // inisialisasi struktur global
+                window.__rujukanCache = window.__rujukanCache || {};
+                window.__rujukanResolvers = window.__rujukanResolvers || {};
+
+                // Kalau sudah ada di cache, langsung return
+                if (Object.prototype.hasOwnProperty.call(window.__rujukanCache, idDataPemeriksaan)) {
+                    resolve(window.__rujukanCache[idDataPemeriksaan]);
+                    return;
+                }
+
+                // Masukkan resolver ke queue — akan dipanggil ketika batch berhasil
+                window.__rujukanResolvers[idDataPemeriksaan] = window.__rujukanResolvers[idDataPemeriksaan] || [];
+                window.__rujukanResolvers[idDataPemeriksaan].push(resolve);
             });
         }
+
 
         // ============================================
         // FUNGSI UNTUK UPDATE KETERANGAN HASIL LAIN DENGAN KONDISI
@@ -7929,35 +7914,29 @@
         // ============================================
 
         function getRujukanByKondisi(idDataPemeriksaan, jenisKelamin, umurPasien) {
-            return new Promise(function(resolve, reject) {
+            // Versi queue/cache — menggantikan Ajax lama
+            return new Promise(function(resolve) {
                 if (!idDataPemeriksaan) {
                     resolve(null);
                     return;
                 }
 
-                $.ajax({
-                    url: '{{ route("pasien.get-rujukan-by-kondisi") }}',
-                    method: 'GET',
-                    data: {
-                        id_data_pemeriksaan: idDataPemeriksaan,
-                        jenis_kelamin: jenisKelamin,
-                        umur_pasien: umurPasien
-                    },
-                    success: function(response) {
-                        if (response.success) {
-                            resolve(response.data);
-                        } else {
-                            console.error('Gagal mendapatkan rujukan:', response.message);
-                            resolve(null);
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error mendapatkan rujukan:', error);
-                        resolve(null);
-                    }
-                });
+                // inisialisasi struktur global
+                window.__rujukanCache = window.__rujukanCache || {};
+                window.__rujukanResolvers = window.__rujukanResolvers || {};
+
+                // Kalau sudah ada di cache, langsung return
+                if (Object.prototype.hasOwnProperty.call(window.__rujukanCache, idDataPemeriksaan)) {
+                    resolve(window.__rujukanCache[idDataPemeriksaan]);
+                    return;
+                }
+
+                // Masukkan resolver ke queue — akan dipanggil ketika batch berhasil
+                window.__rujukanResolvers[idDataPemeriksaan] = window.__rujukanResolvers[idDataPemeriksaan] || [];
+                window.__rujukanResolvers[idDataPemeriksaan].push(resolve);
             });
         }
+
 
         // ============================================
         // 1. TAMBAH TABEL PEMERIKSAAN BARU
@@ -9347,6 +9326,97 @@
         console.log('9. REAL-TIME: Update rujukan berdasarkan kondisi pasien');
     });
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // baca payload dari element yang kita buat
+        const holder = document.getElementById('rujukan-batch-data');
+        if (!holder) return;
+
+        let items;
+        try {
+            items = JSON.parse(holder.dataset.items || '[]');
+        } catch (e) {
+            console.error('Payload rujukan tidak valid', e);
+            items = [];
+        }
+
+        if (!Array.isArray(items) || items.length === 0) {
+            // jika tidak ada item, pastikan resolve dengan null untuk queue yang mungkin ada
+            if (window.__rujukanResolvers) {
+                Object.entries(window.__rujukanResolvers).forEach(([id, arr]) => {
+                    arr.forEach(fn => fn(null));
+                });
+                window.__rujukanResolvers = {};
+            }
+            return;
+        }
+
+        // anti double run
+        if (window.__rujukanBatchRequested) return;
+        window.__rujukanBatchRequested = true;
+
+        // kirim 1 request batch (POST)
+        fetch('{{ route("pasien.get-rujukan-by-kondisi-batch") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({ items: items })
+        })
+        .then(r => r.json())
+        .then(json => {
+            // struktur expected: { success: true, data: { "<id>": { success: true, data: [...] }, ... } }
+            const resultMap = (json && json.data) ? json.data : {};
+
+            // siapkan cache global
+            window.__rujukanCache = window.__rujukanCache || {};
+            window.__rujukanResolvers = window.__rujukanResolvers || {};
+
+            // isi cache + resolve any waiting resolvers
+            Object.entries(resultMap).forEach(([id, payload]) => {
+                const data = (payload && payload.success) ? payload.data : null;
+                window.__rujukanCache[id] = data;
+
+                // resolve queued promises
+                const resolvers = window.__rujukanResolvers[id] || [];
+                resolvers.forEach(fn => {
+                    try { fn(data); } catch (e) { console.error(e); }
+                });
+                delete window.__rujukanResolvers[id];
+
+                // update DOM bila ada elemen target: id="rujukan-<id>"
+                const el = document.getElementById('rujukan-' + id);
+                if (el) {
+                    if (!data || data.length === 0) {
+                        el.innerHTML = '<small class="text-muted">Tidak ada rujukan</small>';
+                    } else {
+                        el.innerHTML = '<ul class="mb-0 ps-3">' +
+                            data.map(r => `<li>${r.nilai_min} - ${r.nilai_max} ${r.satuan ?? ''}</li>`).join('') +
+                            '</ul>';
+                    }
+                }
+            });
+
+            // untuk ID yang tidak ada di resultMap, resolve null
+            Object.keys(window.__rujukanResolvers || {}).forEach(id => {
+                const arr = window.__rujukanResolvers[id] || [];
+                arr.forEach(fn => fn(null));
+                delete window.__rujukanResolvers[id];
+            });
+        })
+        .catch(err => {
+            console.error('Batch rujukan gagal', err);
+            // on error resolve all waiting resolvers with null
+            Object.entries(window.__rujukanResolvers || {}).forEach(([id, arr]) => {
+                arr.forEach(fn => fn(null));
+            });
+            window.__rujukanResolvers = {};
+        });
+    });
+</script>
+
 
 
 

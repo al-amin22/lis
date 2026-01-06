@@ -356,7 +356,7 @@
             // Halaman pertama membutuhkan lebih banyak ruang untuk data pasien
             // Jadi kita sesuaikan jumlah baris per halaman
             $max_rows_page1 = 22; // Lebih sedikit karena ada data pasien
-            $max_rows_other = 27; // Lebih banyak untuk halaman selanjutnya
+            $max_rows_other = 26; // Lebih banyak untuk halaman selanjutnya
 
             // Bagi data ke dalam halaman
             $pages = [];

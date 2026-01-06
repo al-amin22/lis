@@ -45,6 +45,7 @@ class HasilLainController extends Controller
             ->whereNull('dp.deleted_at')
             ->select(
                 'dp.id_data_pemeriksaan',
+                'dp.kode_pemeriksaan',
                 'dp.data_pemeriksaan',
                 'dp.satuan',
                 'dp.rujukan',
@@ -52,7 +53,18 @@ class HasilLainController extends Controller
                 'dp.cl',
                 'dp.metode'
             )
-            ->orderBy('dp.data_pemeriksaan')
+            ->orderByRaw("
+                    CASE
+                        WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                        ELSE 1
+                    END,
+                    CASE
+                        WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                        THEN trim(dp.kode_pemeriksaan)::integer
+                        ELSE NULL
+                    END,
+                    dp.kode_pemeriksaan
+                ")
             ->get();
 
         LogActivityService::log(
@@ -643,7 +655,7 @@ class HasilLainController extends Controller
              * - Aman untuk input massal (±50 data)
              * - 100ms per request
              */
-            usleep(500000); // 0.5 detik
+            usleep(100000); // 0.5 detik
 
             $dataPemeriksaan = DataPemeriksaan::findOrFail($request->id_data_pemeriksaan);
 
