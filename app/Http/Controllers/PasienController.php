@@ -41,98 +41,120 @@ class PasienController extends Controller
     {
         $pasien = Pasien::where('no_lab', $no_lab)->firstOrFail();
 
-        // =========================
-        // FORMAT DATA (SAMA DENGAN PHP LAMA)
-        // =========================
         $nama   = $pasien->nama_pasien;
         $no_rm  = $pasien->rm_pasien;
         $ruang  = $pasien->ket_klinik;
         $dokter = $pasien->pengirim;
-        $sex = $pasien->jenis_kelamin === 'L' ? 'Laki-Laki' : 'Perempuan';
+
+        $sex = strtoupper($pasien->jenis_kelamin) === 'PRIA' ? 'PRIA' : 'WANITA';
 
         $tgl_lahir = $pasien->tgl_lahir
             ? (new DateTime($pasien->tgl_lahir))->format('d-m-Y')
             : '';
-        $tgl_periksa = optional($pasien->created_at)->format('Y-m-d');
 
-        // =========================
-        // BARCODE C39 (SAMA PERSIS)
-        // =========================
-        $dns = new DNS1D();
+        // Barcode (sesuaikan tinggi agar muat di label 22mm)
+        $dns = new \Milon\Barcode\DNS1D();
+
         $barcode = $dns->getBarcodePNG(
             $pasien->no_lab,
             'C39',
-            1.3,
-            40
+            2,    // lebar garis (>=2 disarankan untuk thermal)
+            40,   // tinggi barcode dalam pixel (nilai kecil agar muat)
+            [0,0,0],
+            false // tanpa teks
         );
 
         return response()->view('barcode.print', [
-            'nama'         => $nama,
-            'ruang'        => $ruang,
-            'sex'          => $sex,
-            'tgl_lahir'    => $tgl_lahir,
-            'no_lab'       => $pasien->no_lab,
-            'no_rm'        => $no_rm,
-            'tgl_periksa'  => $tgl_periksa,
-            'dokter'       => $dokter,
-            'barcode'      => $barcode,
+            'nama'      => $nama,
+            'ruang'     => $ruang,
+            'sex'       => $sex,
+            'tgl_lahir' => $tgl_lahir,
+            'no_lab'    => $pasien->no_lab,
+            'no_rm'     => $no_rm,
+            'dokter'    => $dokter,
+            'barcode'   => $barcode,
         ]);
     }
+
 
 
     public function index(Request $request)
     {
         Carbon::setLocale('id');
-        $today     = Carbon::today();
-        $todayDmy  = $today->format('ymd');
-
-        $query = Pasien::query();
 
         // =========================
-        // FILTER TANGGAL
+        // DATE CONTEXT
         // =========================
         $date = $request->filled('search_date')
             ? Carbon::parse($request->search_date)
             : Carbon::today();
 
-        $dmyDate  = $date->format('ymd');
+        $activeDate = $date;
+
+        $ymd = $date->format('ymd');
         $dateOnly = $date->toDateString();
 
-        // Filter berdasarkan tanggal
-        $query->where(function ($q) use ($dmyDate, $dateOnly) {
-            $q->where('nomor_registrasi', 'like', $dmyDate . '%')
-            ->orWhere(function ($qq) use ($dateOnly) {
-                $qq->where(function ($x) {
-                        $x->whereNull('nomor_registrasi')
-                            ->orWhere('nomor_registrasi', '');
-                    })
-                    ->whereDate('updated_at', $dateOnly);
+        // =========================
+        // QUERY DATA PASIEN
+        // =========================
+        $query = Pasien::query();
+
+        $query->where(function ($q) use ($ymd, $dateOnly, $request) {
+
+            // DEFAULT INDEX (HARIAN)
+            $q->where(function ($x) use ($ymd, $dateOnly) {
+                $x->where('nomor_registrasi', 'like', $ymd . '%')
+                ->orWhere(function ($xx) use ($dateOnly) {
+                    $xx->where(function ($n) {
+                            $n->whereNull('nomor_registrasi')
+                                ->orWhere('nomor_registrasi', '');
+                        })
+                        ->whereDate('updated_at', $dateOnly);
+                });
             });
+
+            // KHUSUS RM PASIEN → SEMUA HISTORY (TIDAK PEDULI TANGGAL)
+            if ($request->filled('filter_rm')) {
+                $rm = $request->filter_rm;
+                $q->orWhere('rm_pasien', 'ilike', "%{$rm}%");
+            }
         });
 
         // =========================
-        // FILTER KOLOM (SERVER-SIDE)
+        // FILTER LAIN (TETAP)
         // =========================
         $this->applyColumnFilters($query, $request);
 
         $pasiens = $query
-            ->orderByDesc('updated_at')
+            ->orderBy("updated_at","desc")
             ->orderByDesc('nomor_registrasi')
             ->paginate(50)
             ->withQueryString();
 
         // =========================
-        // STATISTIK
+        // STATISTIK (TIDAK DIUBAH)
         // =========================
-        $stat = Pasien::where(function ($q) use ($dmyDate, $dateOnly) {
-            $q->where('nomor_registrasi', 'like', $dmyDate . '%')
-            ->orWhere(function ($qq) use ($dateOnly) {
-                $qq->where(function ($x) {
-                        $x->whereNull('nomor_registrasi')
-                            ->orWhere('nomor_registrasi', '');
-                    })
-                    ->whereDate('updated_at', $dateOnly);
+        $stat = Pasien::query();
+
+        $stat->where(function ($q) use ($ymd, $dateOnly, $request) {
+
+            // DEFAULT INDEX (HARIAN)
+            $q->where(function ($x) use ($ymd, $dateOnly) {
+                $x->where('nomor_registrasi', 'like', $ymd . '%')
+                ->orWhere(function ($xx) use ($dateOnly) {
+                    $xx->where(function ($n) {
+                            $n->whereNull('nomor_registrasi')
+                                ->orWhere('nomor_registrasi', '');
+                        })
+                        ->whereDate('updated_at', $dateOnly);
+                });
             });
+
+            // KHUSUS RM PASIEN (STATISTIK IKUT)
+            if ($request->filled('filter_rm')) {
+                $rm = $request->filter_rm;
+                $q->orWhere('rm_pasien', 'ilike', "%{$rm}%");
+            }
         });
 
         $this->applyColumnFilters($stat, $request);
@@ -141,19 +163,27 @@ class PasienController extends Controller
         $statusSelesai = (clone $stat)->whereNotNull('id_pemeriksa')->count();
         $statusProses  = (clone $stat)->whereNull('id_pemeriksa')->count();
 
+        // =========================
+        // LOG
+        // =========================
         LogActivityService::log(
             action: 'READ',
             module: 'Pasien',
             description: 'User mengakses pasien dengan filter'
         );
 
+        // =========================
+        // RETURN VIEW (LENGKAP)
+        // =========================
         return view('index', compact(
             'pasiens',
             'statusOrders',
             'statusSelesai',
             'statusProses',
             'date'
-        ))->with(['activeDate' => $date]);
+        ))->with([
+            'activeDate' => $activeDate
+        ]);
     }
 
     public function search(Request $request)
@@ -257,7 +287,7 @@ class PasienController extends Controller
             $nextSequence = 1;
         }
 
-        $nextLabNumber = $todayPrefix . str_pad($nextSequence, 6, '0', STR_PAD_LEFT);
+        $nextLabNumber = Carbon::now()->format('ymdHis');
 
         // =====================
         // NOTA (TETAP)
@@ -604,137 +634,30 @@ class PasienController extends Controller
         // Ambil pasien dengan relasi yang diperlukan
         $pasien = Pasien::with([
             'hematology.dataPemeriksaan.lisMappings',
-            'hematology.dataPemeriksaan.detailConditions', // Tambahkan detailConditions
+            'hematology.dataPemeriksaan.detailConditions',
             'kimia.dataPemeriksaan',
             'hasilPemeriksaanLain.dataPemeriksaan.lisMappings',
             'pemeriksa',
             'ujiPemeriksaan',
         ])->findOrFail($no_lab);
 
-        $data = $this->processLabData($pasien);
+        // Proses lab data (jika Anda punya logic lain, letakkan di sini)
+        $data = $this->processLabDataFix($pasien);
 
         // Tambahkan data kondisi pasien ke array data
         $data['jenis_kelamin'] = $pasien->jenis_kelamin;
-        $data['umur_hari'] = $this->hitungUmur($pasien->tgl_lahir, $pasien->umur);
+        $data['umur_hari'] = $this->hitungUmurFix($pasien->tgl_lahir, $pasien->umur);
+        // simpan format asli juga jika dibutuhkan view
+        $data['umur_format'] = $pasien->umur ?? null;
 
         /* =========================
-        * HEMATOLOGY DENGAN RUJUKAN KONDISI
+        * HEMATOLOGY (ORDER BY dp.urutan SAMA SEPERTI KIMIA)
         * ========================= */
-        $urutan = [
-            'WBC','NEU%','LYM%','MON%','EOS%','BAS%',
-            'RBC','HGB','HCT','MCV','MCH','MCHC',
-            'RDW-CV','RDW-SD','PLT','MPV','PDW','PCT'
-        ];
-
-        $hasil = $pasien->hematology()
+        $hematology = $pasien->hematology()
+            ->leftJoin('data_pemeriksaan as dp', 'pemeriksaan_hematology.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
             ->with('dataPemeriksaan.lisMappings')
-            ->with('dataPemeriksaan.detailConditions') // Load detail conditions
-            ->get();
-
-        $lisIndex = [];
-        foreach ($hasil as $item) {
-            if ($item->dataPemeriksaan && $item->dataPemeriksaan->lisMappings) {
-                foreach ($item->dataPemeriksaan->lisMappings as $mapping) {
-                    $lisLower = strtolower(trim($mapping->lis));
-                    if (!isset($lisIndex[$lisLower])) {
-                        $lisIndex[$lisLower] = $item;
-                    }
-                }
-            }
-        }
-
-        $hematology_fix = [];
-            foreach ($urutan as $lis) {
-                $lisLower = strtolower(trim($lis));
-
-                if (isset($lisIndex[$lisLower])) {
-                    $item = $lisIndex[$lisLower];
-
-                    // HITUNG KETERANGAN DI CONTROLLER DENGAN PRIORITAS CH/CL
-                    if ($item && $item->dataPemeriksaan) {
-                        // Dapatkan rujukan berdasarkan kondisi pasien
-                        $rujukanData = $item->dataPemeriksaan->getRujukanByKondisiPasien(
-                            $pasien->jenis_kelamin,
-                            $data['umur_format']
-                        );
-
-                        // Ambil nilai CH dan CL berdasarkan prioritas:
-                        // 1. Jika ada kondisi detail yang cocok, gunakan CH/CL dari detail
-                        // 2. Jika tidak, gunakan CH/CL dari tabel utama data_pemeriksaan
-                        if ($rujukanData['is_from_detail']) {
-                            // Gunakan CH/CL dari detail_data_pemeriksaan
-                            $ch_value = $rujukanData['ch'] ?? '-';
-                            $cl_value = $rujukanData['cl'] ?? '-';
-                            $rujukan_value = $rujukanData['rujukan'] ?? '-';
-                            $satuan_value = $rujukanData['satuan'] ?? '-';
-                        } else {
-                            // Gunakan CH/CL dari tabel utama data_pemeriksaan
-                            $ch_value = $item->dataPemeriksaan->ch ?? '-';
-                            $cl_value = $item->dataPemeriksaan->cl ?? '-';
-                            $rujukan_value = $item->dataPemeriksaan->rujukan ?? '-';
-                            $satuan_value = $item->dataPemeriksaan->satuan ?? '-';
-                        }
-
-                        // Simpan semua data untuk view
-                        $item->rujukan_by_kondisi = [
-                            'rujukan' => $rujukan_value,
-                            'ch' => $ch_value,
-                            'cl' => $cl_value,
-                            'satuan' => $satuan_value,
-                            'is_from_detail' => $rujukanData['is_from_detail'],
-                            'detail_condition' => $rujukanData['detail_condition']
-                        ];
-
-                        // Hitung keterangan jika ada hasil
-                        if ($item->hasil_pengujian && $rujukan_value !== '-') {
-                            $item->calculated_keterangan = $this->determineKeterangan(
-                                $item->hasil_pengujian,
-                                $rujukan_value,
-                                $ch_value,  // Gunakan CH yang sudah diprioritaskan
-                                $cl_value   // Gunakan CL yang sudah diprioritaskan
-                            );
-                        } else {
-                            $item->calculated_keterangan = $item->keterangan ?? '-';
-                        }
-
-                        // Debug log untuk verifikasi
-                        if ($item->hasil_pengujian) {
-                            Log::info('Hematology Keterangan Calculation', [
-                                'no_lab' => $no_lab,
-                                'jenis' => $item->dataPemeriksaan->data_pemeriksaan ?? 'Unknown',
-                                'hasil' => $item->hasil_pengujian,
-                                'rujukan' => $rujukan_value,
-                                'ch_used' => $ch_value,
-                                'cl_used' => $cl_value,
-                                'keterangan' => $item->calculated_keterangan,
-                                'is_from_detail' => $rujukanData['is_from_detail']
-                            ]);
-                        }
-                    }
-
-                    $hematology_fix[] = $item;
-                    continue;
-                }
-
-                $found = null;
-                foreach ($lisIndex as $indexLis => $item) {
-                    if (strpos($indexLis, $lisLower) !== false) {
-                        $found = $item;
-                        break;
-                    }
-                }
-
-                $hematology_fix[] = $found;
-            }
-
-
-        /* =========================
-        * KIMIA (ORDER BY dp.urutan)
-        * ========================= */
-        $kimia = $pasien->kimia()
-            ->leftJoin('data_pemeriksaan as dp', 'pemeriksaan_kimia.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
-            ->with('dataPemeriksaan.jenisPemeriksaan')
-            ->with('dataPemeriksaan.detailConditions') // Tambahkan detailConditions
+            ->with('dataPemeriksaan.detailConditions')
+            ->whereNotNull('pemeriksaan_hematology.id_data_pemeriksaan')
             ->orderByRaw("
                 CASE
                     WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
@@ -747,38 +670,28 @@ class PasienController extends Controller
                 END,
                 dp.kode_pemeriksaan
             ")
-
-
-            ->select('pemeriksaan_kimia.*')
+            ->select('pemeriksaan_hematology.*')
             ->get();
 
-        // Proses setiap item kimia untuk menghitung rujukan berdasarkan kondisi
-        foreach ($kimia as $item) {
+        foreach ($hematology as $item) {
             if ($item->dataPemeriksaan) {
-                // Dapatkan rujukan berdasarkan kondisi pasien
                 $rujukanData = $item->dataPemeriksaan->getRujukanByKondisiPasien(
                     $pasien->jenis_kelamin,
-                    $data['umur_format']
+                    $data['umur_hari']
                 );
 
-                // Ambil nilai CH dan CL berdasarkan prioritas:
-                // 1. Jika ada kondisi detail yang cocok, gunakan CH/CL dari detail
-                // 2. Jika tidak, gunakan CH/CL dari tabel utama data_pemeriksaan
                 if ($rujukanData['is_from_detail']) {
-                    // Gunakan CH/CL dari detail_data_pemeriksaan
                     $ch_value = $rujukanData['ch'] ?? '-';
                     $cl_value = $rujukanData['cl'] ?? '-';
                     $rujukan_value = $rujukanData['rujukan'] ?? '-';
                     $satuan_value = $rujukanData['satuan'] ?? '-';
                 } else {
-                    // Gunakan CH/CL dari tabel utama data_pemeriksaan
                     $ch_value = $item->dataPemeriksaan->ch ?? '-';
                     $cl_value = $item->dataPemeriksaan->cl ?? '-';
                     $rujukan_value = $item->dataPemeriksaan->rujukan ?? '-';
                     $satuan_value = $item->dataPemeriksaan->satuan ?? '-';
                 }
 
-                // Simpan semua data untuk view
                 $item->rujukan_by_kondisi = [
                     'rujukan' => $rujukan_value,
                     'ch' => $ch_value,
@@ -788,19 +701,93 @@ class PasienController extends Controller
                     'detail_condition' => $rujukanData['detail_condition']
                 ];
 
-                // Hitung keterangan jika ada hasil
                 if ($item->hasil_pengujian && $rujukan_value !== '-') {
                     $item->calculated_keterangan = $this->determineKeterangan(
                         $item->hasil_pengujian,
                         $rujukan_value,
-                        $ch_value,  // Gunakan CH yang sudah diprioritaskan
-                        $cl_value   // Gunakan CL yang sudah diprioritaskan
+                        $ch_value,
+                        $cl_value
                     );
                 } else {
                     $item->calculated_keterangan = $item->keterangan ?? '-';
                 }
 
-                // Debug log untuk verifikasi
+                if ($item->hasil_pengujian) {
+                    Log::info('Hematology Keterangan Calculation', [
+                        'no_lab' => $no_lab,
+                        'jenis' => $item->analysis ?? $item->dataPemeriksaan->data_pemeriksaan ?? 'Unknown',
+                        'hasil' => $item->hasil_pengujian,
+                        'rujukan' => $rujukan_value,
+                        'ch_used' => $ch_value,
+                        'cl_used' => $cl_value,
+                        'keterangan' => $item->calculated_keterangan,
+                        'is_from_detail' => $rujukanData['is_from_detail']
+                    ]);
+                }
+            }
+        }
+
+        /* =========================
+        * KIMIA (ORDER BY dp.urutan)
+        * ========================= */
+        $kimia = $pasien->kimia()
+            ->leftJoin('data_pemeriksaan as dp', 'pemeriksaan_kimia.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
+            ->with('dataPemeriksaan.jenisPemeriksaan')
+            ->with('dataPemeriksaan.detailConditions')
+            ->orderByRaw("
+                CASE
+                    WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                    ELSE 1
+                END,
+                CASE
+                    WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                    THEN trim(dp.kode_pemeriksaan)::integer
+                    ELSE NULL
+                END,
+                dp.kode_pemeriksaan
+            ")
+            ->select('pemeriksaan_kimia.*')
+            ->get();
+
+        foreach ($kimia as $item) {
+            if ($item->dataPemeriksaan) {
+                $rujukanData = $item->dataPemeriksaan->getRujukanByKondisiPasien(
+                    $pasien->jenis_kelamin,
+                    $data['umur_hari']
+                );
+
+                if ($rujukanData['is_from_detail']) {
+                    $ch_value = $rujukanData['ch'] ?? '-';
+                    $cl_value = $rujukanData['cl'] ?? '-';
+                    $rujukan_value = $rujukanData['rujukan'] ?? '-';
+                    $satuan_value = $rujukanData['satuan'] ?? '-';
+                } else {
+                    $ch_value = $item->dataPemeriksaan->ch ?? '-';
+                    $cl_value = $item->dataPemeriksaan->cl ?? '-';
+                    $rujukan_value = $item->dataPemeriksaan->rujukan ?? '-';
+                    $satuan_value = $item->dataPemeriksaan->satuan ?? '-';
+                }
+
+                $item->rujukan_by_kondisi = [
+                    'rujukan' => $rujukan_value,
+                    'ch' => $ch_value,
+                    'cl' => $cl_value,
+                    'satuan' => $satuan_value,
+                    'is_from_detail' => $rujukanData['is_from_detail'],
+                    'detail_condition' => $rujukanData['detail_condition']
+                ];
+
+                if ($item->hasil_pengujian && $rujukan_value !== '-') {
+                    $item->calculated_keterangan = $this->determineKeterangan(
+                        $item->hasil_pengujian,
+                        $rujukan_value,
+                        $ch_value,
+                        $cl_value
+                    );
+                } else {
+                    $item->calculated_keterangan = $item->keterangan ?? '-';
+                }
+
                 if ($item->hasil_pengujian) {
                     Log::info('Kimia Keterangan Calculation', [
                         'no_lab' => $no_lab,
@@ -815,7 +802,6 @@ class PasienController extends Controller
                 }
             }
         }
-
 
         /* =========================
         * PEMERIKSAAN LAIN (ORDER BY dp.urutan)
@@ -853,9 +839,7 @@ class PasienController extends Controller
             ")
             ->get();
 
-        // Proses setiap item hasil lain untuk menghitung rujukan berdasarkan kondisi
         $hasil_lain = $hasil_lain->map(function($item) use ($pasien, $data) {
-            // Jika ada data pemeriksaan, hitung rujukan berdasarkan kondisi
             if ($item->id_data_pemeriksaan) {
                 $dataPemeriksaan = DataPemeriksaan::with('detailConditions')
                     ->find($item->id_data_pemeriksaan);
@@ -863,7 +847,7 @@ class PasienController extends Controller
                 if ($dataPemeriksaan) {
                     $rujukanData = $dataPemeriksaan->getRujukanByKondisiPasien(
                         $pasien->jenis_kelamin,
-                        $data['umur_format']
+                        $data['umur_hari']
                     );
 
                     if ($rujukanData['is_from_detail']) {
@@ -881,7 +865,6 @@ class PasienController extends Controller
                     $item->is_from_detail = $rujukanData['is_from_detail'];
                     $item->detail_condition = $rujukanData['detail_condition'];
 
-                    // Hitung keterangan jika ada hasil
                     if ($item->hasil_pengujian && $item->rujukan_by_kondisi !== '-') {
                         $item->calculated_keterangan = $this->determineKeterangan(
                             $item->hasil_pengujian,
@@ -893,7 +876,6 @@ class PasienController extends Controller
                         $item->calculated_keterangan = $item->keterangan ?? '-';
                     }
                 } else {
-                    // Fallback jika data pemeriksaan tidak ditemukan
                     $item->ch_by_kondisi = $item->ch ?? '-';
                     $item->cl_by_kondisi = $item->cl ?? '-';
                     $item->rujukan_by_kondisi = $item->rujukan_pemeriksaan ?? '-';
@@ -902,7 +884,6 @@ class PasienController extends Controller
                     $item->calculated_keterangan = $item->keterangan ?? '-';
                 }
             } else {
-                // Jika tidak ada data pemeriksaan, gunakan data langsung
                 $item->ch_by_kondisi = $item->ch ?? '-';
                 $item->cl_by_kondisi = $item->cl ?? '-';
                 $item->rujukan_by_kondisi = $item->rujukan ?? '-';
@@ -920,14 +901,13 @@ class PasienController extends Controller
         $hasil_lain_grouped = [];
         $jenis_pemeriksaan_order = [];
 
-
         foreach ($hasil_lain as $item) {
             $jenis_pemeriksaan = $item->kelompok_pemeriksaan;
 
             if (!isset($hasil_lain_grouped[$jenis_pemeriksaan])) {
                 $hasil_lain_grouped[$jenis_pemeriksaan] = [];
                 if (!isset($jenis_pemeriksaan_order[$jenis_pemeriksaan])) {
-                    $jenis_pemeriksaan_order[$jenis_pemeriksaan] = $item->created_at;
+                    $jenis_pemeriksaan_order[$jenis_pemeriksaan] = $item->created_at ?? now();
                 }
             }
 
@@ -945,12 +925,12 @@ class PasienController extends Controller
         $rujukanBatchPayload = [];
 
         // 1. HEMATOLOGY
-        foreach ($hematology_fix as $item) {
+        foreach ($hematology as $item) {
             if (!empty($item->id_data_pemeriksaan)) {
                 $rujukanBatchPayload[$item->id_data_pemeriksaan] = [
                     'id_data_pemeriksaan' => (string) $item->id_data_pemeriksaan,
                     'jenis_kelamin' => $pasien->jenis_kelamin ?? '',
-                    'umur_pasien' => $data['umur_format'] ?? '',
+                    'umur_pasien' => $data['umur_hari'] ?? '',
                 ];
             }
         }
@@ -961,7 +941,7 @@ class PasienController extends Controller
                 $rujukanBatchPayload[$item->id_data_pemeriksaan] = [
                     'id_data_pemeriksaan' => (string) $item->id_data_pemeriksaan,
                     'jenis_kelamin' => $pasien->jenis_kelamin ?? '',
-                    'umur_pasien' => $data['umur_format'] ?? '',
+                    'umur_pasien' => $data['umur_hari'] ?? '',
                 ];
             }
         }
@@ -972,13 +952,14 @@ class PasienController extends Controller
                 $rujukanBatchPayload[$item->id_data_pemeriksaan] = [
                     'id_data_pemeriksaan' => (string) $item->id_data_pemeriksaan,
                     'jenis_kelamin' => $pasien->jenis_kelamin ?? '',
-                    'umur_pasien' => $data['umur_format'] ?? '',
+                    'umur_pasien' => $data['umur_hari'] ?? '',
                 ];
             }
         }
 
         // reset index agar jadi array bersih
         $rujukanBatchPayload = array_values($rujukanBatchPayload);
+        $uji_pemeriksaan = $pasien->ujiPemeriksaan;
 
         LogActivityService::log(
             action: 'READ',
@@ -989,13 +970,45 @@ class PasienController extends Controller
         return view('detail', [
             'pasien' => $pasien,
             'kimia' => $kimia,
-            'hematology_fix' => $hematology_fix,
+            'hematology' => $hematology, // Ubah dari hematology_fix ke hematology
             'hasil_lain' => $hasil_lain,
             'hasil_lain_grouped' => $hasil_lain_grouped,
             'jenis_pemeriksaan_1_list' => $jenis_pemeriksaan_1_list,
             'data' => $data,
+            'uji_pemeriksaan' => $uji_pemeriksaan,
             'rujukanBatchPayload'=> $rujukanBatchPayload,
         ]);
+    }
+
+    // ---------------- Helper methods ----------------
+
+    /**
+     * Basic processor for lab data. Keep small — extend as needed.
+     */
+    protected function processLabDataFix(Pasien $pasien): array
+    {
+        return [
+            'raw_pasien' => $pasien,
+            'umur_format' => $pasien->umur ?? null,
+        ];
+    }
+
+    /**
+     * Hitung umur dalam hari. Jika tgl_lahir ada gunakan Carbon diffInDays, jika gagal gunakan parser string.
+     */
+    protected function hitungUmurFix(?string $tgl_lahir, $umur_format): ?int
+    {
+        if ($tgl_lahir) {
+            try {
+                $lahir = Carbon::parse($tgl_lahir);
+                return $lahir->diffInDays(Carbon::now());
+            } catch (\Exception $e) {
+                Log::warning('hitungUmur: gagal parse tgl_lahir - ' . $e->getMessage());
+                return DataPemeriksaan::normalizeUmurToHari($umur_format);
+            }
+        }
+
+        return DataPemeriksaan::normalizeUmurToHari($umur_format);
     }
 
     // Di HasilLabController.php - updateFieldAjax method
@@ -1274,7 +1287,6 @@ class PasienController extends Controller
         $search = $request->get('search', '');
 
         $data = DataPemeriksaan::where('data_pemeriksaan', 'ilike', "%{$search}%")
-            ->orWhere('lis', 'ilike', "%{$search}%")
             ->orWhere('id_data_pemeriksaan', 'ilike', "%{$search}%")
             ->limit(20)
             ->get()
@@ -1969,65 +1981,65 @@ class PasienController extends Controller
                 description: 'Cetak hasil lab No LAB: ' . $no_lab
             );
 
-            // 1. Ambil data pasien (diperluas seperti di show)
+            // 1. Ambil data pasien dengan relasi yang sama seperti di show()
             $pasien = Pasien::with([
                 'hematology.dataPemeriksaan.lisMappings',
                 'hematology.dataPemeriksaan.detailConditions',
                 'kimia.dataPemeriksaan.detailConditions',
                 'hasilPemeriksaanLain.dataPemeriksaan.lisMappings',
                 'pemeriksa',
-                'ruangan'
+                'ruangan',
+                'ujiPemeriksaan'
             ])->where('no_lab', $no_lab)->firstOrFail();
 
-            // 2. Proses data lab (untuk umur_format dll)
+            // 2. Proses data lab untuk kondisi (menggunakan processLabDataFix seperti di show())
+            $dataCondition = $this->processLabDataFix($pasien);
+
+            // 3. Proses data lab untuk view (menggunakan processLabData seperti sebelumnya)
             $lab = $this->processLabData($pasien);
 
-            /* =========================
-            * HEMATOLOGY DENGAN RUJUKAN KONDISI
-            * ========================= */
-            $urutan = [
-                'WBC', 'NEU%', 'LYM%', 'MON%', 'EOS%', 'BAS%',
-                'RBC', 'HGB', 'HCT', 'MCV', 'MCH', 'MCHC',
-                'RDW-CV', 'RDW-SD', 'PLT', 'MPV', 'PDW', 'PCT'
-            ];
+            // 4. Gabungkan data condition ke dalam $lab array
+            $lab['jenis_kelamin'] = $pasien->jenis_kelamin;
+            $lab['umur_hari'] = $this->hitungUmurFix($pasien->tgl_lahir, $pasien->umur);
+            $lab['umur_format'] = $pasien->umur ?? null;
 
-            $hasilHematology = $pasien->hematology()
-                ->with('dataPemeriksaan.lisMappings')
-                ->with('dataPemeriksaan.detailConditions')
-                ->get();
-
-            $lisIndex = [];
-            foreach ($hasilHematology as $item) {
-                if ($item->dataPemeriksaan && $item->dataPemeriksaan->lisMappings) {
-                    foreach ($item->dataPemeriksaan->lisMappings as $mapping) {
-                        $key = strtolower(trim($mapping->lis));
-                        if (!isset($lisIndex[$key])) {
-                            $lisIndex[$key] = $item;
-                        }
-                    }
-                }
+            // 5. Tambahkan data dari processLabDataFix jika ada
+            if (isset($dataCondition['umur_hari'])) {
+                $lab['umur_hari'] = $dataCondition['umur_hari'];
             }
 
-            $hematology_fix = [];
-            foreach ($urutan as $lis) {
-                $key = strtolower(trim($lis));
-                if (isset($lisIndex[$key])) {
-                    $item = $lisIndex[$key];
-                } else {
-                    $item = null;
-                    foreach ($lisIndex as $lisKey => $it) {
-                        if (strpos($lisKey, $key) !== false) {
-                            $item = $it;
-                            break;
-                        }
-                    }
-                }
+            /* =========================
+            * HEMATOLOGY DENGAN RUJUKAN KONDISI (sama seperti di show())
+            * ========================= */
+           /* =========================
+            * HEMATOLOGY (sama persis seperti di show(), urut berdasarkan dp.urutan)
+            * ========================= */
+            $hematology = $pasien->hematology()
+                ->leftJoin('data_pemeriksaan as dp', 'pemeriksaan_hematology.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
+                ->with('dataPemeriksaan.lisMappings')
+                ->with('dataPemeriksaan.detailConditions')
+                ->whereNotNull('pemeriksaan_hematology.id_data_pemeriksaan')
+                ->orderByRaw("
+                    CASE
+                        WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                        ELSE 1
+                    END,
+                    CASE
+                        WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                        THEN trim(dp.kode_pemeriksaan)::integer
+                        ELSE NULL
+                    END,
+                    dp.kode_pemeriksaan
+                ")
+                ->select('pemeriksaan_hematology.*')
+                ->get();
 
-                if ($item && $item->dataPemeriksaan) {
-                    // Ambil rujukan berdasarkan kondisi pasien (prioritas detail)
+            $hematology_fix = [];
+            foreach ($hematology as $item) {
+                if ($item->dataPemeriksaan) {
                     $rujukanData = $item->dataPemeriksaan->getRujukanByKondisiPasien(
                         $pasien->jenis_kelamin,
-                        $lab['umur_format'] ?? null
+                        $lab['umur_hari'] // gunakan umur dari $lab (sudah berisi dataCondition)
                     );
 
                     if ($rujukanData['is_from_detail']) {
@@ -2061,30 +2073,54 @@ class PasienController extends Controller
                     } else {
                         $item->calculated_keterangan = $item->keterangan ?? '-';
                     }
+
+                    if ($item->hasil_pengujian) {
+                        Log::info('Hematology Keterangan Calculation (print)', [
+                            'no_lab' => $no_lab,
+                            'jenis' => $item->analysis ?? $item->dataPemeriksaan->data_pemeriksaan ?? 'Unknown',
+                            'hasil' => $item->hasil_pengujian,
+                            'rujukan' => $rujukan_value,
+                            'ch_used' => $ch_value,
+                            'cl_used' => $cl_value,
+                            'keterangan' => $item->calculated_keterangan,
+                            'is_from_detail' => $rujukanData['is_from_detail']
+                        ]);
+                    }
+                } else {
+                    // fallback jika tidak ada dataPemeriksaan
+                    $item->rujukan_by_kondisi = [
+                        'rujukan' => $item->rujukan ?? '-',
+                        'ch' => $item->ch ?? '-',
+                        'cl' => $item->cl ?? '-',
+                        'satuan' => $item->satuan ?? '-',
+                        'is_from_detail' => false,
+                        'detail_condition' => null
+                    ];
+                    $item->calculated_keterangan = $item->keterangan ?? '-';
                 }
 
-                if ($item) $hematology_fix[] = $item;
+                $hematology_fix[] = $item;
             }
 
             /* =========================
-            * KIMIA (ORDER BY dp.urutan) — dengan rujukan_by_kondisi
+            * KIMIA (ORDER BY dp.urutan) — sama seperti di show()
             * ========================= */
             $kimia = $pasien->kimia()
                 ->leftJoin('data_pemeriksaan as dp', 'pemeriksaan_kimia.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
                 ->with('dataPemeriksaan.jenisPemeriksaan')
                 ->with('dataPemeriksaan.detailConditions')
                 ->orderByRaw("
-                        CASE
-                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
-                            ELSE 1
-                        END,
-                        CASE
-                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
-                            THEN trim(dp.kode_pemeriksaan)::integer
-                            ELSE NULL
-                        END,
-                        dp.kode_pemeriksaan
-                    ")
+                    CASE
+                        WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                        ELSE 1
+                    END,
+                    CASE
+                        WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                        THEN trim(dp.kode_pemeriksaan)::integer
+                        ELSE NULL
+                    END,
+                    dp.kode_pemeriksaan
+                ")
                 ->select('pemeriksaan_kimia.*')
                 ->get();
 
@@ -2092,7 +2128,7 @@ class PasienController extends Controller
                 if ($item->dataPemeriksaan) {
                     $rujukanData = $item->dataPemeriksaan->getRujukanByKondisiPasien(
                         $pasien->jenis_kelamin,
-                        $lab['umur_format'] ?? null
+                        $lab['umur_hari'] // Menggunakan umur_hari dari kondisi
                     );
 
                     if ($rujukanData['is_from_detail']) {
@@ -2130,7 +2166,7 @@ class PasienController extends Controller
             }
 
             /* =========================
-            * HASIL LAIN (ORDER BY dp.urutan) — proses mirip show()
+            * HASIL LAIN (ORDER BY dp.urutan) — sama seperti di show()
             * ========================= */
             $hasil_lain = DB::table('hasil_pemeriksaan_lain as hpl')
                 ->leftJoin('data_pemeriksaan as dp', 'hpl.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
@@ -2153,20 +2189,19 @@ class PasienController extends Controller
                     'hpl.created_at'
                 )
                 ->orderByRaw("
-                        CASE
-                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
-                            ELSE 1
-                        END,
-                        CASE
-                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
-                            THEN trim(dp.kode_pemeriksaan)::integer
-                            ELSE NULL
-                        END,
-                        dp.kode_pemeriksaan
-                    ")
+                    CASE
+                        WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                        ELSE 1
+                    END,
+                    CASE
+                        WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                        THEN trim(dp.kode_pemeriksaan)::integer
+                        ELSE NULL
+                    END,
+                    dp.kode_pemeriksaan
+                ")
                 ->get();
 
-            // Map untuk menambahkan rujukan_by_kondisi dan calculated_keterangan
             $hasil_lain = $hasil_lain->map(function($item) use ($pasien, $lab) {
                 if ($item->id_data_pemeriksaan) {
                     $dataPemeriksaan = DataPemeriksaan::with('detailConditions')
@@ -2175,7 +2210,7 @@ class PasienController extends Controller
                     if ($dataPemeriksaan) {
                         $rujukanData = $dataPemeriksaan->getRujukanByKondisiPasien(
                             $pasien->jenis_kelamin,
-                            $lab['umur_format'] ?? null
+                            $lab['umur_hari'] // Menggunakan umur_hari dari kondisi
                         );
 
                         if ($rujukanData['is_from_detail']) {
@@ -2254,15 +2289,17 @@ class PasienController extends Controller
             if (!empty($hematology_fix)) {
                 $all_data[] = ['type' => 'header', 'title' => 'HEMATOLOGY'];
                 foreach ($hematology_fix as $item) {
-                    $all_data[] = [
-                        'type' => 'row',
-                        'category' => 'hematology',
-                        'data_pemeriksaan' => $item->dataPemeriksaan->data_pemeriksaan ?? '',
-                        'hasil_pengujian' => $item->hasil_pengujian ?? '',
-                        'rujukan' => $item->rujukan_by_kondisi['rujukan'] ?? ($item->dataPemeriksaan->rujukan ?? '-'),
-                        'satuan' => $item->rujukan_by_kondisi['satuan'] ?? ($item->dataPemeriksaan->satuan ?? '-'),
-                        'keterangan' => $item->calculated_keterangan ?? ($item->keterangan ?? '-')
-                    ];
+                    if ($item) {
+                        $all_data[] = [
+                            'type' => 'row',
+                            'category' => 'hematology',
+                            'data_pemeriksaan' => $item->dataPemeriksaan->data_pemeriksaan ?? '',
+                            'hasil_pengujian' => $item->hasil_pengujian ?? '',
+                            'rujukan' => $item->rujukan_by_kondisi['rujukan'] ?? ($item->dataPemeriksaan->rujukan ?? '-'),
+                            'satuan' => $item->rujukan_by_kondisi['satuan'] ?? ($item->dataPemeriksaan->satuan ?? '-'),
+                            'keterangan' => $item->calculated_keterangan ?? ($item->keterangan ?? '-')
+                        ];
+                    }
                 }
             }
 
@@ -2270,11 +2307,11 @@ class PasienController extends Controller
             if ($kimia->count() > 0) {
                 $all_data[] = ['type' => 'header', 'title' => 'KIMIA'];
                 foreach ($kimia as $item) {
-                    if ($item && !empty($item->analysis)) {
+                    if ($item) {
                         $all_data[] = [
                             'type' => 'row',
                             'category' => 'kimia',
-                            'data_pemeriksaan' => $item->dataPemeriksaan->data_pemeriksaan ?? '',
+                            'data_pemeriksaan' => $item->analysis ?? ($item->dataPemeriksaan->data_pemeriksaan ?? ''),
                             'hasil_pengujian' => $item->hasil_pengujian ?? '',
                             'rujukan' => $item->rujukan_by_kondisi['rujukan'] ?? ($item->dataPemeriksaan->rujukan ?? '-'),
                             'satuan' => $item->rujukan_by_kondisi['satuan'] ?? ($item->dataPemeriksaan->satuan ?? '-'),
@@ -2346,19 +2383,25 @@ class PasienController extends Controller
 
             // 8. QR CODE (sama seperti sebelumnya)
             Carbon::setLocale('id');
-            $now = Carbon::now('Asia/Jakarta');
+            if (empty($pasien->waktu_ttd)) {
+                $pasien->waktu_ttd = now('Asia/Jakarta');
+                $pasien->save();
+            }
+
+            $now = Carbon::parse($pasien->waktu_ttd, 'Asia/Jakarta');
             $dateFile = $now->format('Y-m-d');
-
+            $today    = $now->translatedFormat('d F Y');
             $qrDir = public_path('file/qr');
-            if (!is_dir($qrDir)) mkdir($qrDir, 0755, true);
-
-            $qrPath = "$qrDir/qr_$dateFile.png";
-
+            if (!is_dir($qrDir)) {
+                mkdir($qrDir, 0755, true);
+            }
+            $qrPath = $qrDir . "/qr_{$dateFile}.png";
             if (!file_exists($qrPath)) {
+
                 $qrText = "dr. DONNY KOSTRADI, M.Kes, Sp.PK\n"
-                    . "MR15712507005085 \n"
+                    . "MR15712507005085\n"
                     . "Hasil Pemeriksaan Laboratorium RS. Baiturrahim\n"
-                    . "Jambi, " . $now->translatedFormat('d F Y');
+                    . "Jambi, {$today}";
 
                 $result = Builder::create()
                     ->writer(new PngWriter())
@@ -2370,11 +2413,10 @@ class PasienController extends Controller
 
                 $result->saveToFile($qrPath);
             }
-
             $today = $now->translatedFormat('d F Y');
-
-            // 9. Return view (gabungkan $lab seperti sebelumnya)
-            return view('print', array_merge([
+            $waktu_ttd = $pasien->waktu_ttd ? Carbon::parse($pasien->waktu_ttd, 'Asia/Jakarta')->translatedFormat('d F Y') : '';
+            $waktu_validasi_pasien = $pasien->waktu_validasi ? \Carbon\Carbon::parse($pasien->waktu_validasi)->format('Y-m-d H:i:s') : '';
+            return view('print', [
                 'pasien' => $pasien,
                 'hematology_fix' => $hematology_fix,
                 'kimia' => $kimia,
@@ -2384,10 +2426,18 @@ class PasienController extends Controller
                 'no_lab' => $no_lab,
                 'qrCodePath' => asset("file/qr/qr_$dateFile.png"),
                 'today' => $today,
+                'waktu_ttd' => $waktu_ttd,
+                'waktu_validasi_pasien' => $waktu_validasi_pasien,
                 'pages' => $pages,
                 'total_pages' => $total_pages,
-                'max_rows_per_page' => $max_rows_per_page
-            ], $lab));
+                'max_rows_per_page' => $max_rows_per_page,
+                // Gabungkan semua data dari $lab (yang sudah berisi data dari processLabData() dan condition)
+                'umur_hari' => $lab['umur_hari'] ?? null,
+                'umur_format' => $lab['umur_format'] ?? null,
+                'jenis_kelamin' => $lab['jenis_kelamin'] ?? null,
+                // Tambahkan field lain dari $lab jika diperlukan
+                ...$lab
+            ]);
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
@@ -3515,24 +3565,25 @@ class PasienController extends Controller
                 $pasien->tgl_lahir = $carbonDate->format('Y-m-d');
 
                 // Hitung umur lengkap dengan Carbon
-                $today = Carbon::now();
-                $years = $today->diffInYears($carbonDate);
-                $months = $today->diffInMonths($carbonDate) % 12;
+                // ===== FIX UMUR SAJA (TIDAK SENTUH LOGIC LAIN) =====
+                $today = Carbon::now()->startOfDay();
+                $birth = $carbonDate->copy()->startOfDay();
 
-                // Hitung hari yang akurat
-                $tempDate = $carbonDate->copy()->addYears($years)->addMonths($months);
-                $days = $today->diffInDays($tempDate);
+                // FIX FLOAT YEAR
+                $years = (int) floor($birth->diffInYears($today));
 
-                // Format umur: X Tahun Y Bulan Z Hari
-                $umur = '';
-                if ($years > 0) {
-                    $umur .= $years . ' Tahun ';
-                }
-                if ($months > 0 || $years > 0) {
-                    $umur .= $months . ' Bulan ';
-                }
-                $umur .= $days . ' Hari';
-                $pasien->umur = trim($umur);
+                $months = $birth
+                    ->copy()
+                    ->addYears($years)
+                    ->diffInMonths($today) % 12;
+
+                $tempDate = $birth->copy()->addYears($years)->addMonths($months);
+
+                $days = $tempDate->diffInDays($today, true);
+
+                // FORMAT FINAL
+                $pasien->umur = "{$years} Th {$months} Bln {$days} Hari";
+
 
                 LogActivityService::log(
                     action: 'UPDATE',
@@ -3580,7 +3631,8 @@ class PasienController extends Controller
                 'created_at' => $pasien->created_at,
                 'updated_at' => $pasien->updated_at,
                 'waktu_validasi' => $pasien->waktu_validasi,
-                'umur' => $pasien->umur
+                'umur' => $pasien->umur,
+                'waktu_ttd' => $pasien->waktu_ttd,
             ]
         ]);
     }
@@ -3666,13 +3718,13 @@ class PasienController extends Controller
             // ===============================
             $endpoints = [
                 'internet' => [
-                    'login' => 'https://app.rs-baiturrahim.com/rsbr/new72/bridging/frontend/auth/login',
-                    'data'  => 'https://app.rs-baiturrahim.com/rsbr/new72/bridging/frontend/api/getData',
-                    'https' => true,
+                    'login' => 'http://app.rs-baiturrahim.com/rsbr/new72/bridging/frontend/auth/login',
+                    'data'  => 'http://app.rs-baiturrahim.com/rsbr/new72/bridging/frontend/api/getData',
+                    'https' => false,
                 ],
                 'lan' => [
-                    'login' => 'http://192.168.3.66/rsbr/new72/bridging/frontend/auth/login',
-                    'data'  => 'http://192.168.3.66/rsbr/new72/bridging/frontend/api/getData',
+                    'login' => '192.168.3.66/rsbr/new72/bridging/frontend/auth/login',
+                    'data'  => '192.168.3.66/rsbr/new72/bridging/frontend/api/getData',
                     'https' => false,
                 ],
             ];
@@ -3782,8 +3834,6 @@ class PasienController extends Controller
                         'ket_klinik'       => $order['asal_ruangan'] ?? null,
                         'umur'             => $umur, // Kolom umur ditambahkan di sini
                         'synced_at'        => now(),
-                        'created_at'       => now(),
-                        'updated_at'       => now(),
                     ];
 
                     // ===============================
@@ -3820,7 +3870,7 @@ class PasienController extends Controller
                             [
                                 'rm_pasien','tgl_pendaftaran','nota','nama_pasien',
                                 'tgl_lahir','jenis_kelamin','alamat','pengirim',
-                                'ket_klinik','umur','synced_at','updated_at' // umur ditambahkan
+                                'ket_klinik','umur','synced_at'
                             ]
                         );
                         $totalPasien += count($batchPasien);
@@ -4288,64 +4338,268 @@ class PasienController extends Controller
             $request->validate([
                 'jenis_pemeriksaan' => 'required|string',
                 'rm_pasien' => 'required|string',
-                'type' => 'required|string|in:hematology,kimia,hasil_lain',
+                'type' => 'required|in:hematology,kimia,hasil_lain',
                 'current_no_lab' => 'required|string'
             ]);
 
-            // Tentukan tabel utama
-            $mainTable = '';
+            $jenisLabel = $request->jenis_pemeriksaan;
+            $rmPasien   = $request->rm_pasien;
+            $currentNo  = $request->current_no_lab;
+            $type       = $request->type;
 
-            switch($request->type) {
-                case 'hematology':
-                    $mainTable = 'pemeriksaan_hematology';
-                    break;
-                case 'kimia':
-                    $mainTable = 'pemeriksaan_kimia';
-                    break;
-                case 'hasil_lain':
-                    $mainTable = 'hasil_pemeriksaan_lain';
-                    break;
+            $results = collect();
+
+            /* ====================================================
+            * 1) TYPE = hematology
+            * ==================================================== */
+            if ($type === 'hematology') {
+                // A. dari pemeriksaan_hematology (jenis HEMATOLOGI)
+                $hemMain = DB::table('pemeriksaan_hematology as ph')
+                    ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','ph.id_data_pemeriksaan')
+                    ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                    ->join('pasien as p','p.no_lab','=','ph.no_lab')
+                    ->where('dp.data_pemeriksaan', $jenisLabel)
+                    ->whereRaw("UPPER(jp.nama_pemeriksaan) = 'HEMATOLOGI'")
+                    ->where('p.rm_pasien', $rmPasien)
+                    ->where('ph.no_lab', '!=', $currentNo)
+                    ->select(
+                        'ph.no_lab',
+                        'ph.hasil_pengujian',
+                        'dp.satuan',
+                        'p.waktu_validasi',
+                        'p.nama_pasien',
+                        DB::raw("'pemeriksaan_hematology' as source")
+                    )
+                    ->get();
+
+                $results = $results->merge($hemMain);
+
+                // B. dari hasil_pemeriksaan_lain yang mapped ke HEMATOLOGI
+                $hplHem = DB::table('hasil_pemeriksaan_lain as hl')
+                    ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','hl.id_data_pemeriksaan')
+                    ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                    ->join('pasien as p','p.no_lab','=','hl.no_lab')
+                    ->where('dp.data_pemeriksaan', $jenisLabel)
+                    ->whereRaw("UPPER(jp.nama_pemeriksaan) = 'HEMATOLOGI'")
+                    ->where('p.rm_pasien', $rmPasien)
+                    ->where('hl.no_lab', '!=', $currentNo)
+                    ->select(
+                        'hl.no_lab',
+                        'hl.hasil_pengujian',
+                        'dp.satuan',
+                        'p.waktu_validasi',
+                        'p.nama_pasien',
+                        DB::raw("'hasil_pemeriksaan_lain' as source")
+                    )
+                    ->get();
+
+                $results = $results->merge($hplHem);
+
+                // C. untuk setiap no_lab di hplHem, cek tabel pemeriksaan_hematology apakah ada entri terkait -> ambil
+                $hplNos = $hplHem->pluck('no_lab')->filter()->unique()->values()->all();
+                if (!empty($hplNos)) {
+                    $hemFromHpl = DB::table('pemeriksaan_hematology as ph')
+                        ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','ph.id_data_pemeriksaan')
+                        ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                        ->join('pasien as p','p.no_lab','=','ph.no_lab')
+                        ->whereIn('ph.no_lab', $hplNos)
+                        ->where('dp.data_pemeriksaan', $jenisLabel)
+                        ->whereRaw("UPPER(jp.nama_pemeriksaan) = 'HEMATOLOGI'")
+                        ->where('ph.no_lab', '!=', $currentNo)
+                        ->select(
+                            'ph.no_lab',
+                            'ph.hasil_pengujian',
+                            'dp.satuan',
+                            'p.waktu_validasi',
+                            'p.nama_pasien',
+                            DB::raw("'pemeriksaan_hematology' as source")
+                        )
+                        ->get();
+
+                    $results = $results->merge($hemFromHpl);
+                }
             }
 
-            if (empty($mainTable)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Type pemeriksaan tidak valid'
-                ], 400);
+            /* ====================================================
+            * 2) TYPE = kimia
+            * ==================================================== */
+            if ($type === 'kimia') {
+                // A. dari pemeriksaan_kimia (jenis KIMIA)
+                $kimMain = DB::table('pemeriksaan_kimia as pk')
+                    ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','pk.id_data_pemeriksaan')
+                    ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                    ->join('pasien as p','p.no_lab','=','pk.no_lab')
+                    ->where('dp.data_pemeriksaan', $jenisLabel)
+                    ->whereRaw("UPPER(jp.nama_pemeriksaan) = 'KIMIA'")
+                    ->where('p.rm_pasien', $rmPasien)
+                    ->where('pk.no_lab', '!=', $currentNo)
+                    ->select(
+                        'pk.no_lab',
+                        'pk.hasil_pengujian',
+                        'dp.satuan',
+                        'p.waktu_validasi',
+                        'p.nama_pasien',
+                        DB::raw("'pemeriksaan_kimia' as source")
+                    )
+                    ->get();
+
+                $results = $results->merge($kimMain);
+
+                // B. dari hasil_pemeriksaan_lain yang mapped ke KIMIA
+                $hplKim = DB::table('hasil_pemeriksaan_lain as hl')
+                    ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','hl.id_data_pemeriksaan')
+                    ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                    ->join('pasien as p','p.no_lab','=','hl.no_lab')
+                    ->where('dp.data_pemeriksaan', $jenisLabel)
+                    ->whereRaw("UPPER(jp.nama_pemeriksaan) = 'KIMIA'")
+                    ->where('p.rm_pasien', $rmPasien)
+                    ->where('hl.no_lab', '!=', $currentNo)
+                    ->select(
+                        'hl.no_lab',
+                        'hl.hasil_pengujian',
+                        'dp.satuan',
+                        'p.waktu_validasi',
+                        'p.nama_pasien',
+                        DB::raw("'hasil_pemeriksaan_lain' as source")
+                    )
+                    ->get();
+
+                $results = $results->merge($hplKim);
+
+                // C. untuk setiap no_lab di hplKim, cek tabel pemeriksaan_kimia apakah ada entri terkait -> ambil
+                $hplNosKim = $hplKim->pluck('no_lab')->filter()->unique()->values()->all();
+                if (!empty($hplNosKim)) {
+                    $kimFromHpl = DB::table('pemeriksaan_kimia as pk')
+                        ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','pk.id_data_pemeriksaan')
+                        ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                        ->join('pasien as p','p.no_lab','=','pk.no_lab')
+                        ->whereIn('pk.no_lab', $hplNosKim)
+                        ->where('dp.data_pemeriksaan', $jenisLabel)
+                        ->whereRaw("UPPER(jp.nama_pemeriksaan) = 'KIMIA'")
+                        ->where('pk.no_lab', '!=', $currentNo)
+                        ->select(
+                            'pk.no_lab',
+                            'pk.hasil_pengujian',
+                            'dp.satuan',
+                            'p.waktu_validasi',
+                            'p.nama_pasien',
+                            DB::raw("'pemeriksaan_kimia' as source")
+                        )
+                        ->get();
+
+                    $results = $results->merge($kimFromHpl);
+                }
             }
 
-            // Query dengan JOIN ke data_pemeriksaan dan filter berdasarkan data_pemeriksaan
-            $history = DB::table($mainTable)
-                ->select(
-                    "$mainTable.hasil_pengujian",
-                    "$mainTable.no_lab",
-                    'pasien.waktu_validasi',
-                    'pasien.nama_pasien',
-                    'data_pemeriksaan.data_pemeriksaan',
-                    'data_pemeriksaan.satuan'
-                )
-                ->leftJoin('pasien', 'pasien.no_lab', '=', "$mainTable.no_lab")
-                ->leftJoin('data_pemeriksaan', 'data_pemeriksaan.id_data_pemeriksaan', '=', "$mainTable.id_data_pemeriksaan")
-                ->where('data_pemeriksaan.data_pemeriksaan', $request->jenis_pemeriksaan)  // Filter berdasarkan data_pemeriksaan
-                ->where('pasien.rm_pasien', $request->rm_pasien)
-                ->where("$mainTable.no_lab", '!=', $request->current_no_lab)
-                ->orderBy('pasien.waktu_validasi', 'DESC')
-                ->limit(50)
-                ->get();
+            /* ====================================================
+            * 3) TYPE = hasil_lain
+            * ==================================================== */
+            if ($type === 'hasil_lain') {
+                // A. ambil dulu hasil_pemeriksaan_lain yg sesuai
+                $hplMain = DB::table('hasil_pemeriksaan_lain as hl')
+                    ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','hl.id_data_pemeriksaan')
+                    ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                    ->join('pasien as p','p.no_lab','=','hl.no_lab')
+                    ->where('dp.data_pemeriksaan', $jenisLabel)
+                    ->where('p.rm_pasien', $rmPasien)
+                    ->where('hl.no_lab', '!=', $currentNo)
+                    ->select(
+                        'hl.no_lab',
+                        'hl.hasil_pengujian',
+                        'dp.id_data_pemeriksaan',
+                        'dp.satuan',
+                        'p.waktu_validasi',
+                        'p.nama_pasien',
+                        DB::raw('UPPER(jp.nama_pemeriksaan) as jenis_pemeriksaan_name'),
+                        DB::raw("'hasil_pemeriksaan_lain' as source")
+                    )
+                    ->get();
+
+                $results = $results->merge($hplMain);
+
+                // B. temukan jenis yang muncul (HEMATOLOGI / KIMIA)
+                $jenisNames = $hplMain->pluck('jenis_pemeriksaan_name')->filter()->unique()->values()->all();
+
+                // Jika ada HEMATOLOGI di hasil_lain => ambil pemeriksaan_hematology terkait
+                if (in_array('HEMATOLOGI', $jenisNames, true)) {
+                    $nosHem = $hplMain->where('jenis_pemeriksaan_name','HEMATOLOGI')->pluck('no_lab')->filter()->unique()->values()->all();
+
+                    if (!empty($nosHem)) {
+                        $hemFromHpl = DB::table('pemeriksaan_hematology as ph')
+                            ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','ph.id_data_pemeriksaan')
+                            ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                            ->join('pasien as p','p.no_lab','=','ph.no_lab')
+                            ->whereIn('ph.no_lab', $nosHem)
+                            ->where('dp.data_pemeriksaan', $jenisLabel)
+                            ->whereRaw("UPPER(jp.nama_pemeriksaan) = 'HEMATOLOGI'")
+                            ->where('ph.no_lab', '!=', $currentNo)
+                            ->select(
+                                'ph.no_lab',
+                                'ph.hasil_pengujian',
+                                'dp.satuan',
+                                'p.waktu_validasi',
+                                'p.nama_pasien',
+                                DB::raw("'pemeriksaan_hematology' as source")
+                            )
+                            ->get();
+
+                        $results = $results->merge($hemFromHpl);
+                    }
+                }
+
+                // Jika ada KIMIA di hasil_lain => ambil pemeriksaan_kimia terkait
+                if (in_array('KIMIA', $jenisNames, true)) {
+                    $nosKim = $hplMain->where('jenis_pemeriksaan_name','KIMIA')->pluck('no_lab')->filter()->unique()->values()->all();
+
+                    if (!empty($nosKim)) {
+                        $kimFromHpl = DB::table('pemeriksaan_kimia as pk')
+                            ->join('data_pemeriksaan as dp','dp.id_data_pemeriksaan','=','pk.id_data_pemeriksaan')
+                            ->join('jenis_pemeriksaan_1 as jp','jp.id_jenis_pemeriksaan_1','=','dp.id_jenis_pemeriksaan_1')
+                            ->join('pasien as p','p.no_lab','=','pk.no_lab')
+                            ->whereIn('pk.no_lab', $nosKim)
+                            ->where('dp.data_pemeriksaan', $jenisLabel)
+                            ->whereRaw("UPPER(jp.nama_pemeriksaan) = 'KIMIA'")
+                            ->where('pk.no_lab', '!=', $currentNo)
+                            ->select(
+                                'pk.no_lab',
+                                'pk.hasil_pengujian',
+                                'dp.satuan',
+                                'p.waktu_validasi',
+                                'p.nama_pasien',
+                                DB::raw("'pemeriksaan_kimia' as source")
+                            )
+                            ->get();
+
+                        $results = $results->merge($kimFromHpl);
+                    }
+                }
+            }
+
+            /* ====================================================
+            * Finalize: sort by waktu_validasi desc, unique per no_lab, limit 50
+            * ==================================================== */
+            $final = $results
+                ->sortByDesc(function ($r) {
+                    return isset($r->waktu_validasi) && $r->waktu_validasi ? strtotime($r->waktu_validasi) : 0;
+                })
+                ->unique('no_lab')
+                ->values()
+                ->take(50);
 
             return response()->json([
                 'success' => true,
-                'data' => $history,
-                'count' => $history->count()
+                'data'    => $final->values(),
+                'count'   => $final->count()
             ]);
-
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil history: ' . $e->getMessage()
             ], 500);
         }
     }
+
+
 
     public function kirimKeAlat(Request $request, $no_lab)
     {
@@ -4462,64 +4716,40 @@ class PasienController extends Controller
     public function getRujukanHematologyByKondisiBatch(Request $request)
     {
         try {
-            // =========================
-            // VALIDASI
-            // =========================
             $request->validate([
                 'items' => 'required|array|min:1',
                 'items.*.id_data_pemeriksaan' => 'required|string',
                 'items.*.jenis_kelamin' => 'required|string|in:PRIA,WANITA',
-                'items.*.umur_pasien' => 'required|string',
+                'items.*.umur_pasien' => 'required',
+                'items.*.client_key' => 'nullable|string'
             ]);
 
-            $items = $request->items;
+            $items = $request->input('items', []);
+            $noCache = $request->boolean('no_cache', false);
 
-            // =========================
-            // CACHE KEY (STABIL)
-            // =========================
             $cacheKey = 'rujukan_batch_' . md5(json_encode($items));
 
-            return Cache::remember($cacheKey, 3600, function () use ($items) {
+            $compute = function() use ($items) {
+                $ids = collect($items)->pluck('id_data_pemeriksaan')->unique()->values();
+                $dataPemeriksaanMap = DataPemeriksaan::whereIn('id_data_pemeriksaan', $ids)->get()->keyBy('id_data_pemeriksaan');
 
-                // =========================
-                // AMBIL SEMUA ID SEKALIGUS
-                // =========================
-                $ids = collect($items)
-                    ->pluck('id_data_pemeriksaan')
-                    ->unique()
-                    ->values();
-
-                $dataPemeriksaanMap = DataPemeriksaan::whereIn(
-                    'id_data_pemeriksaan',
-                    $ids
-                )->get()->keyBy('id_data_pemeriksaan');
-
-                // =========================
-                // PROSES RUJUKAN
-                // =========================
                 $result = [];
-
                 foreach ($items as $item) {
-
                     $id = $item['id_data_pemeriksaan'];
-
+                    $clientKey = $item['client_key'] ?? $id;
                     $dp = $dataPemeriksaanMap[$id] ?? null;
 
                     if (!$dp) {
-                        $result[$id] = [
+                        $result[$clientKey] = [
                             'success' => false,
                             'message' => 'Data pemeriksaan tidak ditemukan'
                         ];
                         continue;
                     }
 
-                    // 🔥 LOGIKA MEDIS TETAP DIPAKAI
-                    $rujukan = $dp->getRujukanByKondisiPasien(
-                        $item['jenis_kelamin'],
-                        $item['umur_pasien']
-                    );
+                    $rujukan = $dp->getRujukanByKondisiPasien($item['jenis_kelamin'], $item['umur_pasien']);
 
-                    $result[$id] = [
+                    $result[$clientKey] = [
                         'success' => true,
                         'data' => $rujukan,
                         'metadata' => [
@@ -4529,19 +4759,24 @@ class PasienController extends Controller
                     ];
                 }
 
-                // =========================
-                // RESPONSE FINAL
-                // =========================
-                return response()->json([
-                    'success' => true,
-                    'data' => $result
-                ]);
-            });
+                return $result;
+            };
+
+            if ($noCache) {
+                $data = $compute();
+            } else {
+                // TTL singkat supaya tetap relatif realtime; ubah 60 sesuai kebutuhan
+                $data = Cache::remember($cacheKey, 60, $compute);
+            }
+
+            return response()->json(['success' => true, 'data' => $data]);
 
         } catch (\Throwable $e) {
-
-            Log::error('ERROR BATCH RUJUKAN: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
+            Log::error('ERROR BATCH RUJUKAN', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => $e->getTraceAsString()
             ]);
 
             return response()->json([
@@ -4552,5 +4787,222 @@ class PasienController extends Controller
     }
 
 
-}
 
+    public function storeManual(Request $request)
+    {
+        try {
+            $request->validate([
+                'no_lab' => 'required',
+                'id_data_pemeriksaan' => 'required',
+                'jenis_pengujian' => 'required'
+            ]);
+
+            $data = new PemeriksaanHematology();
+            $data->no_lab = $request->no_lab;
+            $data->id_data_pemeriksaan = $request->id_data_pemeriksaan;
+            $data->jenis_pengujian = $request->jenis_pengujian;
+            $data->satuan_hasil_pengujian = $request->satuan;
+            $data->rujukan = $request->rujukan;
+            $data->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data hematology berhasil disimpan',
+                'data' => [
+                    'id_pemeriksaan_hematology' => $data->id_pemeriksaan_hematology
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Force delete data hematology
+     */
+    public function destroyHematology($id)
+    {
+        try {
+            $data = PemeriksaanHematology::find($id);
+
+            if (!$data) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak ditemukan'
+                ], 404);
+            }
+
+            // Force delete
+            $data->forceDelete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data hematology berhasil dihapus secara permanen'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update hasil pengujian hematology
+     */
+    public function updateHasilPengujian(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'hasil_pengujian' => 'nullable',
+                'keterangan' => 'nullable'
+            ]);
+
+            $data = PemeriksaanHematology::find($id);
+
+            if (!$data) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak ditemukan'
+                ], 404);
+            }
+
+            // Update data
+            $data->hasil_pengujian = $request->hasil_pengujian;
+            $data->keterangan = $request->keterangan;
+            $data->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hasil pengujian berhasil diperbarui',
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui hasil: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateKimia(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'id_pemeriksaan_kimia' => 'required|exists:pemeriksaan_kimia,id_pemeriksaan_kimia',
+                'id_data_pemeriksaan' => 'required|exists:data_pemeriksaan,id_data_pemeriksaan',
+                'nama_pemeriksaan' => 'required|string'
+            ]);
+
+            $kimia = PemeriksaanKimia::findOrFail($validated['id_pemeriksaan_kimia']);
+
+            $kimia->update([
+                'id_data_pemeriksaan' => $validated['id_data_pemeriksaan'],
+                'nama_pemeriksaan' => $validated['nama_pemeriksaan'],
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Mapping berhasil diperbarui'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui mapping: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update hasil pengujian kimia
+     */
+    public function updateHasilPengujianKimia(Request $request, $id)
+    {
+        try {
+            $validated = $request->validate([
+                'hasil_pengujian' => 'nullable|string',
+                'keterangan' => 'nullable|string|in:H,L,CH,CL,-'
+            ]);
+
+            $kimia = PemeriksaanKimia::findOrFail($id);
+
+            $kimia->update([
+                'hasil_pengujian' => $validated['hasil_pengujian'] ?? null,
+                'keterangan' => $validated['keterangan'] ?? '-',
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Hasil pengujian berhasil diperbarui',
+                'data' => $kimia
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui hasil: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function destroyKimia($id)
+    {
+        try {
+            $kimia = PemeriksaanKimia::findOrFail($id);
+            //gunakan force delete untuk menghapus permanen
+            $kimia->forcedelete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Data kimia berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menghapus data'
+            ], 500);
+        }
+    }
+
+    public function destroyUjiPemeriksaan($id)
+    {
+        try {
+            $uji = UjiPemeriksaan::findOrFail($id);
+            $uji->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Uji pemeriksaan berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menghapus data'
+            ], 500);
+        }
+    }
+
+    public function loadUji(Request $request)
+    {
+        $uji = UjiPemeriksaan::with([
+            'dataPemeriksaan.jenis',   // kategori
+            'dataPemeriksaan.detailConditions'
+        ])->findOrFail($request->id_uji);
+
+        // Kelompokkan berdasarkan kategori
+        $grouped = $uji->dataPemeriksaan->groupBy(function($d){
+            return $d->jenis->nama_pemeriksaan; // HEMATOLOGI / KIMIA / dll
+        });
+
+        return response()->json([
+            'success' => true,
+            'uji' => $uji,
+            'grouped' => $grouped
+        ]);
+    }
+
+}

@@ -93,17 +93,13 @@
                                                 Edit
                                             </button>
 
-                                            <!-- <form action="{{ route('pasien.destroy.jenis.pemeriksaan', $jenis->id_jenis_pemeriksaan_1) }}"
-                                                method="POST"
-                                                class="d-inline"
-                                                onsubmit="return confirm('Apakah Anda yakin ingin menghapus jenis pemeriksaan ini?')">
-                                                @csrf
-                                                @method('DELETE')
+                                            <a href="{{ route('pasien.jenis-pemeriksaan.show', $jenis->id_jenis_pemeriksaan_1) }}"
+                                                class="btn btn-sm btn-info">
+                                                <i class="ri-eye-line"></i> Show
+                                            </a>
 
-                                                <button type="submit" class="btn btn-sm btn-danger">
-                                                    <i class="ri-delete-bin-line"></i> Hapus
-                                                </button>
-                                            </form> -->
+
+
 
                                         </td>
                                     </tr>
@@ -133,7 +129,7 @@
                 <h5 class="modal-title" id="tambahModalLabel">Tambah Jenis Pemeriksaan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('pasien.store.jenis.pemeriksaan') }}" method="POST">
+            <form action="{{ route('pasien.store.jenis.pemeriksaan.fix') }}" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">

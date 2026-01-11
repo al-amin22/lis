@@ -1,4 +1,3 @@
-<!-- resources/views/label/print.blade.php -->
 <!DOCTYPE html>
 <html>
 <head>
@@ -6,36 +5,66 @@
 
 <style>
 @page {
-    size: 50mm 20mm;
+    size: 40mm 22mm;
     margin: 0;
 }
 
-body {
+html, body {
+    width: 40mm;
+    height: 22mm;
     margin: 0;
-    padding: 0;
+    overflow: hidden;
     font-family: Arial, Helvetica, sans-serif;
 }
 
 .label {
-    width: 50mm;
-    height: 20mm;
-    padding: 1mm;
+    width: 40mm;
+    height: 22mm;
+    padding: 0.8mm;
     box-sizing: border-box;
-    font-size: 1.8mm;
-    line-height: 1.2;
-    position: relative;
 }
 
-.left-line {
-    position: absolute;
-    left: 5mm;
-    right: 1mm;
+/* NAMA */
+.nama {
+    font-size: 2.6mm;
+    font-weight: bold;
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+/* INFO */
+.info {
+    font-size: 1.6mm;
+    margin-top: 0.3mm;
+}
+
+/* BARCODE */
+.barcode {
+    margin-top: 1 mm;
+    text-align: center;
+}
 .barcode img {
-    width: 40mm;  /* 4 cm */
-    height: 8mm;  /* 0.8 cm */
+    max-width: 30mm;
+    max-height: 15mm;
+    height: auto;
     display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* NO LAB */
+.no-lab {
+    font-size: 2.0mm;
+    font-weight: bold;
+    margin-top: 0.3mm;
+}
+
+/* DOKTER */
+.dokter {
+    font-size: 1.6mm;
+    margin-top: 0.2mm;
 }
 </style>
 </head>
@@ -43,29 +72,27 @@ body {
 <body onload="window.print()">
 
 <div class="label">
-    <div class="left-line">
 
-        <div style="font-weight:bold;">{{ $nama }}</div>
+    <div class="nama">{{ $nama }}</div>
 
-        <div style="font-size:1.6mm;">
-            {{ $ruang }}
-            <span style="float:right;">{{ $sex }} {{ $tgl_lahir }}</span>
-            <div style="clear:both;"></div>
-        </div>
-
-        <div class="barcode" style="margin-top:0.5mm;">
-            <img src="data:image/png;base64,{{ $barcode }}">
-        </div>
-
-        <div style="font-size:1.6mm;">
-            {{ $no_lab }} &nbsp; RM. {{ $no_rm }}
-        </div>
-
-        <div style="font-size:1.6mm;">
-            {{ $dokter }}
-        </div>
-
+    <div class="info">
+        {{ $ruang }}
+        <span style="float:right;">{{ $sex }} {{ $tgl_lahir }}</span>
+        <div style="clear:both;"></div>
     </div>
+
+    <div class="barcode">
+        <img src="data:image/png;base64,{{ $barcode }}" alt="barcode">
+    </div>
+
+    <div class="no-lab">
+        {{ $no_lab }} | RM {{ $no_rm }}
+    </div>
+
+    <div class="dokter">
+        {{ $dokter }}
+    </div>
+
 </div>
 
 </body>

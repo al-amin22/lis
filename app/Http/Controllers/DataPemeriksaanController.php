@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use App\Services\LogActivityService;
 use Illuminate\Container\Attributes\Log;
 use Illuminate\Support\Facades\DB;
+use App\Models\DetailDataPemeriksaan;
 
 class DataPemeriksaanController extends Controller
 {
@@ -137,6 +138,46 @@ class DataPemeriksaanController extends Controller
         return redirect()->route('pasien.index.data.pemeriksaan')
             ->with('success', "Berhasil menambahkan $createdCount data pemeriksaan.");
     }
+    public function show($id)
+    {
+        $dataPemeriksaan = DataPemeriksaan::with([
+            'jenisPemeriksaan',
+            'detailConditions'
+        ])->findOrFail($id);
+
+        return view('data-pemeriksaan.show', compact('dataPemeriksaan'));
+    }
+
+    public function updateInline(Request $request)
+    {
+        $request->validate([
+            'id' => 'required',
+            'field' => 'required',
+            'value' => 'nullable'
+        ]);
+
+        $dp = DataPemeriksaan::findOrFail($request->id);
+        $dp->{$request->field} = $request->value;
+        $dp->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    // UPDATE DETAIL DATA PEMERIKSAAN (INLINE)
+    public function updateDetailInline(Request $request)
+    {
+        $request->validate([
+            'id' => 'required',
+            'field' => 'required',
+            'value' => 'nullable'
+        ]);
+
+        $detail = DetailDataPemeriksaan::findOrFail($request->id);
+        $detail->{$request->field} = $request->value;
+        $detail->save();
+
+        return response()->json(['success' => true]);
+    }
 
     public function update(Request $request, $id_data_pemeriksaan)
     {
@@ -152,6 +193,7 @@ class DataPemeriksaanController extends Controller
             'urutan' => 'nullable|integer',
             'ch' => 'nullable|string|max:50',
             'cl' => 'nullable|string|max:50',
+            'kode_uji_pemeriksaan' => 'nullable|string|max:50',
         ]);
 
         $oldData = $dataPemeriksaan->toArray();
@@ -167,6 +209,7 @@ class DataPemeriksaanController extends Controller
             'urutan' => $request->urutan,
             'ch' => $request->ch,
             'cl' => $request->cl,
+            'kode_uji_pemeriksaan' => $request->kode_uji_pemeriksaan,
         ]);
 
         LogActivityService::log(
@@ -193,6 +236,7 @@ class DataPemeriksaanController extends Controller
             'items.*.urutan' => 'nullable|integer',
             'items.*.ch' => 'nullable|string|max:50',
             'items.*.cl' => 'nullable|string|max:50',
+            'items.*.kode_uji_pemeriksaan' => 'nullable|string|max:50',
         ]);
 
         DB::transaction(function () use ($request, $idJenis) {
@@ -209,6 +253,7 @@ class DataPemeriksaanController extends Controller
                         'urutan' => $item['urutan'] ?? null,
                         'ch' => $item['ch'] ?? null,
                         'cl' => $item['cl'] ?? null,
+                        'kode_uji_pemeriksaan' => $item['kode_uji_pemeriksaan'] ?? null,
                         'updated_at' => now(),
                     ]);
             }

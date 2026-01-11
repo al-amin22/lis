@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\HasilPemeriksaanLain;
 use App\Models\Pasien;
 use App\Models\DataPemeriksaan;
+use App\Models\UjiPemeriksaan;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,7 +15,6 @@ use App\Services\LogActivityService;
 
 class HasilLainController extends Controller
 {
-
     // Method untuk mengambil data pemeriksaan berdasarkan jenis
     // HasilLabController.php
 
@@ -80,6 +80,106 @@ class HasilLainController extends Controller
     }
 
     public function searchKodePemeriksaan(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'search' => 'nullable|string|max:100',
+                'jenis_pemeriksaan' => 'nullable|string|max:100',
+                'exclude_current' => 'nullable|string|max:50'
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validasi gagal',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $search = $request->input('search', '');
+            $jenisPemeriksaan = $request->input('jenis_pemeriksaan', '');
+            $excludeCurrent = $request->input('exclude_current', '');
+
+            // Query dengan debugging
+            $query = DB::table('data_pemeriksaan as dp')
+                ->select(
+                    'dp.id_data_pemeriksaan',
+                    'dp.data_pemeriksaan',
+                    'dp.satuan',
+                    'dp.rujukan',
+                    'dp.metode',
+                    'jp1.nama_pemeriksaan as jenis_pemeriksaan'
+                );
+
+            // Join dengan jenis_pemeriksaan_1
+            $query->leftJoin('jenis_pemeriksaan_1 as jp1', 'dp.id_jenis_pemeriksaan_1', '=', 'jp1.id_jenis_pemeriksaan_1');
+
+            // Kondisi where
+            $query->whereNull('dp.deleted_at')
+                ->whereNull('jp1.deleted_at');
+
+            // Filter by jenis pemeriksaan jika ada
+            if (!empty($jenisPemeriksaan) && $jenisPemeriksaan !== '') {
+                $query->where('jp1.nama_pemeriksaan', '=', $jenisPemeriksaan);
+            }
+
+            // Exclude current kode jika ada
+            if (!empty($excludeCurrent) && $excludeCurrent !== '') {
+                $query->where('dp.id_data_pemeriksaan', '!=', $excludeCurrent);
+            }
+
+            // Search term jika ada
+            if (!empty($search) && strlen($search) >= 2) {
+                $searchTerm = '%' . $search . '%';
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('dp.id_data_pemeriksaan', 'ILIKE', $searchTerm)
+                        ->orWhere('dp.data_pemeriksaan', 'ILIKE', $searchTerm)
+                        ->orWhere('jp1.nama_pemeriksaan', 'ILIKE', $searchTerm);
+                });
+            }
+
+            // Order dan limit
+            $query->orderBy('dp.data_pemeriksaan')
+                ->limit(20);
+
+            // Debug query SQL
+            $sql = $query->toSql();
+            $bindings = $query->getBindings();
+
+            $results = $query->get();
+
+            LogActivityService::log(
+                action: 'READ',
+                module: 'Hasil Pemeriksaan Lain',
+                description: 'User melakukan pencarian kode pemeriksaan dengan istilah: ' . $search
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil ditemukan',
+                'data' => $results,
+                'debug' => [
+                    'sql' => $sql,
+                    'bindings' => $bindings,
+                    'search_term' => $search
+                ]
+            ]);
+        } catch (\Exception $e) {
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage(),
+                'error_details' => [
+                    'message' => $e->getMessage(),
+                    'code' => $e->getCode(),
+                    'file' => $e->getFile(),
+                    'line' => $e->getLine()
+                ]
+            ], 500);
+        }
+    }
+
+    public function searchKodePemeriksaanFix(Request $request)
     {
         try {
             $validator = Validator::make($request->all(), [
@@ -861,6 +961,78 @@ class HasilLainController extends Controller
         }
     }
 
+    // HasilLainController.php
+    public function getByKodeUji($kodeUji)
+    {
+        try {
+            // Ambil data pemeriksaan berdasarkan kode_uji_pemeriksaan dengan JOIN
+            $dataPemeriksaan = DB::table('data_pemeriksaan')
+                ->leftJoin('jenis_pemeriksaan_1', 'data_pemeriksaan.id_jenis_pemeriksaan_1', '=', 'jenis_pemeriksaan_1.id_jenis_pemeriksaan_1')
+                ->where('data_pemeriksaan.kode_uji_pemeriksaan', $kodeUji)
+                ->whereNull('data_pemeriksaan.deleted_at')
+                ->select([
+                    'data_pemeriksaan.id_data_pemeriksaan',
+                    'data_pemeriksaan.data_pemeriksaan',
+                    'data_pemeriksaan.satuan',
+                    'data_pemeriksaan.rujukan',
+                    'data_pemeriksaan.ch',
+                    'data_pemeriksaan.cl',
+                    'data_pemeriksaan.metode',
+                    'data_pemeriksaan.kode_uji_pemeriksaan',
+                    'jenis_pemeriksaan_1.id_jenis_pemeriksaan_1',
+                    'jenis_pemeriksaan_1.nama_pemeriksaan as jenis_pemeriksaan'
+                ])
+                ->orderBy('data_pemeriksaan.urutan', 'asc')
+                ->get();
+
+            // Jika nama_pemeriksaan kosong, gunakan 'Lainnya'
+            $processedData = $dataPemeriksaan->map(function($item) {
+                return [
+                    'id_data_pemeriksaan' => $item->id_data_pemeriksaan,
+                    'data_pemeriksaan' => $item->data_pemeriksaan,
+                    'satuan' => $item->satuan,
+                    'rujukan' => $item->rujukan,
+                    'ch' => $item->ch,
+                    'cl' => $item->cl,
+                    'metode' => $item->metode,
+                    'kode_uji_pemeriksaan' => $item->kode_uji_pemeriksaan,
+                    'id_jenis_pemeriksaan_1' => $item->id_jenis_pemeriksaan_1,
+                    'jenis_pemeriksaan' => $item->jenis_pemeriksaan ?: 'Lainnya'
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $processedData,
+                'count' => $processedData->count(),
+                'kode_uji' => $kodeUji
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
+        }
+    }
+
+    public function search(Request $request)
+    {
+        $q = trim($request->search);
+
+        $results = UjiPemeriksaan::where('kode_pemeriksaan', 'ILIKE', "%{$q}%")
+            ->orWhere('nama_pemeriksaan', 'ILIKE', "%{$q}%")
+            ->limit(15)
+            ->get([
+                'id_uji_pemeriksaan',
+                'kode_pemeriksaan',
+                'nama_pemeriksaan',
+                'kategori'
+            ]);
+
+        return response()->json($results);
+    }
 
 
 }

@@ -368,14 +368,22 @@
                                             @endif
                                         </td>
                                         <td>
-                                            <a href="{{ route('user.print', $patient->no_lab) }}" target="_blank" class="btn btn-sm btn-secondary">
-                                                Print
-                                            </a>
-                                            <a href="{{ route('user.show', $patient->no_lab) }}" class="btn btn-sm btn-primary">View</a>
-                                            <a href="{{ route('user.history', $patient->rm_pasien ?? '') }}"
-                                            class="btn btn-sm btn-info" title="History">
-                                                History
-                                            </a>
+                                            @if (!empty($patient->id_pemeriksa) && !empty($patient->waktu_validasi))
+                                                <a href="{{ route('user.print', $patient->no_lab) }}"
+                                                target="_blank"
+                                                class="btn btn-sm btn-secondary">
+                                                    Print
+                                                </a>
+                                                <a href="{{ route('user.history', $patient->rm_pasien ?? '') }}"
+                                                class="btn btn-sm btn-info" title="History">
+                                                    History
+                                                </a>
+                                            @else
+                                                <span class="badge bg-warning text-dark">
+                                                    Belum divalidasi
+                                                </span>
+                                            @endif
+
 
                                         </td>
                                     </tr>

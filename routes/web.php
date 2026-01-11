@@ -21,11 +21,19 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/view_lab/home.php', function () {
     return redirect()->route('login');
 });
+
+// Routes untuk Hematology
+Route::post('/hematology/store-manual', [PasienController::class, 'storeManual']);
+Route::delete('/hematology/destroy/{id}', [PasienController::class, 'destroyHematology']);
+Route::put('/hematology/update-hasil-pengujian/{id}', [PasienController::class, 'updateHasilPengujian']);
+
+Route::post('/data-pemeriksaan/update-inline',[DataPemeriksaanController::class, 'updateInline'])->name('data-pemeriksaan.update-inline');
+Route::post('/detail-data-pemeriksaan/update-inline',[DataPemeriksaanController::class, 'updateDetailInline'])->name('detail-data-pemeriksaan.update-inline');
 // Route::get('/pasien/kirim-hasil/{no_lab}', [PasienController::class, 'kirimHasilKeSimrs'])
 //     ->withoutMiddleware('*');
 // Route::get('/pasien/ambil-order', [PasienController::class, 'ambilOrderDariSimrs'])
 //     ->withoutMiddleware('*'); // optional tanpa auth untuk testing
-
+Route::get('/test-barcode', [PasienController::class, 'print']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout')->middleware('auth');
 Route::post('/hematology/update-ajax', [PasienController::class, 'updateHematologyAjax'])->name('hematology.update.ajax');
 Route::post('/kimia/update-ajax', [PasienController::class, 'updateKimiaAjax'])->name('kimia.update.ajax');
@@ -34,12 +42,15 @@ Route::post('/kirim-ke-alat/{no_lab}', [PasienController::class, 'kirimKeAlat'])
 // Route untuk update hasil lab
 Route::get('/check-file/{no_lab}', [PasienController::class, 'checkFile']);
 Route::prefix('hasil-lab')->group(function () {
+    Route::post('/get-data-pemeriksaan', [PasienController::class, 'getDataPemeriksaan'])->name('hasil-lab.get-data-pemeriksaan');
     Route::get('/{no_lab}', [PasienController::class, 'show'])->name('hasil-lab.show');
     Route::put('/{no_lab}', [PasienController::class, 'update'])->name('hasil-lab.update');
     Route::post('/update-field-ajax', [PasienController::class, 'updateFieldAjax'])->name('hasil-lab.update-field-ajax');
-    Route::post('/get-data-pemeriksaan', [PasienController::class, 'getDataPemeriksaan'])->name('hasil-lab.get-data-pemeriksaan');
     Route::post('/get-rujukan-hematology', [PasienController::class, 'getRujukanHematologyByKondisi'])->name('hasil-lab.get-rujukan-hematology');
 });
+
+Route::delete('/uji-pemeriksaan/{id}', [PasienController::class, 'destroyUjiPemeriksaan'])
+    ->name('uji-pemeriksaan.destroy');
 
 Route::get('/pasien/rujukan-by-kondisi', [PasienController::class, 'getRujukanHematologyByKondisi'])->name('pasien.get-rujukan-by-kondisi');
 Route::post('/pasien/rujukan-by-kondisi/batch',[PasienController::class, 'getRujukanHematologyByKondisiBatch'])->name('pasien.get-rujukan-by-kondisi-batch');
@@ -84,6 +95,7 @@ Route::prefix('hasil-lain')->group(function () {
     Route::post('/destroy-multiple', [HasilLainController::class, 'destroyMultiple'])->name('hasil-lain.destroy-multiple');
     Route::delete('/destroy/{id}', [HasilLainController::class, 'destroy'])->name('hasil-lain.destroy');
     Route::post('/search-kode-pemeriksaan', [HasilLainController::class, 'searchKodePemeriksaan'])->name('hasil-lain.search-kode-pemeriksaan');
+    Route::get('/search-kode-pemeriksaan', [HasilLainController::class, 'searchKodePemeriksaanFix'])->name('hasil-lain.search-kode-pemeriksaan');
 });
 Route::get('/jenis-pemeriksaan/search',[JenisPemeriksaanController::class, 'search'])->name('jenis-pemeriksaan.search');
 Route::get('/search/pemeriksa', [PemeriksaController::class, 'searchPemeriksa'])->name('pemeriksa.search');
@@ -104,17 +116,29 @@ Route::get('/pasien/data/{no_lab}', [PasienController::class, 'getDataPasienDeta
 
 Route::post('/kimia/search-kode-pemeriksaan', [LisMappingController::class, 'searchKodePemeriksaan'])
     ->name('kimia.search-kode-pemeriksaan');
+Route::delete('/kimia/destroy/{id}', [PasienController::class, 'destroyKimia'])->name('kimia.delete-manual-row');
 
 Route::post('/kimia/update-kode-pemeriksaan', [LisMappingController::class, 'updateKodePemeriksaan'])
     ->name('kimia.update-kode-pemeriksaan');
 
+
 Route::post('/kimia/reset-kode-pemeriksaan', [LisMappingController::class, 'resetKodePemeriksaan'])
     ->name('kimia.reset-kode-pemeriksaan');
 
+Route::post('/kimia/save-manual-row', [LisMappingController::class, 'saveManualRow'])->name('kimia.save-manual-row');
+Route::post('/kimia/update-row', [LisMappingController::class, 'updateRow'])->name('kimia.update-row');
+Route::post('/kimia/update-hasil-realtime',[LisMappingController::class, 'updateHasilRealtime'])->name('kimia.update-hasil-realtime');
+// Routes untuk Hematologi
+Route::post('/hematologi/save-manual-row', [LisMappingController::class, 'saveManualRowHematology'])->name('hematologi.save-manual-row');
+Route::post('/hematologi/update-row', [LisMappingController::class, 'updateRowHematology'])->name('hematologi.update-row');
+Route::post('/hematologi/update-hasil-realtime', [LisMappingController::class, 'updateHasilRealtimeHematology'])->name('hematologi.update-hasil-realtime');
+Route::delete('/hematologi/delete-manual-row/{id}', [LisMappingController::class, 'deleteManualRowHematology'])->name('hematologi.delete-manual-row');
+
 Route::post('/hasil-lab/pemeriksaan-lain', [PasienController::class, 'savePemeriksaanLain'])->name('hasil-lab.save-pemeriksaan-lain');
 Route::delete('/hasil-lab/pemeriksaan-lain/{id}', [PasienController::class, 'deletePemeriksaanLain'])->name('hasil-lab.delete-pemeriksaan-lain');
-
-
+Route::post('/uji-pemeriksaan/search', [HasilLainController::class, 'search'])
+    ->name('uji-pemeriksaan.search');
+Route::get('/hasil-lain/get-by-kode-uji/{kodeUji}', [HasilLainController::class, 'getByKodeUji']);
 Route::get('/', function () {
     return redirect('/login');
 });
@@ -171,14 +195,16 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/search', [PasienController::class, 'search'])->name('search');
         Route::delete('/{no_lab}', [PasienController::class, 'destroy'])->name('destroy');
+        Route::get('/jenis-pemeriksaan/{id}', [JenisPemeriksaanController::class, 'show'])->name('jenis-pemeriksaan.show');
         Route::get('/data/jenis-pemeriksaan/', [JenisPemeriksaanController::class, 'index'])->name('index.jenis.pemeriksaan');
-        Route::post('/jenis-pemeriksaan', [JenisPemeriksaanController::class, 'store'])->name('store.jenis.pemeriksaan');
+        Route::post('/jenis-pemeriksaan', [JenisPemeriksaanController::class, 'store'])->name('store.jenis.pemeriksaan.fix');
         Route::post('/jenis-pemeriksaan/store-batch', [JenisPemeriksaanController::class, 'storeBatch'])->name('store.batch.jenis.pemeriksaan');
         Route::put('/jenis-pemeriksaan/update/{id}', [JenisPemeriksaanController::class, 'update'])->name('update.jenis.pemeriksaan');
         Route::delete('/jenis-pemeriksaan/destroy/{id}', [JenisPemeriksaanController::class, 'destroy'])->name('destroy.jenis.pemeriksaan');
 
         Route::get('/data/data-pemeriksaan/', [DataPemeriksaanController::class, 'index'])->name('index.data.pemeriksaan');
         Route::post('/data-pemeriksaan', [DataPemeriksaanController::class, 'store'])->name('store.data.pemeriksaan');
+        Route::get('/data-pemeriksaan/{id}', [DataPemeriksaanController::class, 'show'])->name('data-pemeriksaan.show');
         Route::post('/data-pemeriksaan/store-batch', [DataPemeriksaanController::class, 'storeBatch'])->name('store.batch.data.pemeriksaan');
         Route::put('/data-pemeriksaan/update/{id_data_pemeriksaan}', [DataPemeriksaanController::class, 'update'])->name('update.data.pemeriksaan');
         Route::put('/data-pemeriksaan/update-batch/jenis/{idJenis}',[DataPemeriksaanController::class, 'updateBatchByJenis'])->name('data-pemeriksaan.update-batch-jenis');

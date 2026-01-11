@@ -389,6 +389,8 @@
                                             🖨 Cetak Barcode
                                             </a>
 
+
+
                                             <form action="{{ route('pasien.destroy', $patient->no_lab) }}" method="POST" class="d-inline">
                                                 @csrf
                                                 @method('DELETE')
@@ -635,17 +637,19 @@
         });
 
         // Reset semua filter
-        document.getElementById('resetFilters').addEventListener('click', function() {
-            document.querySelectorAll('.filter-input').forEach(input => {
-                if (input.tagName === 'SELECT') {
-                    input.value = '';
-                } else {
-                    input.value = '';
-                }
-            });
-            applyFilters();
-        });
-
+        const resetBtn = document.getElementById('resetFilters');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-input').forEach(input => {
+                        if (input.tagName === 'SELECT') {
+                            input.value = '';
+                        } else {
+                            input.value = '';
+                        }
+                    });
+                    applyFilters();
+                });
+            }
         // Terapkan filter saat pertama kali load (jika ada filter dari URL)
         setTimeout(() => {
             applyFilters();

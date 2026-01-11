@@ -15,22 +15,25 @@ class DetailDataPemeriksaanController extends Controller
     {
         $search = $request->get('search');
 
-        $details = DetailDataPemeriksaan::with('dataPemeriksaan.jenisPemeriksaan')
-            ->when($search, function($query) use ($search) {
-                return $query->whereHas('dataPemeriksaan', function($q) use ($search) {
-                    $q->where('data_pemeriksaan', 'like', "%{$search}%")
-                      ->orWhereHas('jenisPemeriksaan', function($q2) use ($search) {
-                          $q2->where('nama_pemeriksaan', 'like', "%{$search}%");
-                      });
-                })
-                ->orWhere('umur', 'like', "%{$search}%")
-                ->orWhere('rujukan', 'like', "%{$search}%");
+        $details = DetailDataPemeriksaan::query()
+            ->select('detail_data_pemeriksaan.*')
+            ->leftJoin('data_pemeriksaan as dp', 'dp.id_data_pemeriksaan', '=', 'detail_data_pemeriksaan.id_data_pemeriksaan')
+            ->leftJoin('jenis_pemeriksaan_1 as jp', 'jp.id_jenis_pemeriksaan_1', '=', 'dp.id_jenis_pemeriksaan_1')
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->whereRaw('dp.data_pemeriksaan ILIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('jp.nama_pemeriksaan ILIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('detail_data_pemeriksaan.umur ILIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('detail_data_pemeriksaan.rujukan ILIKE ?', ["%{$search}%"]);
+                });
             })
-            ->orderBy('updated_at', 'desc')
-            ->paginate(10);
+            ->orderByDesc('detail_data_pemeriksaan.updated_at')
+            ->paginate(10)
+            ->withQueryString(); // 🔥 WAJIB
 
         return view('detail-data-pemeriksaan.index', compact('details'));
     }
+
 
     /**
      * Get data pemeriksaan for Select2

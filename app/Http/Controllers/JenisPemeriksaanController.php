@@ -41,7 +41,16 @@ class JenisPemeriksaanController extends Controller
         return view('jenis-pemeriksaan.index', compact('jenisPemeriksaans'));
     }
 
-    public function store(Request $request)
+    public function show($id)
+    {
+        $jenisPemeriksaan = JenisPemeriksaan::with([
+            'dataPemeriksaan.detailConditions'
+        ])->findOrFail($id);
+
+        return view('jenis-pemeriksaan.show', compact('jenisPemeriksaan'));
+    }
+
+    public function storeBatch(Request $request)
     {
         // Validasi input
         $request->validate([
@@ -52,6 +61,7 @@ class JenisPemeriksaanController extends Controller
         JenisPemeriksaan::create([
             'nama_pemeriksaan' => $request->nama_pemeriksaan,
         ]);
+
 
         LogActivityService::log(
             action: 'CREATE',
@@ -65,7 +75,7 @@ class JenisPemeriksaanController extends Controller
     }
 
 
-    public function storeBatch(Request $request)
+    public function storeBatch1(Request $request)
     {
         $request->validate([
             'nama_pemeriksaan' => 'required|string',

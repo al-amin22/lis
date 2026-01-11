@@ -9,15 +9,6 @@
 <!-- Styles -->
 <style>
     #laboratorium-preview-wrapper {
-        all: initial !important;
-    }
-
-    #laboratorium-preview-wrapper * {
-        all: revert !important;
-        box-sizing: border-box !important;
-    }
-
-    #laboratorium-preview-wrapper {
         margin: 0 !important;
         padding: 0 !important;
         font-family: Arial, sans-serif !important;
@@ -67,13 +58,13 @@
         gap: 8px !important;
     }
 
-    #laboratorium-preview-wrapper .btn-success {
-        background-color: #27ae60 !important;
+    #laboratorium-preview-wrapper .btn-primary {
+        background-color: #3498db !important;
         color: white !important;
     }
 
-    #laboratorium-preview-wrapper .btn-success:hover {
-        background-color: #219653 !important;
+    #laboratorium-preview-wrapper .btn-primary:hover {
+        background-color: #2980b9 !important;
     }
 
     #laboratorium-preview-wrapper .btn-warning {
@@ -228,8 +219,8 @@
             </div>
 
             <div class="controls">
-                <button class="btn btn-success" onclick="downloadPDF()">
-                    <i class="fas fa-print"></i> Print Hasil
+                <button class="btn btn-primary" onclick="directPrint()">
+                    <i class="fas fa-print"></i> Print Langsung
                 </button>
 
                 <button class="btn btn-warning" onclick="refreshPreview()">
@@ -249,7 +240,7 @@
                 </div>
 
                 <div class="iframe-wrapper">
-                    <iframe id="resultPreview" src="about:blank"></iframe>
+                    <iframe id="resultPreview" src="{{ route('hasil-lab.html-content', $no_lab) }}"></iframe>
                 </div>
             </div>
 
@@ -266,163 +257,104 @@
         </div>
         `;
 
-        // Load konten
-        setTimeout(loadContentToIframe, 100);
+        // Load konten langsung
+        loadIframeContent();
     });
 </script>
 
 <!-- JavaScript Libraries -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 
 <!-- Main JavaScript -->
 <script>
-    const { jsPDF } = window.jspdf;
     let isContentLoaded = false;
 
-    // Fungsi untuk memuat konten HTML ke dalam iframe
-    async function loadContentToIframe() {
+    // Fungsi untuk memuat konten iframe
+    function loadIframeContent() {
         const iframe = document.getElementById('resultPreview');
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        const loadingEl = document.getElementById('loading');
+        const statusText = document.getElementById('statusText');
 
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('statusText').textContent = 'Memuat konten...';
+        loadingEl.style.display = 'block';
+        statusText.textContent = 'Memuat konten...';
+
+        iframe.onload = function() {
+            isContentLoaded = true;
+            loadingEl.style.display = 'none';
+            statusText.textContent = 'Ready';
+            updateScaleText();
+            adjustIframeSize();
+        };
+
+        iframe.onerror = function() {
+            loadingEl.style.display = 'none';
+            statusText.textContent = 'Error loading content';
+        };
+    }
+
+    // Fungsi untuk direct print menggunakan iframe yang ada
+    function directPrint() {
+        if (!isContentLoaded) {
+            alert('Tunggu konten selesai dimuat');
+            return;
+        }
+
+        const iframe = document.getElementById('resultPreview');
+        const statusText = document.getElementById('statusText');
+        const loadingEl = document.getElementById('loading');
+
+        loadingEl.style.display = 'block';
+        statusText.textContent = 'Mempersiapkan print...';
 
         try {
-            // Ambil HTML dari server via AJAX
-            const response = await fetch(`{{ route('hasil-lab.html-content', $no_lab) }}`);
-            const htmlContent = await response.text();
-
-            iframeDoc.open();
-            iframeDoc.write(htmlContent);
-            iframeDoc.close();
-
-            isContentLoaded = true;
-
-            // Update scale text
+            // Tunggu sedikit untuk memastikan iframe siap
             setTimeout(() => {
-                updateScaleText();
-                adjustIframeSize();
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('statusText').textContent = 'Ready';
+                const iframeWindow = iframe.contentWindow;
+
+                if (!iframeWindow) {
+                    throw new Error('Iframe tidak tersedia');
+                }
+
+                // Focus dan langsung print
+                iframeWindow.focus();
+
+                // Tunggu sedikit untuk memastikan iframe fokus
+                setTimeout(() => {
+                    iframeWindow.print();
+                    loadingEl.style.display = 'none';
+                    statusText.textContent = 'Print dialog dibuka';
+                }, 500);
+
             }, 500);
 
         } catch (error) {
-            console.error('Error loading content:', error);
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('statusText').textContent = 'Error loading content';
+            console.error('Print error:', error);
+            loadingEl.style.display = 'none';
+            statusText.textContent = 'Error: ' + error.message;
+            alert('Terjadi kesalahan saat mencetak: ' + error.message);
         }
-    }
-
-    // Fungsi untuk download PDF
-    async function downloadPDF() {
-        if (!isContentLoaded) {
-            alert('Tunggu konten selesai dimuat');
-            return;
-        }
-
-        document.getElementById('statusText').textContent = 'Menyiapkan PDF...';
-        document.getElementById('loading').style.display = 'block';
-
-        try {
-            const iframe = document.getElementById('resultPreview');
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-
-            const pages = iframeDoc.querySelectorAll('.page');
-
-            if (!pages.length) throw new Error('Tidak ada halaman ditemukan');
-
-            const pdf = new jsPDF({
-                orientation: 'portrait',
-                unit: 'mm',
-                format: 'a4',
-                compress: true
-            });
-
-            for (let i = 0; i < pages.length; i++) {
-                const page = pages[i];
-
-                const canvas = await html2canvas(page, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff',
-                    logging: false,
-                    width: 210 * 3.78,
-                    height: 297 * 3.78,
-                    windowWidth: 210 * 3.78,
-                    windowHeight: 297 * 3.78,
-                    onclone: (clonedDoc, clonedElement) => {
-                        clonedElement.style.width = '210mm';
-                        clonedElement.style.height = '297mm';
-                        clonedElement.style.margin = '0';
-                        clonedElement.style.padding = '0';
-                        clonedElement.style.background = 'white';
-
-                        // Pastikan gambar cross-origin
-                        const images = clonedElement.getElementsByTagName('img');
-                        Array.from(images).forEach(img => {
-                            if (!img.complete) {
-                                img.crossOrigin = 'anonymous';
-                            }
-                        });
-                    }
-                });
-
-                const imgData = canvas.toDataURL('image/jpeg', 1.0);
-                const imgWidth = 210;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-                if (i > 0) pdf.addPage();
-                pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight, '', 'FAST');
-
-                document.getElementById('statusText').textContent =
-                    `Memproses halaman ${i + 1} dari ${pages.length}...`;
-            }
-
-            pdf.save(`Hasil-Lab-{{ $no_lab }}-{{ date('Y-m-d') }}.pdf`);
-            document.getElementById('statusText').textContent = 'PDF berhasil dibuat';
-
-        } catch (error) {
-            console.error('Error:', error);
-            document.getElementById('statusText').textContent = 'Error: ' + error.message;
-        } finally {
-            document.getElementById('loading').style.display = 'none';
-        }
-    }
-
-    // Fungsi untuk print
-    function printResult() {
-        if (!isContentLoaded) {
-            alert('Tunggu konten selesai dimuat');
-            return;
-        }
-
-        document.getElementById('statusText').textContent = 'Mempersiapkan print...';
-
-        const iframe = document.getElementById('resultPreview');
-        const iframeWindow = iframe.contentWindow || iframe.contentDocument.defaultView;
-
-        setTimeout(() => {
-            try {
-                iframeWindow.focus();
-                iframeWindow.print();
-                document.getElementById('statusText').textContent = 'Sedang mencetak...';
-            } catch (error) {
-                console.error('Print error:', error);
-                document.getElementById('statusText').textContent = 'Error print';
-            }
-        }, 500);
     }
 
     // Fungsi refresh
     function refreshPreview() {
-        document.getElementById('loading').style.display = 'block';
-        document.getElementById('statusText').textContent = 'Memuat ulang...';
+        const iframe = document.getElementById('resultPreview');
+        const loadingEl = document.getElementById('loading');
+        const statusText = document.getElementById('statusText');
 
-        setTimeout(() => {
-            loadContentToIframe();
-        }, 500);
+        loadingEl.style.display = 'block';
+        statusText.textContent = 'Memuat ulang...';
+
+        // Reload iframe
+        iframe.src = iframe.src;
+
+        // Reset status
+        iframe.onload = function() {
+            isContentLoaded = true;
+            loadingEl.style.display = 'none';
+            statusText.textContent = 'Ready';
+            updateScaleText();
+            adjustIframeSize();
+        };
     }
 
     // Fungsi untuk adjust iframe size
@@ -482,11 +414,18 @@
         if (urlParams.get('print') === 'true') {
             setTimeout(() => {
                 if (isContentLoaded) {
-                    printResult();
+                    directPrint();
+                } else {
+                    // Tunggu konten selesai dimuat
+                    const checkInterval = setInterval(() => {
+                        if (isContentLoaded) {
+                            clearInterval(checkInterval);
+                            directPrint();
+                        }
+                    }, 500);
                 }
             }, 1500);
         }
     });
 </script>
 @endsection
-

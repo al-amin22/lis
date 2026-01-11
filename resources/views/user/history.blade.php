@@ -71,9 +71,10 @@
         </div>
     </div>
 
-    <!-- Tabel history -->
+    <!-- Konten utama dengan 2 kolom -->
     <div class="row gx-3">
-        <div class="col-sm-12">
+        <!-- Kolom kiri: Tabel history -->
+        <div class="col-lg-8 col-md-12">
             <div class="card mb-3">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Riwayat Pemeriksaan</h5>
@@ -88,8 +89,8 @@
                             <table class="table m-0 align-middle">
                                 <thead>
                                     <tr>
-                                        <th>No Lab</th>
                                         <th>Tanggal</th>
+                                        <th>No Lab</th>
                                         <th>Nama Pasien</th>
                                         <th>Status</th>
                                         <th>Actions</th>
@@ -97,9 +98,9 @@
                                 </thead>
                                 <tbody>
                                     @forelse($histories as $patient)
-                                    <tr>
-
-                                        <td>@php
+                                    <tr id="row-{{ $patient->no_lab }}" class="{{ request('view') == $patient->no_lab ? 'table-active' : '' }}">
+                                        <td>
+                                            @php
                                                 // Parse tanggal dari nomor_registrasi (yymmdd)
                                                 $nomorRegistrasi = $patient->nomor_registrasi ?? '';
 
@@ -133,7 +134,8 @@
                                                 <a href="{{ route('user.print', $patient->no_lab) }}" target="_blank" class="btn btn-sm btn-secondary" title="Print">
                                                     <i class="ri-printer-line"></i>
                                                 </a>
-                                                <a href="{{ route('user.show', $patient->no_lab) }}" class="btn btn-sm btn-primary" title="View">
+                                                <a href="{{ route('user.history', ['rm_pasien' => $latestPatient->rm_pasien, 'view' => $patient->no_lab]) }}"
+                                                   class="btn btn-sm btn-primary" title="View Detail">
                                                     <i class="ri-eye-line"></i>
                                                 </a>
                                             </div>
@@ -141,7 +143,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="7" class="text-center">Tidak ada data history untuk pasien ini.</td>
+                                        <td colspan="5" class="text-center">Tidak ada data history untuk pasien ini.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>
@@ -157,6 +159,239 @@
                 </div>
             </div>
         </div>
+
+        <!-- Kolom kanan: History Panel -->
+        <div class="col-lg-4 col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Detail Pemeriksaan</h5>
+                </div>
+                <div class="card-body p-2">
+                    @if(request('view'))
+                        @php
+                            $selectedPatient = $histories->firstWhere('no_lab', request('view'));
+
+                            if($selectedPatient) {
+                                $no_lab = $selectedPatient->no_lab;
+
+                                // 1. Hematology
+                                $hematology = DB::table('pemeriksaan_hematology as ph')
+                                    ->leftJoin('data_pemeriksaan as dp', 'ph.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
+                                    ->leftJoin('jenis_pemeriksaan_1 as jp1', 'dp.id_jenis_pemeriksaan_1', '=', 'jp1.id_jenis_pemeriksaan_1')
+                                    ->where('ph.no_lab', $no_lab)
+                                    ->whereNull('ph.deleted_at')
+                                    ->select(
+                                        'ph.hasil_pengujian',
+                                        'dp.data_pemeriksaan',
+                                        'dp.satuan as satuan_pemeriksaan',
+                                        'dp.kode_pemeriksaan',
+                                        'jp1.nama_pemeriksaan as jenis_pemeriksaan_nama',
+                                        DB::raw("COALESCE(jp1.nama_pemeriksaan, 'Hematology') as kelompok_pemeriksaan")
+                                    )
+                                    ->whereNotNull('ph.hasil_pengujian')
+                                    ->where('ph.hasil_pengujian', '!=', '')
+                                    ->orderByRaw("
+                                        CASE
+                                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                                            ELSE 1
+                                        END,
+                                        CASE
+                                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                                            THEN trim(dp.kode_pemeriksaan)::integer
+                                            ELSE NULL
+                                        END,
+                                        dp.kode_pemeriksaan
+                                    ")
+                                    ->get();
+
+                                // 2. Kimia
+                                $kimia = DB::table('pemeriksaan_kimia as pk')
+                                    ->leftJoin('data_pemeriksaan as dp', 'pk.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
+                                    ->leftJoin('jenis_pemeriksaan_1 as jp1', 'dp.id_jenis_pemeriksaan_1', '=', 'jp1.id_jenis_pemeriksaan_1')
+                                    ->where('pk.no_lab', $no_lab)
+                                    ->whereNull('pk.deleted_at')
+                                    ->select(
+                                        'pk.hasil_pengujian',
+                                        'dp.data_pemeriksaan',
+                                        'dp.satuan as satuan_pemeriksaan',
+                                        'dp.kode_pemeriksaan',
+                                        'jp1.nama_pemeriksaan as jenis_pemeriksaan_nama',
+                                        DB::raw("COALESCE(jp1.nama_pemeriksaan, 'Kimia') as kelompok_pemeriksaan")
+                                    )
+                                    ->whereNotNull('pk.hasil_pengujian')
+                                    ->where('pk.hasil_pengujian', '!=', '')
+                                    ->orderByRaw("
+                                        CASE
+                                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                                            ELSE 1
+                                        END,
+                                        CASE
+                                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                                            THEN trim(dp.kode_pemeriksaan)::integer
+                                            ELSE NULL
+                                        END,
+                                        dp.kode_pemeriksaan
+                                    ")
+                                    ->get();
+
+                                // 3. Hasil Lain
+                                $hasil_lain = DB::table('hasil_pemeriksaan_lain as hpl')
+                                    ->leftJoin('data_pemeriksaan as dp', 'hpl.id_data_pemeriksaan', '=', 'dp.id_data_pemeriksaan')
+                                    ->leftJoin('jenis_pemeriksaan_1 as jp1', 'dp.id_jenis_pemeriksaan_1', '=', 'jp1.id_jenis_pemeriksaan_1')
+                                    ->where('hpl.no_lab', $no_lab)
+                                    ->whereNull('hpl.deleted_at')
+                                    ->select(
+                                        'hpl.hasil_pengujian',
+                                        'dp.data_pemeriksaan',
+                                        'dp.satuan as satuan_pemeriksaan',
+                                        'dp.kode_pemeriksaan',
+                                        'jp1.nama_pemeriksaan as jenis_pemeriksaan_nama',
+                                        DB::raw("COALESCE(jp1.nama_pemeriksaan, 'Lainnya') as kelompok_pemeriksaan")
+                                    )
+                                    ->whereNotNull('hpl.hasil_pengujian')
+                                    ->where('hpl.hasil_pengujian', '!=', '')
+                                    ->orderByRaw("
+                                        CASE
+                                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$' THEN 0
+                                            ELSE 1
+                                        END,
+                                        CASE
+                                            WHEN trim(dp.kode_pemeriksaan) ~ '^[0-9]+$'
+                                            THEN trim(dp.kode_pemeriksaan)::integer
+                                            ELSE NULL
+                                        END,
+                                        dp.kode_pemeriksaan
+                                    ")
+                                    ->get();
+
+                                // Gabungkan semua data dan kelompokkan
+                                $groupedExaminations = collect();
+
+                                // Tambahkan hematology ke kelompoknya
+                                foreach ($hematology as $item) {
+                                    $kelompok = $item->kelompok_pemeriksaan;
+                                    if (!$groupedExaminations->has($kelompok)) {
+                                        $groupedExaminations->put($kelompok, collect());
+                                    }
+                                    $groupedExaminations[$kelompok]->push((object)[
+                                        'nama' => $item->data_pemeriksaan ?? 'Hematology',
+                                        'hasil' => $item->hasil_pengujian,
+                                        'satuan' => $item->satuan_pemeriksaan ?? ''
+                                    ]);
+                                }
+
+                                // Tambahkan kimia ke kelompoknya
+                                foreach ($kimia as $item) {
+                                    $kelompok = $item->kelompok_pemeriksaan;
+                                    if (!$groupedExaminations->has($kelompok)) {
+                                        $groupedExaminations->put($kelompok, collect());
+                                    }
+                                    $groupedExaminations[$kelompok]->push((object)[
+                                        'nama' => $item->data_pemeriksaan ?? 'Kimia',
+                                        'hasil' => $item->hasil_pengujian,
+                                        'satuan' => $item->satuan_pemeriksaan ?? ''
+                                    ]);
+                                }
+
+                                // Tambahkan hasil lain ke kelompoknya
+                                foreach ($hasil_lain as $item) {
+                                    $kelompok = $item->kelompok_pemeriksaan;
+                                    if (!$groupedExaminations->has($kelompok)) {
+                                        $groupedExaminations->put($kelompok, collect());
+                                    }
+                                    $groupedExaminations[$kelompok]->push((object)[
+                                        'nama' => $item->data_pemeriksaan ?? 'Lainnya',
+                                        'hasil' => $item->hasil_pengujian,
+                                        'satuan' => $item->satuan_pemeriksaan ?? ''
+                                    ]);
+                                }
+                            }
+                        @endphp
+
+                        @if($selectedPatient)
+                            @if($groupedExaminations->count() > 0)
+                                <div class="examination-horizontal">
+                                    @foreach($groupedExaminations as $kelompok => $items)
+                                        <div class="kelompok-pemeriksaan mb-2">
+                                            <div class="kelompok-header p-1">
+                                                <small class="fw-semibold text-dark">{{ $kelompok }}</small>
+                                            </div>
+                                            <div class="items-list">
+                                                @foreach($items as $exam)
+                                                    <div class="exam-item d-flex align-items-center border-bottom py-1">
+                                                        <div class="exam-name flex-shrink-0 me-2" style="width: 60%;">
+                                                            <small class="text-muted">{{ $exam->nama }}</small>
+                                                        </div>
+                                                        <div class="exam-result d-flex align-items-center flex-grow-1">
+                                                            <span class="fw-bold me-1">{{ $exam->hasil }}</span>
+                                                            @if($exam->satuan)
+                                                                <small class="text-secondary">{{ $exam->satuan }}</small>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endforeach
+
+                                    @if($selectedPatient->catatan || $selectedPatient->keluhan)
+                                        <div class="mt-2 pt-2 border-top">
+                                            @if($selectedPatient->keluhan)
+                                                <div class="mb-1">
+                                                    <small class="text-muted d-block">Keluhan:</small>
+                                                    <small>{{ $selectedPatient->keluhan }}</small>
+                                                </div>
+                                            @endif
+                                            @if($selectedPatient->catatan)
+                                                <div>
+                                                    <small class="text-muted d-block">Catatan:</small>
+                                                    <small>{{ $selectedPatient->catatan }}</small>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="text-center py-2">
+                                    <small class="text-muted">Belum ada hasil pemeriksaan</small>
+                                </div>
+                            @endif
+                        @else
+                            <div class="text-center py-2">
+                                <small class="text-warning">Data tidak ditemukan</small>
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center py-3">
+                            <small class="text-muted">Pilih data dari tabel</small>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <!-- End Kolom kanan: History Panel -->
     </div>
 </div>
+
+<style>
+.table-active {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+    border-left: 3px solid #0d6efd;
+}
+.history-detail .table th,
+.history-detail .table td {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.875rem;
+}
+.history-detail .table thead th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+}
+.history-detail .badge {
+    font-size: 0.7rem;
+    padding: 0.25em 0.6em;
+}
+</style>
 @endsection

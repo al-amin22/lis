@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+
 class LisMappingController extends Controller
 {
     // Search kode pemeriksaan
@@ -96,6 +97,111 @@ class LisMappingController extends Controller
         }
     }
 
+    public function saveManualRow(Request $request)
+    {
+        try {
+            // Validasi
+            $request->validate([
+                'analysis' => 'required',
+                'id_data_pemeriksaan' => 'required',
+                'no_lab' => 'required',
+            ]);
+
+            // Insert data baru
+            $id = DB::table('pemeriksaan_kimia')->insertGetId([
+                'no_lab' => $request->no_lab,
+                'analysis' => $request->analysis,
+                'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
+                'satuan_hasil_pengujian' => $request->satuan,
+                'rujukan' => $request->rujukan,
+                'method' => $request->method,
+                'hasil_pengujian' => $request->hasil_pengujian,
+                'keterangan' => $request->keterangan,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], 'id_pemeriksaan_kimia'); // <-- tambah 'id_pemeriksaan_kimia' di sini
+
+            return response()->json([
+                'success' => true,
+                'id_pemeriksaan_kimia' => $id, // return ID yang baru dibuat
+                'message' => 'Data berhasil disimpan'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateHasilRealtime(Request $request)
+    {
+        try {
+            $request->validate([
+                'id_pemeriksaan_kimia' => 'required|integer',
+                'hasil_pengujian' => 'nullable',
+                'keterangan' => 'nullable|string|max:5',
+            ]);
+
+            $updated = DB::table('pemeriksaan_kimia')
+                ->where('id_pemeriksaan_kimia', $request->id_pemeriksaan_kimia)
+                ->update([
+                    'hasil_pengujian' => $request->hasil_pengujian,
+                    'keterangan' => $request->keterangan,
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'updated' => $updated,
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
+    public function updateRow(Request $request)
+    {
+        try {
+            // Validasi - pastikan id_pemeriksaan_kimia ada
+            $request->validate([
+                'id_pemeriksaan_kimia' => 'required|integer',
+                'id_data_pemeriksaan' => 'required',
+            ]);
+
+            // Update existing row
+            DB::table('pemeriksaan_kimia')
+                ->where('id_pemeriksaan_kimia', $request->id_pemeriksaan_kimia)
+                ->update([
+                    'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
+                    'analysis' => $request->analysis,
+                    'satuan_hasil_pengujian' => $request->satuan,
+                    'rujukan' => $request->rujukan,
+                    'method' => $request->method,
+                    'hasil_pengujian' => $request->hasil_pengujian,
+                    'keterangan' => $request->keterangan,
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil diperbarui'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal update: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function resetKodePemeriksaan(Request $request)
     {
         DB::beginTransaction();
@@ -144,6 +250,129 @@ class LisMappingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal reset mapping: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function saveManualRowHematology(Request $request)
+    {
+        try {
+            // Validasi
+            $request->validate([
+                'jenis_pengujian' => 'required',
+                'id_data_pemeriksaan' => 'required',
+                'no_lab' => 'required',
+            ]);
+
+            // Insert data baru
+            $id = DB::table('pemeriksaan_hematology')
+                ->insertGetId([
+                    'no_lab' => $request->no_lab,
+                    'jenis_pengujian' => $request->jenis_pengujian,
+                    'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
+                    'satuan_hasil_pengujian' => $request->satuan_hasil_pengujian,
+                    'rujukan' => $request->rujukan,
+                    'hasil_pengujian' => $request->hasil_pengujian,
+                    'keterangan' => $request->keterangan,
+                    'status_pemeriksaan' => 'selesai',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ], 'id_pemeriksaan_hematology'); // ✅ INI KUNCI
+
+
+            return response()->json([
+                'success' => true,
+                'id_pemeriksaan_hematology' => $id,
+                'message' => 'Data berhasil disimpan'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateRowHematology(Request $request)
+    {
+        try {
+            // Validasi - pastikan id_pemeriksaan_hematology ada
+            $request->validate([
+                'id_pemeriksaan_hematology' => 'required|integer',
+                'id_data_pemeriksaan' => 'required',
+            ]);
+
+            // Update existing row
+            DB::table('pemeriksaan_hematology')
+                ->where('id_pemeriksaan_hematology', $request->id_pemeriksaan_hematology)
+                ->update([
+                    'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
+                    'jenis_pengujian' => $request->jenis_pengujian,
+                    'satuan_hasil_pengujian' => $request->satuan_hasil_pengujian,
+                    'rujukan' => $request->rujukan,
+                    'hasil_pengujian' => $request->hasil_pengujian,
+                    'keterangan' => $request->keterangan,
+                    'updated_at' => now(),
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil diperbarui'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal update: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateHasilRealtimeHematology(Request $request)
+    {
+        try {
+            DB::table('pemeriksaan_hematology')
+                ->where('id_pemeriksaan_hematology', $request->id_pemeriksaan_hematology)
+                ->update([
+                    'hasil_pengujian' => $request->hasil_pengujian,
+                    'keterangan' => $request->keterangan,
+                    'updated_at' => now()
+                ]);
+
+            return response()->json([
+                'success' => true
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function deleteManualRowHematology($id)
+    {
+        try {
+            $deleted = DB::table('pemeriksaan_hematology')
+                ->where('id_pemeriksaan_hematology', $id)
+                ->delete();
+
+            if ($deleted) {
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Data hematologi berhasil dihapus'
+                ]);
+            } else {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Data tidak ditemukan'
+                ], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Gagal menghapus: ' . $e->getMessage()
             ], 500);
         }
     }

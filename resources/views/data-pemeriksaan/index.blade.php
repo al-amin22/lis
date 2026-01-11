@@ -94,6 +94,7 @@
                                         <th>Urutan</th>
                                         <th>CH</th>
                                         <th>CL</th>
+                                        <th>kode uji</th>
                                         <th>Actions</th>
                                     </tr>
                                 </thead>
@@ -117,6 +118,7 @@
                                         <td>{{ $data->urutan ?? '-' }}</td>
                                         <td>{{ $data->ch ?? '-' }}</td>
                                         <td>{{ $data->cl ?? '-' }}</td>
+                                        <td>{{ $data->kode_uji_pemeriksaan ?? '-' }}</td>
                                         <td>
                                             <button type="button" class="btn btn-sm btn-warning"
                                                 data-bs-toggle="modal"
@@ -133,11 +135,18 @@
                                                 data-cl="{{ $data->cl }}">
                                                 <i class="ri-edit-line"></i> Edit
                                             </button>
-                                            <button class="btn btn-sm btn-primary"
+                                            <button type="button" class="btn btn-sm btn-primary"
                                                 data-bs-toggle="modal"
                                                 data-bs-target="#modalBatchJenis{{ $data->id_jenis_pemeriksaan_1 }}">
-                                                Edit Batch
+                                                <i class="ri-file-list-line"></i> Edit Batch
                                             </button>
+
+                                            <a href="{{ route('pasien.data-pemeriksaan.show', $data->id_data_pemeriksaan) }}"
+                                                class="btn btn-sm btn-info"
+                                                title="Lihat Detail">
+                                                    <i class="ri-eye-line"></i> Show
+                                            </a>
+
 
                                             <!-- <form action="{{ route('pasien.destroy.data.pemeriksaan', $data->id_data_pemeriksaan) }}"
                                                 method="POST"
@@ -170,20 +179,18 @@
 </div>
 
 @foreach($jenisPemeriksaans as $jenis)
-<div class="modal fade" id="modalBatchJenis{{ $jenis->id_jenis_pemeriksaan_1 }}" tabindex="-1">
+<div class="modal fade" id="modalBatchJenis{{ $jenis->id_jenis_pemeriksaan_1 }}" tabindex="-1" role="dialog" aria-labelledby="modalBatchJenisLabel{{ $jenis->id_jenis_pemeriksaan_1 }}" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
-
-            <form method="POST"
-                  action="{{ route('pasien.data-pemeriksaan.update-batch-jenis', $jenis->id_jenis_pemeriksaan_1) }}">
+            <form method="POST" action="{{ route('pasien.data-pemeriksaan.update-batch-jenis', $jenis->id_jenis_pemeriksaan_1) }}">
                 @csrf
                 @method('PUT')
 
                 <div class="modal-header">
-                    <h5 class="modal-title">
+                    <h5 class="modal-title" id="modalBatchJenisLabel{{ $jenis->id_jenis_pemeriksaan_1 }}">
                         Update Batch – {{ $jenis->nama_pemeriksaan }}
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
 
                 <div class="modal-body">
@@ -199,6 +206,7 @@
                                     <th>Urutan</th>
                                     <th>CH</th>
                                     <th>CL</th>
+                                    <th>Kode Uji Pemeriksaan</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -207,48 +215,73 @@
                                     <td>
                                         {{ $item->id_data_pemeriksaan }}
                                         <input type="hidden"
-                                            name="items[{{ $i }}][id_data_pemeriksaan]"
-                                            value="{{ $item->id_data_pemeriksaan }}">
+                                               name="items[{{ $i }}][id_data_pemeriksaan]"
+                                               value="{{ $item->id_data_pemeriksaan }}">
                                     </td>
 
                                     <td>
-                                        <input type="text" class="form-control"
-                                            name="items[{{ $i }}][data_pemeriksaan]"
-                                            value="{{ $item->data_pemeriksaan }}">
+                                        <input type="text"
+                                               class="form-control"
+                                               name="items[{{ $i }}][data_pemeriksaan]"
+                                               value="{{ $item->data_pemeriksaan }}">
                                     </td>
 
                                     <td>
-                                        <input type="text" class="form-control"
-                                            name="items[{{ $i }}][satuan]"
-                                            value="{{ $item->satuan }}">
+                                        <input type="text"
+                                               class="form-control"
+                                               name="items[{{ $i }}][satuan]"
+                                               value="{{ $item->satuan }}">
                                     </td>
 
                                     <td>
-                                        <input type="text" class="form-control"
-                                            name="items[{{ $i }}][rujukan]"
-                                            value="{{ $item->rujukan }}">
+                                        <input type="text"
+                                               class="form-control"
+                                               name="items[{{ $i }}][rujukan]"
+                                               value="{{ $item->rujukan }}">
                                     </td>
 
                                     <td>
-                                        <input type="text" class="form-control"
-                                            name="items[{{ $i }}][metode]"
-                                            value="{{ $item->metode }}">
+                                        <input type="text"
+                                               class="form-control"
+                                               name="items[{{ $i }}][metode]"
+                                               value="{{ $item->metode }}">
                                     </td>
 
                                     <td>
-                                        <input type="number" class="form-control"
-                                            name="items[{{ $i }}][urutan]"
-                                            value="{{ $item->urutan }}">
+                                        <input type="number"
+                                               class="form-control"
+                                               name="items[{{ $i }}][urutan]"
+                                               value="{{ $item->urutan }}">
                                     </td>
+
                                     <td>
-                                        <input type="text" class="form-control"
-                                            name="items[{{ $i }}][ch]"
-                                            value="{{ $item->ch }}">
+                                        <input type="text"
+                                               class="form-control"
+                                               name="items[{{ $i }}][ch]"
+                                               value="{{ $item->ch }}">
                                     </td>
+
                                     <td>
-                                        <input type="text" class="form-control"
-                                            name="items[{{ $i }}][cl]"
-                                            value="{{ $item->cl }}">
+                                        <input type="text"
+                                               class="form-control"
+                                               name="items[{{ $i }}][cl]"
+                                               value="{{ $item->cl }}">
+                                    </td>
+
+                                    <td>
+                                        <div class="position-relative search-container">
+                                            <input type="text"
+                                                   class="form-control uji-search-input"
+                                                   placeholder="Cari kode / nama uji..."
+                                                   value="{{ $item->kode_uji_pemeriksaan }}"
+                                                   autocomplete="off"
+                                                   data-id="{{ $item->id_data_pemeriksaan }}">
+                                            <div class="search-results dropdown-menu"></div>
+                                            <input type="hidden"
+                                                   name="items[{{ $i }}][kode_uji_pemeriksaan]"
+                                                   value="{{ $item->kode_uji_pemeriksaan }}"
+                                                   class="uji-kode-hidden">
+                                        </div>
                                     </td>
                                 </tr>
                                 @endforeach
@@ -258,12 +291,10 @@
                 </div>
 
                 <div class="modal-footer">
-                    <button class="btn btn-primary">Update Semua</button>
+                    <button type="submit" class="btn btn-primary">Update Semua</button>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                 </div>
-
             </form>
-
         </div>
     </div>
 </div>
@@ -471,153 +502,201 @@
         </div>
     </div>
 </div>
+
+<style>
+    .search-dropdown {
+        max-height: 300px;
+        overflow-y: auto;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.175);
+        border: 1px solid rgba(0,0,0,0.15);
+        border-radius: 4px;
+        margin-top: 2px;
+    }
+
+    .search-dropdown .dropdown-item {
+        padding: 8px 16px;
+        cursor: pointer;
+        white-space: normal;
+        word-wrap: break-word;
+    }
+
+    .search-dropdown .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .search-dropdown .dropdown-item strong {
+        color: #495057;
+    }
+
+    .position-relative {
+        position: relative;
+    }
+
+    .uji-search-input {
+        padding-right: 30px !important;
+    }
+
+    .uji-search-input:focus + .search-dropdown,
+    .uji-search-input:focus ~ .search-dropdown {
+        display: block !important;
+    }
+</style>
 <script>
-    // Filter by Jenis Pemeriksaan
-    // Edit Modal Handler
     document.addEventListener('DOMContentLoaded', function() {
+        // ==================== FILTER JENIS PEMERIKSAAN ====================
+        const filterJenis = document.getElementById('filterJenis');
+        if (filterJenis) {
+            filterJenis.addEventListener('change', function() {
+                const selectedJenis = this.value;
+                const dataRows = document.querySelectorAll('.data-row');
+
+                dataRows.forEach(row => {
+                    if (!selectedJenis || row.getAttribute('data-jenis') === selectedJenis) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // ==================== EDIT MODAL HANDLER ====================
         const editModal = document.getElementById('editModal');
+        if (editModal) {
+            editModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const kode = button.getAttribute('data-kode');
+                const jenis = button.getAttribute('data-jenis');
+                const nama = button.getAttribute('data-nama');
+                const lis = button.getAttribute('data-lis');
+                const satuan = button.getAttribute('data-satuan');
+                const rujukan = button.getAttribute('data-rujukan');
+                const metode = button.getAttribute('data-metode');
+                const urutan = button.getAttribute('data-urutan');
+                const ch = button.getAttribute('data-ch');
+                const cl = button.getAttribute('data-cl');
 
-        editModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const kode = button.getAttribute('data-kode');
-            const jenis = button.getAttribute('data-jenis');
-            const nama = button.getAttribute('data-nama');
-            const lis = button.getAttribute('data-lis');
-            const satuan = button.getAttribute('data-satuan');
-            const rujukan = button.getAttribute('data-rujukan');
-            const metode = button.getAttribute('data-metode');
-            const urutan = button.getAttribute('data-urutan');
-            const ch = button.getAttribute('data-ch');
-            const cl = button.getAttribute('data-cl');
+                // Update modal title
+                const modalTitle = editModal.querySelector('.modal-title');
+                modalTitle.textContent = 'Edit: ' + nama;
 
-            // Update modal title
-            const modalTitle = editModal.querySelector('.modal-title');
-            modalTitle.textContent = 'Edit: ' + nama;
+                // Set form values
+                document.getElementById('edit_id_jenis_pemeriksaan_1').value = jenis;
+                document.getElementById('edit_data_pemeriksaan').value = nama;
+                document.getElementById('edit_lis').value = lis || '';
+                document.getElementById('edit_satuan').value = satuan || '';
+                document.getElementById('edit_rujukan').value = rujukan || '';
+                document.getElementById('edit_metode').value = metode || '';
+                document.getElementById('edit_urutan').value = urutan || '';
+                document.getElementById('edit_ch').value = ch || '';
+                document.getElementById('edit_cl').value = cl || '';
 
-            // Set form values
-            document.getElementById('edit_id_jenis_pemeriksaan_1').value = jenis;
-            document.getElementById('edit_data_pemeriksaan').value = nama;
-            document.getElementById('edit_lis').value = lis || '';
-            document.getElementById('edit_satuan').value = satuan || '';
-            document.getElementById('edit_rujukan').value = rujukan || '';
-            document.getElementById('edit_metode').value = metode || '';
-            document.getElementById('edit_urutan').value = urutan || '';
-            document.getElementById('edit_ch').value = ch || '';
-            document.getElementById('edit_cl').value = cl || '';
+                // Set form action
+                const form = editModal.querySelector('#editForm');
+                form.action = "{{ route('pasien.update.data.pemeriksaan', '') }}/" + kode;
+            });
+        }
 
-            // Set form action
-            const form = editModal.querySelector('#editForm');
-            form.action = "{{ route('pasien.update.data.pemeriksaan', '') }}/" + kode;
-        });
-    });
-
-    // Edit Modal Handler
-    document.addEventListener('DOMContentLoaded', function() {
-        const editModal = document.getElementById('editModal');
-
-        editModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const kode = button.getAttribute('data-kode');
-            const jenis = button.getAttribute('data-jenis');
-            const nama = button.getAttribute('data-nama');
-            const lis = button.getAttribute('data-lis');
-            const satuan = button.getAttribute('data-satuan');
-            const rujukan = button.getAttribute('data-rujukan');
-            const metode = button.getAttribute('data-metode');
-            const urutan = button.getAttribute('data-urutan');
-            const ch = button.getAttribute('data-ch');
-            const cl = button.getAttribute('data-cl');
-
-            // Update modal content
-            const modalTitle = editModal.querySelector('.modal-title');
-            const form = editModal.querySelector('#editForm');
-
-            modalTitle.textContent = 'Edit: ' + nama;
-
-            // Set form values
-            document.getElementById('edit_id_jenis_pemeriksaan_1').value = jenis;
-            document.getElementById('edit_data_pemeriksaan').value = nama;
-            document.getElementById('edit_lis').value = lis;
-            document.getElementById('edit_satuan').value = satuan;
-            document.getElementById('edit_rujukan').value = rujukan;
-            document.getElementById('edit_urutan').value = '';
-            document.getElementById('edit_metode').value = metode;
-            document.getElementById('edit_urutan').value = urutan;
-            document.getElementById('edit_ch').value = ch;
-            document.getElementById('edit_cl').value = cl;
-
-            // Set form action
-            form.action = "{{ route('pasien.update.data.pemeriksaan', '') }}/" + kode;
-        });
-    });
-
-    // Batch Input Functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        let rowCount = 0;
+        // ==================== BATCH ADD MODAL FUNCTIONALITY ====================
+        const batchModal = document.getElementById('tambahBatchModal');
         const batchTableBody = document.getElementById('batchTableBody');
-        const addRowBtn = document.getElementById('addRowBtn');
-        const addMultipleBtn = document.getElementById('addMultipleBtn');
-        const batchForm = document.getElementById('batchForm');
+        let batchRowCount = 0;
 
-        // Function to add a new row
-        function addRow() {
-            rowCount++;
-            const rowIndex = rowCount - 1;
+        if (batchModal && batchTableBody) {
+            // Initialize when modal is shown
+            batchModal.addEventListener('shown.bs.modal', function() {
+                initializeBatchModal();
+            });
+        }
 
+        function initializeBatchModal() {
+            // Clear existing rows
+            batchTableBody.innerHTML = '';
+            batchRowCount = 0;
+
+            // Add first row
+            addBatchRow();
+
+            // Setup event listeners for add buttons
+            const addRowBtn = document.getElementById('addRowBtn');
+            const addMultipleBtn = document.getElementById('addMultipleBtn');
+
+            if (addRowBtn) {
+                addRowBtn.onclick = function() {
+                    addBatchRow();
+                };
+            }
+
+            if (addMultipleBtn) {
+                addMultipleBtn.onclick = function() {
+                    for (let i = 0; i < 5; i++) {
+                        addBatchRow();
+                    }
+                };
+            }
+        }
+
+        function addBatchRow() {
+            const rowIndex = batchRowCount++;
             const row = document.createElement('tr');
+
             row.innerHTML = `
-                <td>${rowCount}</td>
+                <td>${rowIndex + 1}</td>
                 <td>
-                    <input type="text"
-                           name="nama_pemeriksaan[${rowIndex}]"
-                           class="form-control form-control-sm"
-                           placeholder="Nama pemeriksaan"
-                           required>
+                    <div class="position-relative search-container">
+                        <input type="text"
+                               class="form-control form-control-sm uji-search-input"
+                               placeholder="Cari kode / nama uji..."
+                               autocomplete="off"
+                               data-row="${rowIndex}">
+                        <div class="search-results dropdown-menu"></div>
+                        <input type="hidden"
+                               name="nama_pemeriksaan[${rowIndex}]"
+                               value=""
+                               class="uji-hidden-input">
+                    </div>
                 </td>
-               {{-- <td>
-                    <input type="text"
-                           name="lis[${rowIndex}]"
-                           class="form-control form-control-sm"
-                           placeholder="LIS">
-                </td> --}}
                 <td>
                     <input type="text"
-                           name="satuan[${rowIndex}]"
                            class="form-control form-control-sm"
+                           name="satuan[${rowIndex}]"
                            placeholder="Satuan">
                 </td>
                 <td>
                     <input type="text"
-                           name="rujukan[${rowIndex}]"
                            class="form-control form-control-sm"
-                           placeholder="Nilai rujukan">
+                           name="rujukan[${rowIndex}]"
+                           placeholder="Rujukan">
                 </td>
                 <td>
                     <input type="text"
-                           name="metode[${rowIndex}]"
                            class="form-control form-control-sm"
+                           name="metode[${rowIndex}]"
                            placeholder="Metode">
                 </td>
                 <td>
                     <input type="number"
+                           class="form-control form-control-sm"
                            name="urutan[${rowIndex}]"
-                           class="form-control form-control-sm"
-                           placeholder="Urutan">
+                           value="${rowIndex + 1}"
+                           min="1">
                 </td>
                 <td>
-                    <input type="number"
+                    <input type="text"
+                           class="form-control form-control-sm"
                            name="ch[${rowIndex}]"
-                           class="form-control form-control-sm"
-                           placeholder="ch">
+                           placeholder="CH">
                 </td>
                 <td>
-                    <input type="number"
+                    <input type="text"
+                           class="form-control form-control-sm"
                            name="cl[${rowIndex}]"
-                           class="form-control form-control-sm"
-                           placeholder="cl">
+                           placeholder="CL">
                 </td>
                 <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger remove-row" ${rowCount === 1 ? 'disabled' : ''}>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger remove-row-btn"
+                            ${rowIndex === 0 ? 'disabled' : ''}>
                         <i class="ri-delete-bin-line"></i>
                     </button>
                 </td>
@@ -625,92 +704,244 @@
 
             batchTableBody.appendChild(row);
 
-            // Add event listener for remove button
-            const removeBtn = row.querySelector('.remove-row');
-            removeBtn.addEventListener('click', function() {
-                if (rowCount > 1) {
-                    row.remove();
-                    rowCount--;
-                    updateRowNumbers();
-                }
-            });
+            // Initialize search for this row
+            initializeSearchForRow(row);
+
+            // Setup remove button
+            const removeBtn = row.querySelector('.remove-row-btn');
+            if (removeBtn) {
+                removeBtn.onclick = function() {
+                    if (batchRowCount > 1) {
+                        row.remove();
+                        batchRowCount--;
+                        updateBatchRowNumbers();
+                    }
+                };
+            }
         }
 
-        // Function to update row numbers
-        function updateRowNumbers() {
+        function updateBatchRowNumbers() {
             const rows = batchTableBody.querySelectorAll('tr');
             rows.forEach((row, index) => {
-                row.querySelector('td:first-child').textContent = index + 1;
+                // Update row number
+                const firstCell = row.querySelector('td:first-child');
+                if (firstCell) firstCell.textContent = index + 1;
+
+                // Update urutan input
+                const urutanInput = row.querySelector('input[name^="urutan"]');
+                if (urutanInput) urutanInput.value = index + 1;
+
+                // Update hidden input names
+                const hiddenInput = row.querySelector('.uji-hidden-input');
+                if (hiddenInput) hiddenInput.name = `nama_pemeriksaan[${index}]`;
+
+                const satuanInput = row.querySelector('input[name^="satuan"]');
+                if (satuanInput) satuanInput.name = `satuan[${index}]`;
+
+                const rujukanInput = row.querySelector('input[name^="rujukan"]');
+                if (rujukanInput) rujukanInput.name = `rujukan[${index}]`;
+
+                const metodeInput = row.querySelector('input[name^="metode"]');
+                if (metodeInput) metodeInput.name = `metode[${index}]`;
+
+                const chInput = row.querySelector('input[name^="ch"]');
+                if (chInput) chInput.name = `ch[${index}]`;
+
+                const clInput = row.querySelector('input[name^="cl"]');
+                if (clInput) clInput.name = `cl[${index}]`;
             });
         }
 
-        // Function to add multiple rows
-        function addMultipleRows(count) {
-            for (let i = 0; i < count; i++) {
-                addRow();
-            }
-        }
+        // ==================== SEARCH FUNCTIONALITY ====================
+        function initializeSearchForRow(row) {
+            const searchContainer = row.querySelector('.search-container');
+            if (!searchContainer) return;
 
-        // Add initial row
-        addRow();
+            const searchInput = searchContainer.querySelector('.uji-search-input');
+            const resultsContainer = searchContainer.querySelector('.search-results');
+            const hiddenInput = searchContainer.querySelector('.uji-hidden-input');
 
-        // Event listeners
-        addRowBtn.addEventListener('click', function() {
-            addRow();
-        });
+            if (!searchInput || !resultsContainer) return;
 
-        addMultipleBtn.addEventListener('click', function() {
-            addMultipleRows(5);
-        });
+            // Search input event
+            searchInput.addEventListener('input', debounce(function(e) {
+                const keyword = e.target.value.trim();
+                if (keyword.length < 2) {
+                    resultsContainer.style.display = 'none';
+                    return;
+                }
 
-        // Form validation before submit
-        batchForm.addEventListener('submit', function(e) {
-            const jenisSelect = document.getElementById('batch_id_jenis_pemeriksaan_1');
-            const namaInputs = batchTableBody.querySelectorAll('input[name^="nama_pemeriksaan"]');
+                searchUjiPemeriksaan(keyword, resultsContainer, searchInput, hiddenInput);
+            }, 300));
 
-            // Check if jenis pemeriksaan is selected
-            if (!jenisSelect.value) {
-                e.preventDefault();
-                alert('Pilih jenis pemeriksaan terlebih dahulu!');
-                jenisSelect.focus();
-                return;
-            }
-
-            // Check if at least one row has nama pemeriksaan filled
-            let hasData = false;
-            namaInputs.forEach(input => {
-                if (input.value.trim()) {
-                    hasData = true;
+            // Click outside to hide results
+            document.addEventListener('click', function(e) {
+                if (!searchContainer.contains(e.target)) {
+                    resultsContainer.style.display = 'none';
                 }
             });
 
-            if (!hasData) {
-                e.preventDefault();
-                alert('Isi minimal satu data pemeriksaan!');
+            // Focus event
+            searchInput.addEventListener('focus', function() {
+                const currentValue = this.value.trim();
+                if (currentValue.length >= 2) {
+                    searchUjiPemeriksaan(currentValue, resultsContainer, searchInput, hiddenInput);
+                }
+            });
+        }
+
+        // Initialize search for all existing inputs (for batch edit modals)
+        function initializeAllSearchInputs() {
+            document.querySelectorAll('.search-container').forEach(container => {
+                const searchInput = container.querySelector('.uji-search-input');
+                const resultsContainer = container.querySelector('.search-results');
+                const hiddenInput = container.querySelector('.uji-kode-hidden') ||
+                                   container.querySelector('.uji-hidden-input');
+
+                if (searchInput && resultsContainer) {
+                    searchInput.addEventListener('input', debounce(function(e) {
+                        const keyword = e.target.value.trim();
+                        if (keyword.length < 2) {
+                            resultsContainer.style.display = 'none';
+                            return;
+                        }
+
+                        searchUjiPemeriksaan(keyword, resultsContainer, searchInput, hiddenInput);
+                    }, 300));
+
+                    // Set current value in search input
+                    if (hiddenInput && hiddenInput.value) {
+                        searchInput.value = hiddenInput.value;
+                    }
+                }
+            });
+        }
+
+        function searchUjiPemeriksaan(keyword, resultsContainer, searchInput, hiddenInput) {
+            fetch("{{ route('uji-pemeriksaan.search') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ search: keyword })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                displaySearchResults(data, resultsContainer, searchInput, hiddenInput);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                resultsContainer.innerHTML = '<div class="dropdown-item text-danger">Error saat mencari</div>';
+                resultsContainer.style.display = 'block';
+            });
+        }
+
+        function displaySearchResults(data, resultsContainer, searchInput, hiddenInput) {
+            resultsContainer.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                resultsContainer.innerHTML = '<div class="dropdown-item text-muted">Tidak ditemukan</div>';
+                resultsContainer.style.display = 'block';
                 return;
             }
-        });
 
-        // Auto-focus on first input when modal opens
-        const batchModal = document.getElementById('tambahBatchModal');
-        batchModal.addEventListener('shown.bs.modal', function() {
-            const firstInput = batchTableBody.querySelector('input[name^="nama_pemeriksaan"]');
-            if (firstInput) {
-                firstInput.focus();
-            }
-        });
+            data.forEach(uji => {
+                const resultItem = document.createElement('a');
+                resultItem.className = 'dropdown-item';
+                resultItem.href = '#';
+                resultItem.innerHTML = `
+                    <strong>${uji.kode_pemeriksaan}</strong><br>
+                    <small class="text-muted">${uji.nama_pemeriksaan}</small>
+                `;
 
-        // Reset form when modal closes
-        batchModal.addEventListener('hidden.bs.modal', function() {
-            // Reset to one row
-            batchTableBody.innerHTML = '';
-            rowCount = 0;
-            addRow();
+                resultItem.addEventListener('click', function(e) {
+                    e.preventDefault();
 
-            // Reset jenis select
-            document.getElementById('batch_id_jenis_pemeriksaan_1').value = '';
-        });
+                    // Set value in search input
+                    searchInput.value = uji.kode_pemeriksaan;
+
+                    // Set value in hidden input
+                    if (hiddenInput) {
+                        hiddenInput.value = uji.kode_pemeriksaan;
+                    }
+
+                    // Hide results
+                    resultsContainer.style.display = 'none';
+                });
+
+                resultsContainer.appendChild(resultItem);
+            });
+
+            resultsContainer.style.display = 'block';
+        }
+
+        // Debounce function for search
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Initialize search inputs when page loads
+        initializeAllSearchInputs();
+
+        // Initialize batch modal search when shown
+        if (batchModal) {
+            batchModal.addEventListener('shown.bs.modal', function() {
+                initializeAllSearchInputs();
+            });
+        }
+
+        // ==================== FORM VALIDATION ====================
+        const batchForm = document.getElementById('batchForm');
+        if (batchForm) {
+            batchForm.addEventListener('submit', function(e) {
+                const jenisSelect = document.getElementById('batch_id_jenis_pemeriksaan_1');
+                if (!jenisSelect || !jenisSelect.value) {
+                    e.preventDefault();
+                    alert('Pilih jenis pemeriksaan terlebih dahulu!');
+                    if (jenisSelect) jenisSelect.focus();
+                    return;
+                }
+
+                // Check if at least one row has data
+                const hasData = Array.from(batchTableBody.querySelectorAll('.uji-hidden-input'))
+                    .some(input => input.value.trim() !== '');
+
+                if (!hasData) {
+                    e.preventDefault();
+                    alert('Isi minimal satu data pemeriksaan!');
+                    return;
+                }
+            });
+        }
+
+        // ==================== MODAL CLEANUP ====================
+        // Reset batch modal when closed
+        if (batchModal) {
+            batchModal.addEventListener('hidden.bs.modal', function() {
+                batchTableBody.innerHTML = '';
+                batchRowCount = 0;
+            });
+        }
+
+        // Initialize on page load
+        setTimeout(() => {
+            initializeAllSearchInputs();
+        }, 100);
     });
 </script>
-
 @endsection

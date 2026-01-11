@@ -218,6 +218,22 @@
             }
         }
     </style>
+    <style>
+        .page .content-container table {
+            width: 100% !important;
+            border-collapse: collapse;
+            box-sizing: border-box;
+        }
+        .page .content-container table td,
+        .page .content-container table th {
+            box-sizing: border-box;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .kop-surat-container img { max-width: 100%; height: auto; display: block; }
+    </style>
+
 </head>
 
 <body id='faktur'>
@@ -231,47 +247,62 @@
             $all_data = [];
 
             // 1. HEMATOLOGY - AMBIL DARI $hematology_fix
+            // 1. HEMATOLOGY - AMBIL DARI $hematology_fix (versi diperbarui)
             if(!empty($hematology_fix) && count(array_filter($hematology_fix)) > 0) {
-                $jenis_pemeriksaan_list = [
-                    'WBC', 'Neutrofil%', 'Limfosit%', 'Monosit%', 'Eosinofil%',
-                    'Basofil%', 'RBC', 'HGB', 'HCT', 'MCV', 'MCH', 'MCHC',
-                    'RDW-CV', 'RDW-SD', 'PLT', 'MPV', 'PDW', 'PCT'
-                ];
-
                 $all_data[] = ['type' => 'header', 'title' => 'HEMATOLOGY'];
 
-                foreach($jenis_pemeriksaan_list as $index => $jenis) {
-                    $item = $hematology_fix[$index] ?? null;
-                    if($item && isset($item->id_pemeriksaan_hematology)) {
-                        // Prioritaskan rujukan_by_kondisi (bisa array atau string)
-                        $rujukan_val = '-';
-                        $satuan_val = '-';
-                        if (isset($item->rujukan_by_kondisi)) {
-                            if (is_array($item->rujukan_by_kondisi)) {
-                                $rujukan_val = $item->rujukan_by_kondisi['rujukan'] ?? ($item->dataPemeriksaan->rujukan ?? '-');
-                                $satuan_val = $item->rujukan_by_kondisi['satuan'] ?? ($item->dataPemeriksaan->satuan ?? '-');
-                            } else {
-                                $rujukan_val = $item->rujukan_by_kondisi ?? ($item->dataPemeriksaan->rujukan ?? '-');
-                                $satuan_val = $item->satuan ?? ($item->dataPemeriksaan->satuan ?? '-');
-                            }
-                        } else {
-                            $rujukan_val = $item->dataPemeriksaan->rujukan ?? '-';
-                            $satuan_val = $item->dataPemeriksaan->satuan ?? '-';
-                        }
+                foreach($hematology_fix as $item) {
+                    if(!$item) continue;
 
-                        $keterangan_val = $item->calculated_keterangan ?? ($item->keterangan ?? '-');
-
-                        $all_data[] = [
-                            'type' => 'row',
-                            'data_pemeriksaan' => $jenis,
-                            'hasil_pengujian' => $item->hasil_pengujian ?? '',
-                            'rujukan' => $rujukan_val,
-                            'satuan' => $satuan_val,
-                            'keterangan' => $keterangan_val
-                        ];
+                    // Tentukan nama pemeriksaan: prioritas dataPemeriksaan->data_pemeriksaan -> analysis -> lisMappings
+                    $nama_pemeriksaan = '-';
+                    if (!empty($item->dataPemeriksaan) && !empty($item->dataPemeriksaan->data_pemeriksaan)) {
+                        $nama_pemeriksaan = $item->dataPemeriksaan->data_pemeriksaan;
+                    } elseif (!empty($item->analysis)) {
+                        $nama_pemeriksaan = $item->analysis;
+                    } elseif (!empty($item->dataPemeriksaan) && !empty($item->dataPemeriksaan->lisMappings) && count($item->dataPemeriksaan->lisMappings) > 0) {
+                        // ambil mapping pertama jika ada
+                        $firstMap = $item->dataPemeriksaan->lisMappings[0];
+                        $nama_pemeriksaan = $firstMap->lis ?? ($firstMap->nama ?? '-');
                     }
+
+                    // Ambil nilai hasil
+                    $hasil_pengujian = $item->hasil_pengujian ?? '';
+
+                    // Ambil rujukan dan satuan dengan prioritas rujuan_by_kondisi jika tersedia
+                    $rujukan_val = '-';
+                    $satuan_val = '-';
+
+                    if (isset($item->rujukan_by_kondisi)) {
+                        if (is_array($item->rujukan_by_kondisi) || is_object($item->rujukan_by_kondisi)) {
+                            // bisa array atau object -> akses dengan aman
+                            $rbk = (array) $item->rujukan_by_kondisi;
+                            $rujukan_val = $rbk['rujukan'] ?? ($item->dataPemeriksaan->rujukan ?? '-');
+                            $satuan_val = $rbk['satuan'] ?? ($item->dataPemeriksaan->satuan ?? '-');
+                        } else {
+                            $rujukan_val = $item->rujukan_by_kondisi ?? ($item->dataPemeriksaan->rujukan ?? '-');
+                            $satuan_val = $item->satuan ?? ($item->dataPemeriksaan->satuan ?? '-');
+                        }
+                    } else {
+                        $rujukan_val = $item->dataPemeriksaan->rujukan ?? '-';
+                        $satuan_val = $item->dataPemeriksaan->satuan ?? ($item->satuan ?? '-');
+                    }
+
+                    // Keterangan (prioritaskan calculated_keterangan)
+                    $keterangan_val = $item->calculated_keterangan ?? ($item->keterangan ?? '-');
+
+                    // Masukkan ke all_data
+                    $all_data[] = [
+                        'type' => 'row',
+                        'data_pemeriksaan' => $nama_pemeriksaan,
+                        'hasil_pengujian' => $hasil_pengujian,
+                        'rujukan' => $rujukan_val,
+                        'satuan' => $satuan_val,
+                        'keterangan' => $keterangan_val
+                    ];
                 }
             }
+
 
             // 2. KIMIA - AMBIL DARI $kimia
             if(!empty($kimia) && $kimia->count() > 0) {
@@ -355,8 +386,8 @@
             // Hitung jumlah baris maksimal per halaman
             // Halaman pertama membutuhkan lebih banyak ruang untuk data pasien
             // Jadi kita sesuaikan jumlah baris per halaman
-            $max_rows_page1 = 22; // Lebih sedikit karena ada data pasien
-            $max_rows_other = 26; // Lebih banyak untuk halaman selanjutnya
+            $max_rows_page1 = 27; // Lebih sedikit karena ada data pasien
+            $max_rows_other = 27; // Lebih banyak untuk halaman selanjutnya
 
             // Bagi data ke dalam halaman
             $pages = [];
@@ -433,10 +464,10 @@
                     <table style='border-collapse:collapse; border:none;' border='0' width='100%'>
                         <tr bgcolor="#E1E1E1">
                             <td align="center" style="width:200px; padding-left: 15px; white-space: nowrap; overflow: hidden;">JENIS PEMERIKSAAN</td>
-                            <td align="center" style="width:200px; white-space: nowrap; overflow: hidden;">HASIL</td>
+                            <td align="center" style="width:50px; white-space: nowrap; overflow: hidden;">HASIL</td>
                             <td align="center" style="width:100px; white-space: nowrap; overflow: hidden;">NILAI RUJUKAN</td>
                             <td align="center" style="width:50px; white-space: nowrap; overflow: hidden;">SATUAN</td>
-                            <td align="center" style="width:50px; white-space: nowrap; overflow: hidden;">KETERANGAN</td>
+                            <td align="center" style="width:100px; white-space: nowrap; overflow: hidden;">KETERANGAN</td>
                         </tr>
                         <tr>
                             <td colspan="5" align="center" style="padding: 50px;">
@@ -466,100 +497,90 @@
                         @endif
                     </div>
 
-                    <!-- JUDUL DAN DATA PASIEN HANYA DI HALAMAN PERTAMA -->
-                    @if($page_counter == 1)
+                    <!-- JUDUL DAN DATA PASIEN DI SETIAP HALAMAN (TEPAT SAMA UKURAN & STYLE) -->
                     <div class="judul-container">
                         <h2>HASIL PEMERIKSAAN LABORATORIUM</h2>
                         <div class="title-line"></div>
                     </div>
 
                     <table style='border-collapse:collapse; border:none;' border='0' width='100%'>
+                        <!-- ROW 1 -->
                         <tr>
-                            <td style='width:10px'></td>
-                            <td style='width:100px'><b>Nama</b></td>
-                            <td style='width:10px' align='center'><b>:</b></td>
-                            <td style='width:200px'><b>{{ $nama }} / ({{ $sex }})</b></td>
-                            <td style='width:50px'></td>
-                            <td style='width:100px'><b>No. Lab</b></td>
-                            <td style='width:10px' align='center'><b>:</b></td>
-                            <td style='width:180px'><b>{{ $no_lab }} / {{ $no_rm }}</b></td>
-                            <td style='width:10px'></td>
-                        </tr>
-
-                        <tr>
-                            <td style='width:10px'></td>
-                            <td><b>Tgl Lahir/Umur</b></td>
-                            <td align='center'><b>:</b></td>
-                            <td style='white-space: nowrap;'>
-                                <b>{{ $tgl_lahir }} / {{ $umur_tahun }} Tahun {{ $umur_bulan }} Bulan {{ $umur_hari }} Hari</b>
+                            <td width="10"></td>
+                            <td width="110"><b>Nama</b></td>
+                            <td width="10" align="center"><b>:</b></td>
+                            <td colspan="3">
+                                <b>{{ $nama }} / ({{ $sex }})</b>
                             </td>
-                            <td></td>
-                            <td><b>Waktu Periksa</b></td>
-                            <td align='center'><b>:</b></td>
-                            <td><b>{{ $created_at }}</b></td>
-                            <td></td>
+
+                            <td width="100"><b>No. Lab</b></td>
+                            <td width="10" align="center"><b>:</b></td>
+                            <td width="180"><b>{{ $no_lab }} / {{ $no_rm }}</b></td>
                         </tr>
 
+                        <!-- ROW 2 -->
                         <tr>
                             <td></td>
-                            <td><b>Alamat</b></td>
-                            <td align='center'><b>:</b></td>
-                            <td><b>{{ $alamat }}</b></td>
-                            <td></td>
-                            <td><b>Waktu Validasi</b></td>
-                            <td align='center'><b>:</b></td>
-                            <td><b>{{ $waktu_validasi }}</b></td>
-                            <td></td>
+                            <td><b>Tgl Lahir / Umur</b></td>
+                            <td align="center"><b>:</b></td>
+                            <td colspan="3">
+                                <b>{{ $tgl_lahir }} / {{ $pasien->umur }}</b>
+                            </td>
+
+                            <td><b>Waktu Periksa</b></td>
+                            <td align="center"><b>:</b></td>
+                            <td><b>{{ $created_at }}</b></td>
                         </tr>
 
+                        <!-- ROW 3 (ALAMAT PANJANG) -->
+                        <tr>
+                            <td></td>
+                            <td valign="top"><b>Alamat</b></td>
+                            <td valign="top" align="center"><b>:</b></td>
+                            <td colspan="3" style="word-wrap:break-word; white-space:normal;">
+                                <b>{{ $alamat }}</b>
+                            </td>
+
+                            <td><b>Waktu Validasi</b></td>
+                            <td align="center"><b>:</b></td>
+                            <td><b>{{ $waktu_validasi_pasien }}</b></td>
+                        </tr>
+
+                        <!-- ROW 4 -->
                         <tr>
                             <td></td>
                             <td><b>Pengirim</b></td>
-                            <td align='center'><b>:</b></td>
-                            <td><b>{{ $dokter }}</b></td>
-                            <td></td>
+                            <td align="center"><b>:</b></td>
+                            <td colspan="3"><b>{{ $dokter }}</b></td>
+
                             <td><b>Asal Kunjungan</b></td>
-                            <td align='center'><b>:</b></td>
-                            <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><b>{{ $ruang }}</b></td>
-                            <td></td>
+                            <td align="center"><b>:</b></td>
+                            <td style="white-space:normal;"><b>{{ $ruang }}</b></td>
                         </tr>
 
+                        <!-- ROW 5 -->
                         <tr>
                             <td></td>
                             <td><b>Penjamin</b></td>
-                            <td align='center'><b>:</b></td>
-                            <td><b>{{ $penjamin }}</b></td>
-                            <td></td>
-                            <td colspan='4'></td>
-                            <td></td>
+                            <td align="center"><b>:</b></td>
+                            <td colspan="3"><b>{{ $penjamin }}</b></td>
+
+                            <td colspan="3"></td>
                         </tr>
                     </table>
+
                     <p></p>
-                    @endif
 
                     <!-- TABEL HASIL PEMERIKSAAN -->
                     <table style='border-collapse:collapse; border:none;' border='0' width='100%'>
-                        @if($page_counter == 1)
-                        <!-- Header tabel untuk halaman pertama -->
+                        <!-- HEADER TABEL: SAMA PERSIS UNTUK SETIAP HALAMAN -->
                         <tr bgcolor="#E1E1E1">
                             <td align="center" style="width:200px; padding-left: 15px; white-space: nowrap; overflow: hidden;">JENIS PEMERIKSAAN</td>
-                            <td align="center" style="width:200px; white-space: nowrap; overflow: hidden;">HASIL</td>
-                            <td align="center" style="width:100px; white-space: nowrap; overflow: hidden;">NILAI RUJUKAN</td>
-                            <td align="center" style="width:50px; white-space: nowrap; overflow: hidden;">SATUAN</td>
-                            <td align="center" style="width:50px; white-space: nowrap; overflow: hidden;">KETERANGAN</td>
+                            <td align="center" style="width:50px; white-space: nowrap; overflow: hidden;">HASIL</td>
+                            <td align="center" style="width:200px; white-space: nowrap; overflow: hidden;">NILAI RUJUKAN</td>
+                            <td align="center" style="width:100px; white-space: nowrap; overflow: hidden;">SATUAN</td>
+                            <td align="center" style="width:100px; white-space: nowrap; overflow: hidden;">KETERANGAN</td>
                         </tr>
-                        @else
-                        <!-- Tambahkan spacer untuk halaman selanjutnya -->
-                        <tr><td colspan="5" style="height: 20px;"></td></tr>
-                        <!-- Header tabel untuk halaman berikutnya -->
-                        <tr bgcolor="#E1E1E1">
-                            <td align="center" style="width:200px; padding-left: 15px; white-space: nowrap; overflow: hidden;">JENIS PEMERIKSAAN</td>
-                            <td align="center" style="width:200px; white-space: nowrap; overflow: hidden;">HASIL</td>
-                            <td align="center" style="width:100px; white-space: nowrap; overflow: hidden;">NILAI RUJUKAN</td>
-                            <td align="center" style="width:50px; white-space: nowrap; overflow: hidden;">SATUAN</td>
-                            <td align="center" style="width:50px; white-space: nowrap; overflow: hidden;">KETERANGAN</td>
-                        </tr>
-                        @endif
 
                         @php
                             $baris = 1;
@@ -608,9 +629,9 @@
 
                                 <tr bgcolor="{{ $warna }}">
                                     <td style='width:200px; height:20px; padding-left: 15px; white-space: nowrap; overflow: hidden;'>{{ $item['data_pemeriksaan'] ?? '' }}</td>
-                                    <td align='center' style='width:200px; white-space: nowrap; overflow: hidden;'>{{ $item['hasil_pengujian'] ?? '' }}</td>
-                                    <td align='center' style='width:100px; white-space: nowrap; overflow: hidden;'>{{ $item['rujukan'] ?? '' }}</td>
-                                    <td align='center' style='width:50px; white-space: nowrap; overflow: hidden;'>{{ $item['satuan'] ?? '' }}</td>
+                                    <td align='center' style='width:100px; white-space: nowrap; overflow: hidden;'>{{ $item['hasil_pengujian'] ?? '' }}</td>
+                                    <td align='center' style='width:200px; white-space: nowrap; overflow: hidden;'>{{ $item['rujukan'] ?? '' }}</td>
+                                    <td align='center' style='width:1000px; white-space: nowrap; overflow: hidden;'>{{ $item['satuan'] ?? '' }}</td>
                                     <td align='center' style='width:50px; white-space: nowrap; overflow: hidden; color: {{ $textColor }}; font-weight: bold;'>
                                         {{ $textDisplay }}
                                     </td>
@@ -656,12 +677,14 @@
                                     <div>: Critical High</div>
                                 </div>
                             </td>
+                            <td colspan="1">&nbsp;</td>
                             <td style="width: 200px; vertical-align: top; text-align: left; padding-left: 15px;">
-                                Jambi, {{ $today }}<br>
+                                Jambi, {{ $waktu_ttd }}<br>
                                 Dokter Penanggung Jawab,<br>
                                 <img src="{{ $qrCodePath }}" alt="QR Code" width="90" height="90"><br>
                                 <b>{{ $dokter_penanggung_jawab }}</b>
                             </td>
+
                         </tr>
                     </table>
                     @else
@@ -681,6 +704,7 @@
             @php $page_counter++; @endphp
             @endforeach
         @endif
+
     </div>
 </body>
 </html>

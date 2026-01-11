@@ -26,4 +26,13 @@ class UjiPemeriksaan extends Model
     {
         return $this->belongsTo(Pasien::class, 'no_lab', 'no_lab');
     }
+
+    public function dataPemeriksaan()
+    {
+        return $this->hasMany(
+            DataPemeriksaan::class,
+            'kode_uji_pemeriksaan',   // di data_pemeriksaan
+            'kode_pemeriksaan'       // di uji_pemeriksaan
+        );
+    }
 }
