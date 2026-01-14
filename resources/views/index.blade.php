@@ -259,6 +259,7 @@
                                                 </form>
                                             </div>
                                         </th>
+                                        <th>Dokter</th>
                                         <th>
                                             Asal Kunjungan
                                             <div style="margin-top: 5px;">
@@ -279,6 +280,7 @@
                                                 </form>
                                             </div>
                                         </th>
+
                                         <th>
                                             Penjamin
                                             <div style="margin-top: 5px;">
@@ -359,6 +361,7 @@
                                         <td>{{ $patient->nomor_registrasi ?? '-'}}</td>
                                         <td>{{ $patient->rm_pasien ?? '-'}}</td>
                                         <td>{{ $patient->nama_pasien ?? '-'}}</td>
+					<td>{{ $patient->pengirim ?? '-'}}</td>
                                         <td>{{ $patient->ket_klinik ?? '-'}}</td>
                                         <td>{{ $patient->nota ?? '-'}}</td>
                                         <td>

@@ -257,33 +257,68 @@ class LisMappingController extends Controller
     public function saveManualRowHematology(Request $request)
     {
         try {
-            // Validasi
             $request->validate([
                 'jenis_pengujian' => 'required',
                 'id_data_pemeriksaan' => 'required',
                 'no_lab' => 'required',
             ]);
 
-            // Insert data baru
-            $id = DB::table('pemeriksaan_hematology')
-                ->insertGetId([
-                    'no_lab' => $request->no_lab,
-                    'jenis_pengujian' => $request->jenis_pengujian,
-                    'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
-                    'satuan_hasil_pengujian' => $request->satuan_hasil_pengujian,
-                    'rujukan' => $request->rujukan,
-                    'hasil_pengujian' => $request->hasil_pengujian,
-                    'keterangan' => $request->keterangan,
-                    'status_pemeriksaan' => 'selesai',
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ], 'id_pemeriksaan_hematology'); // ✅ INI KUNCI
+            // Kunci sesuai UNIQUE CONSTRAINT database
+            $where = [
+                'no_lab' => $request->no_lab,
+                'jenis_pengujian' => $request->jenis_pengujian,
+            ];
 
+            // Cek apakah sudah ada
+            $existing = DB::table('pemeriksaan_hematology')
+                ->where($where)
+                ->first();
+
+            if ($existing) {
+                // ========================
+                // UPDATE (row yg sama)
+                // ========================
+                DB::table('pemeriksaan_hematology')
+                    ->where('id_pemeriksaan_hematology', $existing->id_pemeriksaan_hematology)
+                    ->update([
+                        'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
+                        'satuan_hasil_pengujian' => $request->satuan_hasil_pengujian,
+                        'rujukan' => $request->rujukan,
+                        'hasil_pengujian' => $request->hasil_pengujian,
+                        'keterangan' => $request->keterangan,
+                        'status_pemeriksaan' => 'selesai',
+                        'updated_at' => now(),
+                    ]);
+
+                return response()->json([
+                    'success' => true,
+                    'mode' => 'update',
+                    'id_pemeriksaan_hematology' => $existing->id_pemeriksaan_hematology,
+                    'message' => 'Data diperbarui (no_lab + jenis_pengujian)'
+                ]);
+            }
+
+            // ========================
+            // INSERT (jika belum ada)
+            // ========================
+            $id = DB::table('pemeriksaan_hematology')->insertGetId([
+                'no_lab' => $request->no_lab,
+                'jenis_pengujian' => $request->jenis_pengujian,
+                'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
+                'satuan_hasil_pengujian' => $request->satuan_hasil_pengujian,
+                'rujukan' => $request->rujukan,
+                'hasil_pengujian' => $request->hasil_pengujian,
+                'keterangan' => $request->keterangan,
+                'status_pemeriksaan' => 'selesai',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ], 'id_pemeriksaan_hematology');
 
             return response()->json([
                 'success' => true,
+                'mode' => 'insert',
                 'id_pemeriksaan_hematology' => $id,
-                'message' => 'Data berhasil disimpan'
+                'message' => 'Data baru disimpan'
             ]);
 
         } catch (\Exception $e) {

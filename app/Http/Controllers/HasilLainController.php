@@ -707,6 +707,7 @@ class HasilLainController extends Controller
 
         return '-';
     }
+
     public function getJenisPemeriksaanList()
     {
         try {
@@ -731,7 +732,6 @@ class HasilLainController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'no_lab' => 'required|exists:pasien,no_lab',
-            'jenis_pemeriksaan' => 'required|string|max:100',
             'id_data_pemeriksaan' => 'required|exists:data_pemeriksaan,id_data_pemeriksaan'
         ]);
 
@@ -746,61 +746,58 @@ class HasilLainController extends Controller
         DB::beginTransaction();
 
         try {
+            // Ambil master test
+            $dp = DataPemeriksaan::findOrFail($request->id_data_pemeriksaan);
 
-            /**
-             * ==============================
-             * JEDA ANTRIAN (PENTING)
-             * ==============================
-             * - Menghindari tabrakan insert
-             * - Aman untuk input massal (±50 data)
-             * - 100ms per request
-             */
-            usleep(100000); // 0.5 detik
+            // Kunci baris ini agar tidak race condition
+            $existing = HasilPemeriksaanLain::where('no_lab', $request->no_lab)
+                ->where('id_data_pemeriksaan', $request->id_data_pemeriksaan)
+                ->lockForUpdate()
+                ->first();
 
-            $dataPemeriksaan = DataPemeriksaan::findOrFail($request->id_data_pemeriksaan);
-
-            $hasilLain = HasilPemeriksaanLain::create([
-                'no_lab' => $request->no_lab,
-                'jenis_pengujian' => $dataPemeriksaan->data_pemeriksaan,
-                'id_data_pemeriksaan' => $request->id_data_pemeriksaan,
+            $payload = [
+                'jenis_pengujian' => $dp->data_pemeriksaan,
+                'satuan_hasil_pengujian' => $dp->satuan,
+                'rujukan' => $dp->rujukan,
                 'hasil_pengujian' => $request->hasil_pengujian,
-                'satuan_hasil_pengujian' => $dataPemeriksaan->satuan,
-                'rujukan' => $dataPemeriksaan->rujukan,
                 'keterangan' => $request->hasil_pengujian
-                    ? $this->determineKeterangan($request->hasil_pengujian, $dataPemeriksaan->rujukan)
+                    ? $this->determineKeterangan($request->hasil_pengujian, $dp->rujukan)
                     : '-',
-                'status_pemeriksaan' => 'selesai'
-            ]);
+                'status_pemeriksaan' => 'selesai',
+            ];
+
+            if ($existing) {
+                // UPDATE
+                $existing->update($payload);
+                $hasilLain = $existing;
+            } else {
+                // INSERT
+                $hasilLain = HasilPemeriksaanLain::create(array_merge($payload, [
+                    'no_lab' => $request->no_lab,
+                    'id_data_pemeriksaan' => $request->id_data_pemeriksaan
+                ]));
+            }
 
             Pasien::where('no_lab', $request->no_lab)
-                ->update(['updated_at' => now()->timezone('Asia/Jakarta')]);
+                ->update(['updated_at' => now('Asia/Jakarta')]);
 
             DB::commit();
 
-            LogActivityService::log(
-                action: 'CREATE',
-                module: 'Hasil Pemeriksaan Lain',
-                description: 'Tambah hasil pemeriksaan lain manual dengan no_lab: ' . $request->no_lab,
-                newData: $hasilLain->toArray()
-            );
-
             return response()->json([
                 'success' => true,
-                'message' => 'Data pemeriksaan berhasil ditambahkan',
+                'message' => $existing ? 'Data diperbarui' : 'Data ditambahkan',
                 'data' => $hasilLain
             ]);
 
-        } catch (\Exception $e) {
-
+        } catch (\Throwable $e) {
             DB::rollBack();
 
             return response()->json([
                 'success' => false,
-                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+                'message' => $e->getMessage()
             ], 500);
         }
     }
-
 
     public function searchDataPemeriksaan(Request $request)
     {
@@ -982,7 +979,7 @@ class HasilLainController extends Controller
                     'jenis_pemeriksaan_1.id_jenis_pemeriksaan_1',
                     'jenis_pemeriksaan_1.nama_pemeriksaan as jenis_pemeriksaan'
                 ])
-                ->orderBy('data_pemeriksaan.urutan', 'asc')
+                ->orderBy('data_pemeriksaan.kode_pemeriksaan', 'asc')
                 ->get();
 
             // Jika nama_pemeriksaan kosong, gunakan 'Lainnya'

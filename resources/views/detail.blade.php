@@ -310,6 +310,7 @@
                             </div>
 
                             <!-- waktu_ttd -->
+                            @if(Auth::check() && Auth::user()->name === 'karu')
                             <div class="col-xxl-3 col-lg-4 col-sm-6">
                                 <div class="mb-3">
                                     <label class="form-label">Waktu Tanda Tangan</label>
@@ -323,6 +324,8 @@
                                     </div>
                                 </div>
                             </div>
+                            @endif
+
                             <!-- Data pasien display ends -->
                         </div>
                     </div>
@@ -10404,7 +10407,6 @@
                                 name="hematologi[${newIndex}][id_data_pemeriksaan]"
                                 class="kode-pemeriksaan-input-hematologi"
                                 value="">
-
                         </div>
                     </td>
                     <td class="hasil-cell">
@@ -10456,6 +10458,9 @@
 
             $table.append(newRow);
 
+            // Inisialisasi event listener untuk row baru
+            initHematologiRowEvents($table.find('tr:last-child'));
+
             // Focus ke input search
             setTimeout(() => {
                 $table.find('tr:last-child .kode-search-input-hematologi').focus();
@@ -10463,6 +10468,30 @@
 
             console.log('Row hematologi baru ditambahkan:', manualId);
         });
+
+        // ==============================
+        // INISIALISASI EVENT LISTENER UNTUK ROW HEMATOLOGI
+        // ==============================
+        function initHematologiRowEvents($row) {
+            // Event untuk input hasil pada row baru
+            $row.find('.hasil-input-hematologi').on('input', function() {
+                const $input = $(this);
+                updateHematologiKeterangan($input);
+
+                // Auto-save jika sudah ada ID database
+                const $row = $input.closest('tr');
+                const hematologiId = getHematologiRowId($row);
+
+                if (hematologiId && !hematologiId.toString().startsWith('manual_hematologi_')) {
+                    saveHematologiHasilRealtime($input, hematologiId);
+                }
+            });
+
+            // Event untuk keyboard navigation
+            $row.find('.hasil-input-hematologi').on('keydown', function(e) {
+                handleExcelNavigation(e, $(this));
+            });
+        }
 
         // ==============================
         // SEARCH DATA PEMERIKSAAN HEMATOLOGI
@@ -10518,9 +10547,9 @@
         });
 
         // ==============================
-        // KLIK ITEM SEARCH HEMATOLOGI
+        // KLIK ITEM SEARCH HEMATOLOGI - REVISI UTAMA
         // ==============================
-        $(document).on('click', '.kode-search-item-hematologi', function(e) {
+        $(document).on('click', '.kode-search-item-hematologi', async function(e) {
             e.preventDefault();
 
             const $item = $(this);
@@ -10530,7 +10559,6 @@
             const rujukan = $item.data('rujukan');
             const ch = $item.data('ch');
             const cl = $item.data('cl');
-            const metode = $item.data('metode');
 
             const $row = $(this).closest('tr');
             const $searchInput = $row.find('.kode-search-input-hematologi');
@@ -10538,16 +10566,11 @@
             const currentId = getHematologiRowId($row);
             const index = $row.data('index');
 
-            // 1. Update UI
+            // 1. Update UI dengan data dari pencarian
             $searchInput.val(namaPemeriksaan);
             $row.find('.kode-pemeriksaan-input-hematologi').val(idDataPemeriksaan);
 
-            // $row.find('.status-mapping-hematologi').html(
-            //     `<small class="text-success">
-            //         <i class="ri-links-line me-1"></i> ${namaPemeriksaan}
-            //     </small>`
-            // );
-
+            // Update data attributes pada input hasil
             $hasilInput
                 .attr('data-id-data-pemeriksaan', idDataPemeriksaan)
                 .attr('data-jenis', namaPemeriksaan)
@@ -10561,10 +10584,9 @@
                 .data('ch', ch)
                 .data('cl', cl);
 
-            // TAMPILKAN DATA RUJUKAN DEFAULT DARI ITEM PENCARIAN
-            // HANYA TANPA BADGE K (karena belum tahu apakah dari kondisi)
+            // Tampilkan data default
             $row.find('.satuan-display').text(satuan || '-');
-            $row.find('.rujukan-display').text(rujukan || '-'); // TANPA BADGE K
+            $row.find('.rujukan-display').text(rujukan || '-');
             $row.find('.ch-display').text(ch || '-');
             $row.find('.cl-display').text(cl || '-');
 
@@ -10587,92 +10609,105 @@
             };
 
             let url;
+            let isNewRow = false;
 
             if (isManualRow) {
                 // Row baru: CREATE
                 url = '{{ route("hematologi.save-manual-row") }}';
-                dataToSend.manual_id = currentId; // hanya untuk tracking di frontend
+                dataToSend.manual_id = currentId;
+                isNewRow = true;
             } else {
-                // Row sudah ada: UPDATE - tambahkan id_pemeriksaan_hematology
+                // Row sudah ada: UPDATE
                 url = '{{ route("hematologi.update-row") }}';
-                dataToSend.id_pemeriksaan_hematology = currentId; // INI YANG PENTING!
+                dataToSend.id_pemeriksaan_hematology = currentId;
             }
 
-            // 3. Kirim ke server
-            $.ajax({
-                url: url,
-                method: 'POST', // selalu POST
-                data: dataToSend,
-                beforeSend: function() {
-                    $row.addClass('table-warning');
-                },
-                success: function(response) {
-                    if (response.success) {
-                        // Jika ini row baru, update ID-nya dari manual ke database ID
-                        if (isManualRow && response.id_pemeriksaan_hematology) {
-                            const newId = response.id_pemeriksaan_hematology;
+            try {
+                // 3. Kirim ke server untuk save/update
+                $row.addClass('table-warning');
 
-                            // Tetap gunakan data-hematologi-id (JANGAN HAPUS)
-                            $row.attr('data-hematologi-id', newId);
-                            $row.data('hematologi-id', newId);
+                const response = await $.ajax({
+                    url: url,
+                    method: 'POST',
+                    data: dataToSend
+                });
 
-                            // Simpan juga sebagai data-id supaya kompatibel
-                            $row.attr('data-id', newId);
-                            $row.data('id', newId);
+                if (response.success) {
+                    // Jika ini row baru, update ID-nya dari manual ke database ID
+                    let newHematologiId = currentId;
+                    if (isNewRow && response.id_pemeriksaan_hematology) {
+                        newHematologiId = response.id_pemeriksaan_hematology;
 
-                            $hasilInput.attr('data-id', newId);
-                            $hasilInput.data('id', newId);
+                        // Update semua atribut ID
+                        $row.attr('data-hematologi-id', newHematologiId);
+                        $row.data('hematologi-id', newHematologiId);
+                        $row.attr('data-id', newHematologiId);
+                        $row.data('id', newHematologiId);
 
-                            // Update hidden input id (form)
-                            $row.find('input[name*="[id]"]').val(newId);
+                        $hasilInput.attr('data-id', newHematologiId);
+                        $hasilInput.data('id', newHematologiId);
 
-                            console.log('Hematologi: manual row saved, replaced id ->', newId);
-                        }
+                        // Update hidden input id (form)
+                        $row.find('input[name*="[id]"]').val(newHematologiId);
 
-                        $row.removeClass('table-warning').addClass('table-success');
-
-                        // AMBIL RUJUKAN BERDASARKAN KONDISI
-                        // Pastikan kita pakai ID terbaru kalau tersedia
-                        const hematologiIdForFetch = (isManualRow && response.id_pemeriksaan_hematology)
-                            ? response.id_pemeriksaan_hematology
-                            : getHematologiRowId($row);
-
-                        fetchRujukanByKondisiHematologi(idDataPemeriksaan, $row, $hasilInput, hematologiIdForFetch)
-                            .then(() => {
-                                if ($hasilInput.val()) {
-                                    updateHematologiKeterangan($hasilInput);
-                                }
-                            });
-
-                        // Toast sukses
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('success', 'Data hematologi berhasil disimpan: ' + namaPemeriksaan);
-                        }
-
-                        setTimeout(() => {
-                            $row.removeClass('table-success');
-                        }, 2000);
-                    } else {
-                        if (typeof window.showToast === 'function') {
-                            window.showToast('danger', response.message || 'Gagal menyimpan data');
-                        }
-                        $row.removeClass('table-warning');
-                    }
-                },
-                error: function(xhr) {
-                    console.error('Save error:', xhr);
-                    $row.removeClass('table-warning');
-
-                    let errorMessage = 'Gagal menyimpan data';
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
+                        console.log('Hematologi: manual row saved, replaced id ->', newHematologiId);
                     }
 
+                    // 4. AMBIL RUJUKAN BERDASARKAN KONDISI PASAL
+                    const rujukanData = await fetchRujukanByKondisiHematologi(
+                        idDataPemeriksaan,
+                        $row,
+                        $hasilInput,
+                        newHematologiId
+                    );
+
+                    // 5. UPDATE KETERANGAN JIKA SUDAH ADA HASIL
+                    if ($hasilInput.val() && $hasilInput.val().trim() !== '') {
+                        // Gunakan data rujukan dari kondisi jika ada, atau data default
+                        const finalRujukan = rujukanData?.rujukan || rujukan;
+                        const finalCh = rujukanData?.ch || ch;
+                        const finalCl = rujukanData?.cl || cl;
+
+                        // Update data attributes dengan nilai final
+                        $hasilInput
+                            .data('rujukan', finalRujukan)
+                            .data('ch', finalCh)
+                            .data('cl', finalCl)
+                            .attr('data-rujukan', finalRujukan)
+                            .attr('data-ch', finalCh)
+                            .attr('data-cl', finalCl);
+
+                        // Hitung keterangan
+                        await updateHematologiKeterangan($hasilInput);
+                    }
+
+                    $row.removeClass('table-warning').addClass('table-success');
+
+                    // Toast sukses
                     if (typeof window.showToast === 'function') {
-                        window.showToast('danger', errorMessage);
+                        window.showToast('success', 'Data hematologi berhasil disimpan: ' + namaPemeriksaan);
                     }
+
+                    setTimeout(() => {
+                        $row.removeClass('table-success');
+                    }, 2000);
+
+                } else {
+                    throw new Error(response.message || 'Gagal menyimpan data');
                 }
-            });
+            } catch (error) {
+                console.error('Save error:', error);
+                $row.removeClass('table-warning');
+
+                let errorMessage = 'Gagal menyimpan data';
+                if (error.responseJSON && error.responseJSON.message) {
+                    errorMessage = error.responseJSON.message;
+                }
+
+                if (typeof window.showToast === 'function') {
+                    window.showToast('danger', errorMessage);
+                }
+            }
 
             // Focus ke input hasil
             setTimeout(() => {
@@ -10681,21 +10716,22 @@
         });
 
         // ==============================
-        // FETCH RUJUKAN BY KONDISI (HEMATOLOGI)
+        // FETCH RUJUKAN BY KONDISI (HEMATOLOGI) - DIOPTIMALKAN
         // ==============================
-        async function fetchRujukanByKondisiHematologi(idDataPemeriksaan, $row, $hasilInput, overrideHematologiId = null) {
+        async function fetchRujukanByKondisiHematologi(idDataPemeriksaan, $row, $hasilInput, hematologiId = null) {
             if (!idDataPemeriksaan) return null;
 
             const jenisKelamin = $hasilInput.data('jenis-kelamin') || '{{ $pasien->jenis_kelamin }}';
             const umurPasien = $hasilInput.data('umur') || '{{ $data["umur_format"] ?? "" }}';
 
-            // Gunakan override jika diberikan (penting setelah save)
-            const hematologiId = overrideHematologiId ?? getHematologiRowId($row);
+            // Gunakan hematologiId yang diberikan atau ambil dari row
+            const finalHematologiId = hematologiId || getHematologiRowId($row);
+            if (!finalHematologiId) return null;
+
+            const clientKey = idDataPemeriksaan + '_' + finalHematologiId;
+            console.log('fetchRujukanByKondisiHematologi client_key:', clientKey);
 
             try {
-                const clientKey = idDataPemeriksaan + '_' + hematologiId;
-                console.log('fetchRujukanByKondisiHematologi client_key:', clientKey);
-
                 const response = await $.ajax({
                     url: '{{ route("pasien.get-rujukan-by-kondisi-batch") }}',
                     method: 'POST',
@@ -10718,6 +10754,8 @@
                     // Update UI dengan data rujukan by kondisi
                     let rujukanText = rujukanData.rujukan || '-';
                     let satuanText = rujukanData.satuan || $row.find('.satuan-display').text();
+                    let chText = rujukanData.ch || '-';
+                    let clText = rujukanData.cl || '-';
 
                     if (rujukanData.is_from_detail) {
                         rujukanText = `${rujukanData.rujukan} <span class="badge bg-info ms-1 badge-kondisi" title="Rujukan berdasarkan kondisi">K</span>`;
@@ -10729,32 +10767,34 @@
                     // Update tampilan di tabel
                     $row.find('.rujukan-display').html(rujukanText);
                     $row.find('.satuan-display').text(satuanText);
-                    $row.find('.ch-display').text(rujukanData.ch || '-');
-                    $row.find('.cl-display').text(rujukanData.cl || '-');
+                    $row.find('.ch-display').text(chText);
+                    $row.find('.cl-display').text(clText);
 
                     // Update data attributes untuk perhitungan
                     $hasilInput
                         .data('rujukan', rujukanData.rujukan || '')
                         .data('satuan', satuanText)
-                        .data('ch', rujukanData.ch || '')
-                        .data('cl', rujukanData.cl || '')
+                        .data('ch', chText)
+                        .data('cl', clText)
                         .attr('data-rujukan', rujukanData.rujukan || '')
                         .attr('data-satuan', satuanText)
-                        .attr('data-ch', rujukanData.ch || '')
-                        .attr('data-cl', rujukanData.cl || '');
+                        .attr('data-ch', chText)
+                        .attr('data-cl', clText);
 
                     return rujukanData;
                 } else {
                     console.log('fetchRujukanByKondisiHematologi: response tidak mengandung key', clientKey);
+                    return null;
                 }
             } catch (error) {
                 console.error('Error mendapatkan rujukan berdasarkan kondisi (Hematologi):', error);
+                return null;
             }
-
-            return null;
         }
 
-
+        // ==============================
+        // FUNGSI UPDATE KETERANGAN HEMATOLOGI - DIOPTIMALKAN
+        // ==============================
         async function updateHematologiKeterangan($input) {
             const hasil = $input.val().trim();
             const $row = $input.closest('tr');
@@ -10798,11 +10838,14 @@
 
                         console.log('Data setelah update dari kondisi:', { rujukan, ch, cl });
 
-                        // Jangan lupa update data pada input untuk penggunaan selanjutnya
+                        // Update data pada input untuk penggunaan selanjutnya
                         $input
                             .data('rujukan', rujukan)
                             .data('ch', ch)
-                            .data('cl', cl);
+                            .data('cl', cl)
+                            .attr('data-rujukan', rujukan)
+                            .attr('data-ch', ch)
+                            .attr('data-cl', cl);
                     } else {
                         console.log('Tidak ada data rujukan dari kondisi');
                     }
@@ -10815,6 +10858,9 @@
             calculateAndUpdateKeteranganHematologi($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl);
         }
 
+        // ==============================
+        // FUNGSI PERHITUNGAN KETERANGAN HEMATOLOGI - DIOPTIMALKAN
+        // ==============================
         function calculateAndUpdateKeteranganHematologi($input, $keteranganDisplay, $hiddenInput, hasil, rujukan, ch, cl) {
             console.log('Hematologi - Perhitungan dengan:', {
                 hasil,
@@ -10842,8 +10888,8 @@
                 if (ch && ch !== '' && ch !== '-' && ch !== 'null' &&
                     cl && cl !== '' && cl !== '-' && cl !== 'null') {
 
-                    const chNum = parseFloat(ch.toString().replace(',', '.'));
-                    const clNum = parseFloat(cl.toString().replace(',', '.'));
+                    const chNum = parseNumberFromString(ch);
+                    const clNum = parseNumberFromString(cl);
 
                     console.log('Menggunakan CH/CL:', { chNum, clNum, hasilNum });
 
@@ -10876,38 +10922,60 @@
             console.log('Cek CH/CL:', { chStr, clStr, hasilNum });
 
             if (chStr && chStr !== '' && chStr !== '-' && chStr !== 'null') {
-                let chNum;
-                if (chStr.includes('>')) {
-                    chNum = parseFloat(chStr.replace('>', '').replace(',', '.').trim());
-                } else {
-                    chNum = parseFloat(chStr.replace(',', '.'));
-                }
-
+                const chNum = parseNumberFromString(chStr);
                 console.log('Parsed CH:', chNum);
 
-                if (!isNaN(chNum) && !isNaN(hasilNum) && hasilNum > chNum) {
-                    console.log(`✅ HEMATOLOGI CH DETECTED: ${hasilNum} > ${chNum}`);
-                    updateKeteranganDisplay($keteranganDisplay, 'CH');
-                    $hiddenInput.val('CH');
-                    return;
+                if (!isNaN(chNum) && !isNaN(hasilNum)) {
+                    // Handle berbagai format: >, >=, atau angka biasa
+                    if (chStr.includes('>=')) {
+                        if (hasilNum >= chNum) {
+                            console.log(`✅ HEMATOLOGI CH DETECTED: ${hasilNum} >= ${chNum}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'CH');
+                            $hiddenInput.val('CH');
+                            return;
+                        }
+                    } else if (chStr.includes('>')) {
+                        if (hasilNum > chNum) {
+                            console.log(`✅ HEMATOLOGI CH DETECTED: ${hasilNum} > ${chNum}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'CH');
+                            $hiddenInput.val('CH');
+                            return;
+                        }
+                    } else if (hasilNum > chNum) {
+                        console.log(`✅ HEMATOLOGI CH DETECTED: ${hasilNum} > ${chNum}`);
+                        updateKeteranganDisplay($keteranganDisplay, 'CH');
+                        $hiddenInput.val('CH');
+                        return;
+                    }
                 }
             }
 
             if (clStr && clStr !== '' && clStr !== '-' && clStr !== 'null') {
-                let clNum;
-                if (clStr.includes('<')) {
-                    clNum = parseFloat(clStr.replace('<', '').replace(',', '.').trim());
-                } else {
-                    clNum = parseFloat(clStr.replace(',', '.'));
-                }
-
+                const clNum = parseNumberFromString(clStr);
                 console.log('Parsed CL:', clNum);
 
-                if (!isNaN(clNum) && !isNaN(hasilNum) && hasilNum < clNum) {
-                    console.log(`✅ HEMATOLOGI CL DETECTED: ${hasilNum} < ${clNum}`);
-                    updateKeteranganDisplay($keteranganDisplay, 'CL');
-                    $hiddenInput.val('CL');
-                    return;
+                if (!isNaN(clNum) && !isNaN(hasilNum)) {
+                    // Handle berbagai format: <, <=, atau angka biasa
+                    if (clStr.includes('<=')) {
+                        if (hasilNum <= clNum) {
+                            console.log(`✅ HEMATOLOGI CL DETECTED: ${hasilNum} <= ${clNum}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'CL');
+                            $hiddenInput.val('CL');
+                            return;
+                        }
+                    } else if (clStr.includes('<')) {
+                        if (hasilNum < clNum) {
+                            console.log(`✅ HEMATOLOGI CL DETECTED: ${hasilNum} < ${clNum}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'CL');
+                            $hiddenInput.val('CL');
+                            return;
+                        }
+                    } else if (hasilNum < clNum) {
+                        console.log(`✅ HEMATOLOGI CL DETECTED: ${hasilNum} < ${clNum}`);
+                        updateKeteranganDisplay($keteranganDisplay, 'CL');
+                        $hiddenInput.val('CL');
+                        return;
+                    }
                 }
             }
 
@@ -10950,99 +11018,99 @@
             // 3. CEK RUJUKAN NUMERIK
             console.log('Cek rujukan numerik:', rujukanStr);
 
-            // Format range: "1 - 90" atau "1-90"
-            if (rujukanStr.includes('-') && !rujukanStr.includes('<') && !rujukanStr.includes('>')) {
-                // Bersihkan whitespace
-                const cleanStr = rujukanStr.replace(/\s+/g, '');
-                const parts = cleanStr.split('-');
+            // Parse rujukan untuk berbagai format
+            const parsedRujukan = parseRujukanValue(rujukanStr);
 
-                console.log('Range parts:', parts);
+            if (parsedRujukan) {
+                console.log('Parsed rujukan:', parsedRujukan);
 
-                if (parts.length === 2) {
-                    const min = parseFloat(parts[0].replace(',', '.'));
-                    const max = parseFloat(parts[1].replace(',', '.'));
-
-                    console.log('Parsed range:', { min, max, hasilNum });
-
-                    if (!isNaN(min) && !isNaN(max)) {
-                        if (hasilNum < min) {
-                            console.log(`✅ HEMATOLOGI L DETECTED: ${hasilNum} < ${min}`);
-                            updateKeteranganDisplay($keteranganDisplay, 'L');
-                            $hiddenInput.val('L');
-                        } else if (hasilNum > max) {
-                            console.log(`✅ HEMATOLOGI H DETECTED: ${hasilNum} > ${max}`);
-                            updateKeteranganDisplay($keteranganDisplay, 'H');
-                            $hiddenInput.val('H');
-                        } else {
-                            console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} dalam range ${min}-${max}`);
-                            updateKeteranganDisplay($keteranganDisplay, '-');
-                            $hiddenInput.val('-');
-                        }
-                        return;
-                    }
-                }
-            }
-
-            // Format: "< X"
-            if (rujukanStr.startsWith('<')) {
-                const batas = parseFloat(rujukanStr.replace('<', '').replace(',', '.').trim());
-                console.log('Parsed < format:', { batas, hasilNum });
-
-                if (!isNaN(batas)) {
-                    if (hasilNum >= batas) {
-                        console.log(`✅ HEMATOLOGI H DETECTED: ${hasilNum} ≥ ${batas}`);
+                if (parsedRujukan.type === 'range') {
+                    // Format range: "1 - 90" atau "1-90"
+                    const { min, max } = parsedRujukan;
+                    if (hasilNum < min) {
+                        console.log(`✅ HEMATOLOGI L DETECTED: ${hasilNum} < ${min}`);
+                        updateKeteranganDisplay($keteranganDisplay, 'L');
+                        $hiddenInput.val('L');
+                    } else if (hasilNum > max) {
+                        console.log(`✅ HEMATOLOGI H DETECTED: ${hasilNum} > ${max}`);
                         updateKeteranganDisplay($keteranganDisplay, 'H');
                         $hiddenInput.val('H');
                     } else {
-                        console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} < ${batas}`);
+                        console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} dalam range ${min}-${max}`);
                         updateKeteranganDisplay($keteranganDisplay, '-');
                         $hiddenInput.val('-');
                     }
                     return;
-                }
-            }
+                } else if (parsedRujukan.type === 'less_than') {
+                    // Format: "< X" atau "<= X"
+                    const { value, inclusive } = parsedRujukan;
+                    if (inclusive) {
+                        if (hasilNum <= value) {
+                            console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} <= ${value}`);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            console.log(`✅ HEMATOLOGI H DETECTED: ${hasilNum} > ${value}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
+                        }
+                    } else {
+                        if (hasilNum < value) {
+                            console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} < ${value}`);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            console.log(`✅ HEMATOLOGI H DETECTED: ${hasilNum} >= ${value}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'H');
+                            $hiddenInput.val('H');
+                        }
+                    }
+                    return;
+                } else if (parsedRujukan.type === 'greater_than') {
+                    // Format: "> X" atau ">= X"
+                    const { value, inclusive } = parsedRujukan;
+                    if (inclusive) {
+                        if (hasilNum >= value) {
+                            console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} >= ${value}`);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            console.log(`✅ HEMATOLOGI L DETECTED: ${hasilNum} < ${value}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
+                        }
+                    } else {
+                        if (hasilNum > value) {
+                            console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} > ${value}`);
+                            updateKeteranganDisplay($keteranganDisplay, '-');
+                            $hiddenInput.val('-');
+                        } else {
+                            console.log(`✅ HEMATOLOGI L DETECTED: ${hasilNum} <= ${value}`);
+                            updateKeteranganDisplay($keteranganDisplay, 'L');
+                            $hiddenInput.val('L');
+                        }
+                    }
+                    return;
+                } else if (parsedRujukan.type === 'single_value') {
+                    // Format single value: "X"
+                    const { value } = parsedRujukan;
+                    const tolerance = 0.0001;
 
-            // Format: "> X"
-            if (rujukanStr.startsWith('>')) {
-                const batas = parseFloat(rujukanStr.replace('>', '').replace(',', '.').trim());
-                console.log('Parsed > format:', { batas, hasilNum });
-
-                if (!isNaN(batas)) {
-                    if (hasilNum <= batas) {
-                        console.log(`✅ HEMATOLOGI L DETECTED: ${hasilNum} ≤ ${batas}`);
+                    if (Math.abs(hasilNum - value) < tolerance) {
+                        console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} sama dengan ${value}`);
+                        updateKeteranganDisplay($keteranganDisplay, '-');
+                        $hiddenInput.val('-');
+                    } else if (hasilNum < value) {
+                        console.log(`✅ HEMATOLOGI L DETECTED: ${hasilNum} < ${value}`);
                         updateKeteranganDisplay($keteranganDisplay, 'L');
                         $hiddenInput.val('L');
                     } else {
-                        console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} > ${batas}`);
-                        updateKeteranganDisplay($keteranganDisplay, '-');
-                        $hiddenInput.val('-');
+                        console.log(`✅ HEMATOLOGI H DETECTED: ${hasilNum} > ${value}`);
+                        updateKeteranganDisplay($keteranganDisplay, 'H');
+                        $hiddenInput.val('H');
                     }
                     return;
                 }
-            }
-
-            // Format single value: "X"
-            const singleValue = parseFloat(rujukanStr.replace(',', '.'));
-            if (!isNaN(singleValue)) {
-                console.log('Parsed single value:', { singleValue, hasilNum });
-
-                // Untuk single value, cek apakah hasil sama dengan nilai rujukan
-                const tolerance = 0.0001; // Toleransi kecil untuk floating point
-
-                if (Math.abs(hasilNum - singleValue) < tolerance) {
-                    console.log(`✅ HEMATOLOGI NORMAL: ${hasilNum} sama dengan ${singleValue}`);
-                    updateKeteranganDisplay($keteranganDisplay, '-');
-                    $hiddenInput.val('-');
-                } else if (hasilNum < singleValue) {
-                    console.log(`✅ HEMATOLOGI L DETECTED: ${hasilNum} < ${singleValue}`);
-                    updateKeteranganDisplay($keteranganDisplay, 'L');
-                    $hiddenInput.val('L');
-                } else {
-                    console.log(`✅ HEMATOLOGI H DETECTED: ${hasilNum} > ${singleValue}`);
-                    updateKeteranganDisplay($keteranganDisplay, 'H');
-                    $hiddenInput.val('H');
-                }
-                return;
             }
 
             // Default - tidak ada pola yang cocok
@@ -11051,7 +11119,82 @@
             $hiddenInput.val('-');
         }
 
-        // Fungsi display tetap sama
+        // ==============================
+        // HELPER FUNCTIONS
+        // ==============================
+
+        // Helper untuk parse angka dari string dengan berbagai format
+        function parseNumberFromString(str) {
+            if (!str) return NaN;
+
+            // Hapus simbol >, <, = dan whitespace
+            const cleaned = str.replace(/[><=]/g, '').trim();
+            return parseFloat(cleaned.replace(',', '.'));
+        }
+
+        // Helper untuk parse nilai rujukan
+        function parseRujukanValue(rujukanStr) {
+            if (!rujukanStr) return null;
+
+            const str = rujukanStr.trim();
+
+            // Cek range: "1 - 90" atau "1-90"
+            if (str.includes('-') && !str.includes('<') && !str.includes('>') && !str.includes('=')) {
+                const cleanStr = str.replace(/\s+/g, '');
+                const parts = cleanStr.split('-');
+
+                if (parts.length === 2) {
+                    const min = parseFloat(parts[0].replace(',', '.'));
+                    const max = parseFloat(parts[1].replace(',', '.'));
+
+                    if (!isNaN(min) && !isNaN(max)) {
+                        return { type: 'range', min, max };
+                    }
+                }
+            }
+
+            // Cek <=
+            if (str.includes('<=')) {
+                const value = parseNumberFromString(str);
+                if (!isNaN(value)) {
+                    return { type: 'less_than', value, inclusive: true };
+                }
+            }
+
+            // Cek <
+            if (str.includes('<') && !str.includes('<=')) {
+                const value = parseNumberFromString(str);
+                if (!isNaN(value)) {
+                    return { type: 'less_than', value, inclusive: false };
+                }
+            }
+
+            // Cek >=
+            if (str.includes('>=')) {
+                const value = parseNumberFromString(str);
+                if (!isNaN(value)) {
+                    return { type: 'greater_than', value, inclusive: true };
+                }
+            }
+
+            // Cek >
+            if (str.includes('>') && !str.includes('>=')) {
+                const value = parseNumberFromString(str);
+                if (!isNaN(value)) {
+                    return { type: 'greater_than', value, inclusive: false };
+                }
+            }
+
+            // Cek single value
+            const singleValue = parseFloat(str.replace(',', '.'));
+            if (!isNaN(singleValue)) {
+                return { type: 'single_value', value: singleValue };
+            }
+
+            return null;
+        }
+
+        // Fungsi display keterangan
         function updateKeteranganDisplay($display, keterangan) {
             if (!$display.length) {
                 console.error('Display element tidak ditemukan');
@@ -11105,32 +11248,19 @@
             $display.data('keterangan', keterangan);
         }
 
-        // Event input hasil hematologi
+        // ==============================
+        // AUTO-SAVE HASIL HEMATOLOGI
+        // ==============================
         let hematologiSaveTimers = {};
 
-        $(document).on('input', '.hasil-input-hematologi', function () {
-            const $input = $(this);
-            const $row   = $input.closest('tr');
-
-            const hematologiIdRaw = getHematologiRowId($row);
-            if (!hematologiIdRaw) return;
-
-            const hematologiId = String(hematologiIdRaw);
-
-            const hasil   = $input.val();
-
-            // 1️⃣ HITUNG KETERANGAN
-            updateHematologiKeterangan($input);
-
-            // Ambil keterangan terbaru (SETELAH dihitung)
+        function saveHematologiHasilRealtime($input, hematologiId) {
+            const $row = $input.closest('tr');
+            const hasil = $input.val();
             const keterangan = $row.find('.keterangan-input').val();
 
-            // 2️⃣ STOP JIKA ROW MASIH MANUAL
-            if (!hematologiId || hematologiId.startsWith('manual_hematologi_')) {
-                return;
-            }
+            if (!hematologiId) return;
 
-            // 3️⃣ DEBOUNCE AUTOSAVE
+            // Debounce autosave
             if (hematologiSaveTimers[hematologiId]) {
                 clearTimeout(hematologiSaveTimers[hematologiId]);
             }
@@ -11145,7 +11275,7 @@
                         hasil_pengujian: hasil,
                         keterangan: keterangan
                     },
-                    success: function (res) {
+                    success: function(res) {
                         if (res.success) {
                             $row.addClass('table-success');
                             setTimeout(() => {
@@ -11153,12 +11283,12 @@
                             }, 400);
                         }
                     },
-                    error: function () {
+                    error: function() {
                         $row.addClass('table-danger');
                     }
                 });
-            }, 600); // ⏱️ 600ms setelah user berhenti mengetik
-        });
+            }, 600);
+        }
 
         // Event hapus row hematologi
         $(document).on('click', '.hapus-row-hematologi-btn', function() {
@@ -11171,7 +11301,6 @@
                 return;
             }
             const hematologiId = String(hematologiIdRaw);
-
 
             // ROW MANUAL (BELUM MASUK DB)
             if (hematologiId.startsWith('manual_hematologi_')) {
@@ -11219,6 +11348,39 @@
         // ==============================
         // EXCEL NAVIGATION
         // ==============================
+        function handleExcelNavigation(e, $current) {
+            const $row = $current.closest('tr');
+            const $cell = $current.closest('td');
+            const cellIndex = $cell.index();
+            const $rows = $row.closest('tbody').find('tr');
+            const rowIndex = $rows.index($row);
+
+            switch (e.key) {
+                case 'Enter':
+                case 'ArrowDown':
+                    e.preventDefault();
+                    const $nextRow = $rows.eq(rowIndex + 1);
+                    if ($nextRow.length) {
+                        const $nextInput = $nextRow.find('td').eq(cellIndex).find('.hasil-input-hematologi');
+                        if ($nextInput.length) {
+                            $nextInput.focus().select();
+                        }
+                    }
+                    break;
+
+                case 'ArrowUp':
+                    e.preventDefault();
+                    const $upRow = $rows.eq(rowIndex - 1);
+                    if ($upRow.length) {
+                        const $upInput = $upRow.find('td').eq(cellIndex).find('.hasil-input-hematologi');
+                        if ($upInput.length) {
+                            $upInput.focus().select();
+                        }
+                    }
+                    break;
+            }
+        }
+
         function initHematologiExcelNavigation() {
             // Select all inputs on focus
             $('.hasil-input-hematologi').on('focus', function() {
@@ -11233,45 +11395,22 @@
 
             // Excel-like keyboard navigation
             $('.hasil-input-hematologi').on('keydown', function(e) {
-                const $current = $(this);
-                const $row = $current.closest('tr');
-                const $cell = $current.closest('td');
-                const cellIndex = $cell.index();
-                const $rows = $row.closest('tbody').find('tr');
-                const rowIndex = $rows.index($row);
-
-                switch (e.key) {
-                    case 'Enter':
-                    case 'ArrowDown':
-                        e.preventDefault();
-                        const $nextRow = $rows.eq(rowIndex + 1);
-                        if ($nextRow.length) {
-                            const $nextInput = $nextRow.find('td').eq(cellIndex).find('.hasil-input-hematologi');
-                            if ($nextInput.length) {
-                                $nextInput.focus().select();
-                            }
-                        }
-                        break;
-
-                    case 'ArrowUp':
-                        e.preventDefault();
-                        const $upRow = $rows.eq(rowIndex - 1);
-                        if ($upRow.length) {
-                            const $upInput = $upRow.find('td').eq(cellIndex).find('.hasil-input-hematologi');
-                            if ($upInput.length) {
-                                $upInput.focus().select();
-                            }
-                        }
-                        break;
-                }
+                handleExcelNavigation(e, $(this));
             });
         }
 
-        // Initialize Excel navigation
-        initHematologiExcelNavigation();
+        // Initialize Excel navigation untuk semua row yang ada
+        $(document).ready(function() {
+            initHematologiExcelNavigation();
+
+            // Inisialisasi event untuk row yang sudah ada
+            $('.hematologi-row').each(function() {
+                initHematologiRowEvents($(this));
+            });
+        });
     });
 </script>
-<!-- NAVIGASI TABEL DENGAN KEYBOARD (ENTER, ARROW KE ATAS/BAWAH) -->
+<!-- END TAMBAH ROW & SEARCH HEMATOLOGY -->
 
 <!-- Terapkan pada semua tabel dengan class .table-row-skip -->
 <script>
