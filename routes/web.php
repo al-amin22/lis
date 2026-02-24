@@ -15,6 +15,7 @@ use App\Http\Controllers\PemeriksaController;
 use App\Http\Controllers\RuanganController;
 use App\Http\Controllers\LogActivityController;
 use App\Http\Controllers\DetailDataPemeriksaanController;
+use App\Http\Controllers\LaporanController;
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
@@ -84,6 +85,10 @@ Route::prefix('hasil-lab')->group(function () {
     Route::get('/html-content/{no_lab}', [PasienController::class, 'getHtmlContent'])
         ->name('hasil-lab.html-content');
 });
+
+Route::get('/pasien/{no_lab}/pdf', [PasienController::class, 'pdfHasilLab'])->name('pasien.pdf');
+Route::post('/pasien/{no_lab}/kirim-pdf-wa', [PasienController::class, 'kirimPdfWa'])->name('pasien.kirim_pdf_wa');
+
 // Route untuk hapus pemeriksaan lain
 // Hasil Lain Routes
 Route::prefix('hasil-lain')->group(function () {
@@ -94,7 +99,7 @@ Route::prefix('hasil-lain')->group(function () {
     Route::put('/update-hasil-pengujian/{id}', [HasilLainController::class, 'updateHasilPengujian'])->name('hasil-lain.update-hasil-pengujian');
     Route::post('/destroy-multiple', [HasilLainController::class, 'destroyMultiple'])->name('hasil-lain.destroy-multiple');
     Route::delete('/destroy/{id}', [HasilLainController::class, 'destroy'])->name('hasil-lain.destroy');
-    Route::post('/search-kode-pemeriksaan', [HasilLainController::class, 'searchKodePemeriksaan'])->name('hasil-lain.search-kode-pemeriksaan');
+    Route::post('/search-kode-pemeriksaan/post', [HasilLainController::class, 'searchKodePemeriksaan'])->name('hasil-lain.search-kode-pemeriksaan.post');
     Route::get('/search-kode-pemeriksaan', [HasilLainController::class, 'searchKodePemeriksaanFix'])->name('hasil-lain.search-kode-pemeriksaan');
 });
 Route::get('/jenis-pemeriksaan/search',[JenisPemeriksaanController::class, 'search'])->name('jenis-pemeriksaan.search');
@@ -141,6 +146,39 @@ Route::post('/uji-pemeriksaan/search', [HasilLainController::class, 'search'])
 Route::get('/hasil-lain/get-by-kode-uji/{kodeUji}', [HasilLainController::class, 'getByKodeUji']);
 Route::get('/', function () {
     return redirect('/login');
+});
+
+
+// Laporan Routes
+Route::prefix('laporan')->name('laporan.')->group(function () {
+    Route::get('/', [LaporanController::class, 'index'])->name('index');
+    Route::get('/dashboard', [LaporanController::class, 'dashboard'])->name('dashboard');
+
+    // Laporan lengkap
+    Route::match(['GET', 'POST'], '/lengkap', [LaporanController::class, 'laporanLengkap'])
+        ->name('lengkap');
+
+    // Laporan by jenis pemeriksaan
+    Route::get('/jenis-pemeriksaan', [LaporanController::class, 'laporanByJenisPemeriksaan'])->name('jenis-pemeriksaan');
+    Route::post('/jenis-pemeriksaan', [LaporanController::class, 'laporanByJenisPemeriksaan']);
+
+    // Laporan by pengirim
+    Route::get('/pengirim', [LaporanController::class, 'laporanByPengirim'])->name('pengirim');
+    Route::post('/pengirim', [LaporanController::class, 'laporanByPengirim']);
+
+    // Laporan by pemeriksa
+    Route::get('/pemeriksa', [LaporanController::class, 'laporanByPemeriksa'])->name('pemeriksa');
+    Route::post('/pemeriksa', [LaporanController::class, 'laporanByPemeriksa']);
+
+    // Laporan periodik
+    Route::get('/harian', [LaporanController::class, 'laporanHarian'])->name('harian');
+    Route::post('/harian', [LaporanController::class, 'laporanHarian']);
+
+    Route::get('/bulanan', [LaporanController::class, 'laporanBulanan'])->name('bulanan');
+    Route::post('/bulanan', [LaporanController::class, 'laporanBulanan']);
+
+    Route::get('/tahunan', [LaporanController::class, 'laporanTahunan'])->name('tahunan');
+    Route::post('/tahunan', [LaporanController::class, 'laporanTahunan']);
 });
 
 Route::middleware(['auth', 'role:admin'])
@@ -217,6 +255,8 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/download-pdf/{no_lab}', [PasienController::class, 'downloadPdf'])->name('downloadPdf');
         Route::get('/generate-pdf/{no_lab}', [PasienController::class, 'generatePdf'])->name('generatePdf');
         Route::get('/laboratorium/print/{no_lab}', [PasienController::class, 'printLaboratorium'])->name('laboratorium.print');
+
+
     });
 
 

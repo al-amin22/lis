@@ -155,7 +155,7 @@
                                 placeholder="Cari Data Pasien..."
                                 value="{{ request('search') }}">
 
-                            {{-- 🔥 PERTAHANKAN TANGGAL --}}
+                            {{-- PERTAHANKAN TANGGAL --}}
                             @if(request('search_date'))
                                 <input type="hidden" name="search_date" value="{{ request('search_date') }}">
                             @endif
@@ -166,7 +166,7 @@
                         </form>
 
                         <!-- TOMBOL RESET JIKA ADA FILTER -->
-                        @if(request('search_date') || request('search'))
+                        @if(request('search_date') || request('search') || request('filter_dokter') || request('filter_tanggal') || request('filter_registrasi') || request('filter_rm') || request('filter_nama') || request('filter_asal') || request('filter_penjamin') || request('filter_status'))
                             <a href="{{ route('pasien.index') }}" class="btn btn-sm btn-secondary" title="Reset filter">
                                 <i class="ri-close-line"></i> Reset
                             </a>
@@ -178,7 +178,7 @@
                     <div class="table-outer">
                         <div class="table-responsive">
                             <table class="table table-bordered align-middle text-nowrap">
-                                <!-- GANTI BAGIAN HEADER TABLE -->
+                                <!-- HEADER TABLE DENGAN SEMUA FILTER TERMASUK DOKTER -->
                                 <thead>
                                     <tr>
                                         <th>
@@ -259,13 +259,33 @@
                                                 </form>
                                             </div>
                                         </th>
-                                        <th>Dokter</th>
+                                        <!-- KOLOM DOKTER DENGAN FILTER BARU -->
+                                        <th>
+                                            Dokter
+                                            <div style="margin-top: 5px;">
+                                                <form method="GET" action="{{ route('pasien.index') }}" class="filter-form">
+                                                    <input type="hidden" name="search_date" value="{{ request('search_date') }}">
+                                                    @foreach(['filter_tanggal', 'filter_registrasi', 'filter_rm', 'filter_nama'] as $filter)
+                                                        @if(request($filter))
+                                                            <input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">
+                                                        @endif
+                                                    @endforeach
+                                                    <input type="text"
+                                                        name="filter_dokter"
+                                                        class="form-control form-control-sm filter-input"
+                                                        placeholder="Filter dokter..."
+                                                        value="{{ request('filter_dokter') }}"
+                                                        style="min-width: 140px;"
+                                                        onchange="this.form.submit()">
+                                                </form>
+                                            </div>
+                                        </th>
                                         <th>
                                             Asal Kunjungan
                                             <div style="margin-top: 5px;">
                                                 <form method="GET" action="{{ route('pasien.index') }}" class="filter-form">
                                                     <input type="hidden" name="search_date" value="{{ request('search_date') }}">
-                                                    @foreach(['filter_tanggal', 'filter_registrasi', 'filter_rm', 'filter_nama'] as $filter)
+                                                    @foreach(['filter_tanggal', 'filter_registrasi', 'filter_rm', 'filter_nama', 'filter_dokter'] as $filter)
                                                         @if(request($filter))
                                                             <input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">
                                                         @endif
@@ -280,13 +300,12 @@
                                                 </form>
                                             </div>
                                         </th>
-
                                         <th>
                                             Penjamin
                                             <div style="margin-top: 5px;">
                                                 <form method="GET" action="{{ route('pasien.index') }}" class="filter-form">
                                                     <input type="hidden" name="search_date" value="{{ request('search_date') }}">
-                                                    @foreach(['filter_tanggal', 'filter_registrasi', 'filter_rm', 'filter_nama', 'filter_asal'] as $filter)
+                                                    @foreach(['filter_tanggal', 'filter_registrasi', 'filter_rm', 'filter_nama', 'filter_dokter', 'filter_asal'] as $filter)
                                                         @if(request($filter))
                                                             <input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">
                                                         @endif
@@ -306,7 +325,7 @@
                                             <div style="margin-top: 5px;">
                                                 <form method="GET" action="{{ route('pasien.index') }}" class="filter-form">
                                                     <input type="hidden" name="search_date" value="{{ request('search_date') }}">
-                                                    @foreach(['filter_tanggal', 'filter_registrasi', 'filter_rm', 'filter_nama', 'filter_asal', 'filter_penjamin'] as $filter)
+                                                    @foreach(['filter_tanggal', 'filter_registrasi', 'filter_rm', 'filter_nama', 'filter_dokter', 'filter_asal', 'filter_penjamin'] as $filter)
                                                         @if(request($filter))
                                                             <input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">
                                                         @endif
@@ -356,12 +375,12 @@
                                                     echo '-';
                                                 }
                                             @endphp
-
                                         </td>
                                         <td>{{ $patient->nomor_registrasi ?? '-'}}</td>
                                         <td>{{ $patient->rm_pasien ?? '-'}}</td>
                                         <td>{{ $patient->nama_pasien ?? '-'}}</td>
-					<td>{{ $patient->pengirim ?? '-'}}</td>
+                                        <!-- KOLOM DOKTER -->
+                                        <td>{{ $patient->pengirim ?? '-'}}</td>
                                         <td>{{ $patient->ket_klinik ?? '-'}}</td>
                                         <td>{{ $patient->nota ?? '-'}}</td>
                                         <td>
@@ -380,19 +399,20 @@
                                             class="btn btn-sm btn-info" title="History">
                                                 History
                                             </a>
-                                           <!-- <form action="{{ route('kirim.ke.alat', $patient->no_lab) }}" method="POST">
+                                            <!-- <form action="{{ route('pasien.kirim_pdf_wa', $patient->no_lab) }}" method="POST">
                                                 @csrf
-                                                <button type="submit" class="btn btn-primary btn-sm">
-                                                    Kirim ke Alat
+                                                <input type="text" name="target" class="form-control" placeholder="Masukkan No WhatsApp (628xxxx / 08xxxx)" required>
+
+                                                <button class="btn btn-success btn-sm mt-2" type="submit">
+                                                    Kirim PDF WA
                                                 </button>
                                             </form> -->
+
                                             <a href="{{ route('pasien.barcode', $patient->no_lab) }}"
                                             target="_blank"
                                             class="btn btn-sm btn-dark">
                                             🖨 Cetak Barcode
                                             </a>
-
-
 
                                             <form action="{{ route('pasien.destroy', $patient->no_lab) }}" method="POST" class="d-inline">
                                                 @csrf
@@ -409,7 +429,6 @@
                             <div class="d-flex justify-content-center mt-3">
                                 {{ $pasiens->links('pagination::bootstrap-5') }}
                             </div>
-
                         </div>
                     </div>
                     <!-- Table ends -->
@@ -437,8 +456,6 @@
             if (result.success) {
                 btn.innerText = `Berhasil..`;
                 setTimeout(() => btn.innerText = 'Ambil Order', 5000);
-
-                // 🔥 RELOAD HALAMAN AGAR DATA LANGSUNG MUNCUL
                 location.reload();
             } else {
                 btn.innerText = 'Gagal ❌';
@@ -467,10 +484,8 @@
         const loading = document.getElementById('dateSearchLoading');
         const form = this.form;
 
-        // Tampilkan loading
         if (loading) loading.style.display = 'block';
 
-        // Submit form
         setTimeout(() => {
             form.submit();
         }, 100);
@@ -495,13 +510,13 @@
         // Variabel untuk menyimpan semua data
         let allPatientsData = [];
 
-        // Kumpulkan semua data dari tabel
+        // Kumpulkan semua data dari tabel (8 kolom termasuk dokter)
         function initializeAllData() {
             const rows = document.querySelectorAll('tbody tr');
             allPatientsData = [];
 
             rows.forEach((row, index) => {
-                if (row.cells.length >= 7) { // Pastikan ini baris data, bukan baris kosong
+                if (row.cells.length >= 8) {
                     const cells = row.cells;
                     allPatientsData.push({
                         element: row,
@@ -509,9 +524,10 @@
                         registrasi: cells[1].textContent.trim().toLowerCase(),
                         rm: cells[2].textContent.trim().toLowerCase(),
                         nama: cells[3].textContent.trim().toLowerCase(),
-                        asal: cells[4].textContent.trim().toLowerCase(),
-                        penjamin: cells[5].textContent.trim().toLowerCase(),
-                        status: cells[6].textContent.includes('Selesai') ? 'selesai' : 'diproses',
+                        dokter: cells[4].textContent.trim().toLowerCase(), // Kolom dokter
+                        asal: cells[5].textContent.trim().toLowerCase(),
+                        penjamin: cells[6].textContent.trim().toLowerCase(),
+                        status: cells[7].textContent.includes('Selesai') ? 'selesai' : 'diproses',
                         originalIndex: index
                     });
                 }
@@ -527,7 +543,7 @@
 
             // Kumpulkan semua nilai filter
             document.querySelectorAll('.filter-input').forEach(input => {
-                const column = input.getAttribute('data-column');
+                const column = input.closest('th').cellIndex; // Ambil index kolom dari posisi th
                 if (input.tagName === 'SELECT') {
                     filters[column] = input.value.toLowerCase();
                 } else {
@@ -544,24 +560,24 @@
 
                 // Cek setiap kolom
                 for (const [columnIndex, filterValue] of Object.entries(filters)) {
-                    if (filterValue === '') continue;
+                    if (filterValue === '' || filterValue === 'semua status') continue;
 
                     let cellValue;
-                    switch(columnIndex) {
-                        case '0': cellValue = patient.tanggal; break;
-                        case '1': cellValue = patient.registrasi; break;
-                        case '2': cellValue = patient.rm; break;
-                        case '3': cellValue = patient.nama; break;
-                        case '4': cellValue = patient.asal; break;
-                        case '5': cellValue = patient.penjamin; break;
-                        case '6': cellValue = patient.status; break;
+                    switch(parseInt(columnIndex)) {
+                        case 0: cellValue = patient.tanggal; break;
+                        case 1: cellValue = patient.registrasi; break;
+                        case 2: cellValue = patient.rm; break;
+                        case 3: cellValue = patient.nama; break;
+                        case 4: cellValue = patient.dokter; break; // Kolom dokter
+                        case 5: cellValue = patient.asal; break;
+                        case 6: cellValue = patient.penjamin; break;
+                        case 7: cellValue = patient.status; break;
                         default: cellValue = '';
                     }
 
                     // Untuk status, perlu penanganan khusus
-                    if (columnIndex === '6') {
-                        if (filterValue !== 'semua' && filterValue !== '' &&
-                            !cellValue.includes(filterValue)) {
+                    if (parseInt(columnIndex) === 7) {
+                        if (!cellValue.includes(filterValue)) {
                             shouldShow = false;
                             break;
                         }
@@ -591,7 +607,7 @@
                     const newRow = document.createElement('tr');
                     newRow.className = 'no-data-message';
                     newRow.innerHTML = `
-                        <td colspan="8" class="text-center py-4">
+                        <td colspan="9" class="text-center py-4">
                             <div class="text-muted">
                                 <i class="ri-search-line fs-3"></i>
                                 <p class="mt-2 mb-0">Tidak ada data yang sesuai dengan filter</p>
@@ -604,7 +620,7 @@
                 noDataRow.remove();
             }
 
-            // Update counter (jika ada elemen untuk counter)
+            // Update counter
             updateCounter(visibleCount);
         }
 
@@ -640,20 +656,23 @@
         });
 
         // Reset semua filter
-        const resetBtn = document.getElementById('resetFilters');
-            if (resetBtn) {
-                resetBtn.addEventListener('click', function() {
-                    document.querySelectorAll('.filter-input').forEach(input => {
-                        if (input.tagName === 'SELECT') {
-                            input.value = '';
-                        } else {
-                            input.value = '';
-                        }
-                    });
-                    applyFilters();
+        const resetBtn = document.querySelector('.btn-outline-secondary.w-100');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.filter-input').forEach(input => {
+                    if (input.tagName === 'SELECT') {
+                        input.value = '';
+                    } else {
+                        input.value = '';
+                    }
                 });
-            }
-        // Terapkan filter saat pertama kali load (jika ada filter dari URL)
+                applyFilters();
+                window.location.href = "{{ route('pasien.index') }}";
+            });
+        }
+
+        // Terapkan filter saat pertama kali load
         setTimeout(() => {
             applyFilters();
         }, 100);
@@ -692,80 +711,6 @@
     });
 </script>
 
-<script>
-    async function applyFilters() {
-        const filters = {
-            search_date: document.querySelector('[name="search_date"]')?.value || '',
-            filter_tanggal: document.querySelector('[name="filter_tanggal"]')?.value || '',
-            filter_registrasi: document.querySelector('[name="filter_registrasi"]')?.value || '',
-            filter_rm: document.querySelector('[name="filter_rm"]')?.value || '',
-            filter_nama: document.querySelector('[name="filter_nama"]')?.value || '',
-            filter_asal: document.querySelector('[name="filter_asal"]')?.value || '',
-            filter_penjamin: document.querySelector('[name="filter_penjamin"]')?.value || '',
-            filter_status: document.querySelector('[name="filter_status"]')?.value || '',
-            search: document.querySelector('[name="search"]')?.value || '',
-            page: 1 // Reset ke halaman 1 saat filter berubah
-        };
-
-        // Hapus filter kosong
-        Object.keys(filters).forEach(key => {
-            if (!filters[key]) delete filters[key];
-        });
-
-        const queryString = new URLSearchParams(filters).toString();
-        const url = `{{ route('pasien.index') }}?${queryString}`;
-
-        try {
-            // Tampilkan loading
-            document.getElementById('tableLoading').style.display = 'block';
-
-            const response = await fetch(url);
-            const html = await response.text();
-
-            // Parse HTML dan update hanya bagian table
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newTable = doc.querySelector('.table-responsive');
-
-            document.querySelector('.table-responsive').innerHTML = newTable.innerHTML;
-
-            // Update pagination
-            const newPagination = doc.querySelector('.pagination');
-            if (newPagination) {
-                document.querySelector('.pagination').innerHTML = newPagination.innerHTML;
-            }
-
-            // Update counter
-            updateFilterCounter(filters);
-
-        } catch (error) {
-            console.error('Error:', error);
-        } finally {
-            document.getElementById('tableLoading').style.display = 'none';
-        }
-    }
-
-    // Event listeners dengan debounce
-    let filterTimeout;
-    document.querySelectorAll('.filter-input').forEach(input => {
-        input.addEventListener('input', function() {
-            clearTimeout(filterTimeout);
-            filterTimeout = setTimeout(applyFilters, 500);
-        });
-    });
-
-    document.querySelectorAll('select.filter-input').forEach(select => {
-        select.addEventListener('change', applyFilters);
-    });
-
-    // Update URL tanpa reload
-    function updateURL(filters) {
-        const queryString = new URLSearchParams(filters).toString();
-        const newUrl = `${window.location.pathname}?${queryString}`;
-        window.history.pushState({ path: newUrl }, '', newUrl);
-    }
-</script>
-
 <style>
 .filter-input {
     border: 1px solid #dee2e6;
@@ -787,6 +732,16 @@
 .badge {
     font-size: 0.75em;
     padding: 0.25em 0.5em;
+}
+
+.no-data-message {
+    background-color: #f8f9fa;
+}
+
+.no-data-message td {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
 }
 </style>
 

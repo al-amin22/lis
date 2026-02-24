@@ -258,6 +258,26 @@
                                                 </form>
                                             </div>
                                         </th>
+					                    <th>
+                                            Dokter
+                                            <div style="margin-top: 5px;">
+                                                <form method="GET" action="{{ route('user.index') }}" class="filter-form">
+                                                    <input type="hidden" name="search_date" value="{{ request('search_date') }}">
+                                                    @foreach(['filter_tanggal', 'filter_registrasi', 'filter_rm', 'filter_nama'] as $filter)
+                                                        @if(request($filter))
+                                                            <input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">
+                                                        @endif
+                                                    @endforeach
+                                                    <input type="text"
+                                                        name="filter_dokter"
+                                                        class="form-control form-control-sm filter-input"
+                                                        placeholder="Filter dokter..."
+                                                        value="{{ request('filter_dokter') }}"
+                                                        style="min-width: 140px;"
+                                                        onchange="this.form.submit()">
+                                                </form>
+                                            </div>
+                                        </th>
                                         <th>
                                             Asal Kunjungan
                                             <div style="margin-top: 5px;">
@@ -358,6 +378,7 @@
                                         <td>{{ $patient->nomor_registrasi ?? '-'}}</td>
                                         <td>{{ $patient->rm_pasien ?? '-'}}</td>
                                         <td>{{ $patient->nama_pasien ?? '-'}}</td>
+                                        <td>{{ $patient->pengirim ?? '-'}}</td>
                                         <td>{{ $patient->ket_klinik ?? '-'}}</td>
                                         <td>{{ $patient->nota ?? '-'}}</td>
                                         <td>
@@ -368,21 +389,23 @@
                                             @endif
                                         </td>
                                         <td>
-                                            @if (!empty($patient->id_pemeriksa) && !empty($patient->waktu_validasi))
-                                                <a href="{{ route('user.print', $patient->no_lab) }}"
-                                                target="_blank"
-                                                class="btn btn-sm btn-secondary">
-                                                    Print
-                                                </a>
-                                                <a href="{{ route('user.history', $patient->rm_pasien ?? '') }}"
+                                           @if (!empty($patient->id_pemeriksa) && !empty($patient->waktu_validasi))
+    						<a href="{{ route('user.print', $patient->no_lab) }}"
+       							target="_blank"
+       							class="btn btn-sm btn-secondary">
+        						Print
+    						</a>
+						<a href="{{ route('user.history', $patient->rm_pasien ?? '') }}"
                                                 class="btn btn-sm btn-info" title="History">
                                                     History
                                                 </a>
-                                            @else
-                                                <span class="badge bg-warning text-dark">
-                                                    Belum divalidasi
-                                                </span>
-                                            @endif
+
+					@else
+    						<span class="badge bg-warning text-dark">
+        						Belum divalidasi
+   						 </span>
+					@endif
+
 
 
                                         </td>
@@ -493,9 +516,10 @@
                         registrasi: cells[1].textContent.trim().toLowerCase(),
                         rm: cells[2].textContent.trim().toLowerCase(),
                         nama: cells[3].textContent.trim().toLowerCase(),
-                        asal: cells[4].textContent.trim().toLowerCase(),
-                        penjamin: cells[5].textContent.trim().toLowerCase(),
-                        status: cells[6].textContent.includes('Selesai') ? 'selesai' : 'diproses',
+                        dokter: cells[4].textContent.trim().toLowerCase(),
+                        asal: cells[5].textContent.trim().toLowerCase(),
+                        penjamin: cells[6].textContent.trim().toLowerCase(),
+                        status: cells[7].textContent.includes('Selesai') ? 'selesai' : 'diproses',
                         originalIndex: index
                     });
                 }
@@ -536,9 +560,10 @@
                         case '1': cellValue = patient.registrasi; break;
                         case '2': cellValue = patient.rm; break;
                         case '3': cellValue = patient.nama; break;
-                        case '4': cellValue = patient.asal; break;
-                        case '5': cellValue = patient.penjamin; break;
-                        case '6': cellValue = patient.status; break;
+                        case '4': cellValue = patient.dokter; break;
+                        case '5': cellValue = patient.asal; break;
+                        case '6': cellValue = patient.penjamin; break;
+                        case '7': cellValue = patient.status; break;
                         default: cellValue = '';
                     }
 
@@ -682,6 +707,7 @@
             filter_registrasi: document.querySelector('[name="filter_registrasi"]')?.value || '',
             filter_rm: document.querySelector('[name="filter_rm"]')?.value || '',
             filter_nama: document.querySelector('[name="filter_nama"]')?.value || '',
+            filter_dokter: document.querySelector('[name="filter_dokter"]')?.value || '',
             filter_asal: document.querySelector('[name="filter_asal"]')?.value || '',
             filter_penjamin: document.querySelector('[name="filter_penjamin"]')?.value || '',
             filter_status: document.querySelector('[name="filter_status"]')?.value || '',

@@ -66,6 +66,12 @@ html, body {
     font-size: 1.6mm;
     margin-top: 0.2mm;
 }
+
+.tgl-lahir {
+    float: right;
+    font-size: 2.0mm;   /* BESARKAN di sini */
+    font-weight: bold;  /* opsional biar lebih jelas */
+}
 </style>
 </head>
 
@@ -77,12 +83,12 @@ html, body {
 
     <div class="info">
         {{ $ruang }}
-        <span style="float:right;">{{ $sex }} {{ $tgl_lahir }}</span>
+        <span class="tgl-lahir">{{ $sex }} {{ $tgl_lahir }}</span>
         <div style="clear:both;"></div>
     </div>
 
     <div class="barcode">
-        <img src="data:image/png;base64,{{ $barcode }}" alt="barcode">
+        {!! $barcode_svg !!}
     </div>
 
     <div class="no-lab">

@@ -1905,6 +1905,39 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+<script>
+    document.addEventListener('change', function (e) {
+        if (!e.target.classList.contains('realtime-datetime')) return;
+
+        const input = e.target;
+        const value = input.value;
+
+        // kosong boleh
+        if (!value) return;
+
+        // Ambil tahun
+        const year = parseInt(value.substring(0, 4));
+
+        // Validasi tahun (misal 1900–2100)
+        if (isNaN(year) || year < 1900 || year > 2100) {
+            input.value = '';
+            input.focus();
+            return;
+        }
+
+        // Validasi format ISO datetime-local
+        const regex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+        if (!regex.test(value)) {
+            alert('Format salah: Gunakan format tanggal & waktu yang benar');
+            input.value = '';
+            input.focus();
+            return;
+        }
+    });
+</script>
+
 <!-- Select2 Initialization Script -->
 <script>
     $(document).ready(function () {
@@ -8780,8 +8813,8 @@
             }
         }
 
-        function loadHistory(jenisPemeriksaan, type, rmPasien, kelompok = null) {
-            if (!jenisPemeriksaan || !rmPasien) return;
+        function loadHistory(jenisPemeriksaan, type, rmPasien, idDataPemeriksaan, kelompok = null) {
+            if (!jenisPemeriksaan || !rmPasien || !idDataPemeriksaan) return;
 
             let panelSuffix;
             if (type === 'hasil_lain' && kelompok) {
@@ -8790,24 +8823,9 @@
                 panelSuffix = getPanelSuffix(type, jenisPemeriksaan);
             }
 
-            if ($(`#historyPanelContent${panelSuffix}`).length === 0) {
-                console.warn('Panel tidak ditemukan:', panelSuffix);
-                return;
-            }
+            if ($(`#historyPanelContent${panelSuffix}`).length === 0) return;
 
-            $(`#hoverJenisPemeriksaan${panelSuffix}`).html(`
-                <i class="ri-search-line me-1"></i>
-                <strong>${jenisPemeriksaan}</strong>
-            `);
-
-            const typeText = {
-                hematology: 'Hematology',
-                kimia: 'Kimia',
-                hasil_lain: 'Pemeriksaan Lain'
-            }[type] || '-';
-
-            $(`#hoverTypeInfo${panelSuffix}`).text(typeText);
-
+            // ✅ GUNAKAN LOADING LAMA (INI SAJA)
             $(`#historyPanelContent${panelSuffix}`).html(`
                 <div class="text-center py-3">
                     <div class="spinner-border spinner-border-sm text-primary"></div>
@@ -8823,6 +8841,7 @@
                 data: {
                     _token: csrfToken,
                     jenis_pemeriksaan: jenisPemeriksaan,
+                    id_data_pemeriksaan: idDataPemeriksaan,
                     type: type,
                     rm_pasien: rmPasien,
                     current_no_lab: '{{ $pasien->no_lab }}'
@@ -8887,19 +8906,18 @@
         function formatDate(dateStr) {
             if (!dateStr) return '-';
 
-            const d = new Date(dateStr.split('.')[0]);
-            if (isNaN(d)) return '-';
+            // ambil tanggal saja: YYYY-MM-DD
+            const tgl = dateStr.substring(0, 10); // "2026-01-30"
+
+            const [y, m, d] = tgl.split('-');
 
             const bulan = [
                 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
                 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
             ];
 
-            return d.getDate() + ' ' +
-                bulan[d.getMonth()] + ' ' +
-                d.getFullYear();
+            return parseInt(d) + ' ' + bulan[parseInt(m) - 1] + ' ' + y;
         }
-
 
         function resetHistoryPanel(panelSuffix) {
             if ($(`#historyPanelContent${panelSuffix}`).length === 0) return;
@@ -8935,11 +8953,10 @@
                 e.preventDefault();
                 e.stopPropagation();
 
-                if (isHistoryLoading) return;
-
                 const $this = $(this);
                 const type = $this.data('type');
                 const rm = $this.data('rm') || '{{ $pasien->rm_pasien }}';
+                const idDataPemeriksaan = $this.data('id-data-pemeriksaan'); // ✅ AMBIL DI SINI
 
                 let jenis = null;
                 let kelompok = null;
@@ -8952,28 +8969,15 @@
                     jenis = $this.data('jenis');
                 }
 
-                if (!jenis || !type || !rm) {
-                    console.warn('Data tidak lengkap', { jenis, type, rm });
+                if (!jenis || !type || !rm || !idDataPemeriksaan) {
+                    console.warn('Data tidak lengkap', { jenis, type, rm, idDataPemeriksaan });
                     return;
                 }
 
-                if (currentActiveElement && currentActiveElement[0] !== $this[0]) {
-                    currentActiveElement.removeClass('click-active');
-                }
-
-                $this.toggleClass('click-active');
-
-                if (currentActiveElement && currentActiveElement[0] === $this[0]) {
-                    const suffix = getPanelSuffix(type, jenis);
-                    resetHistoryPanel(suffix);
-                    currentActiveElement = null;
-                    return;
-                }
-
-                currentActiveElement = $this;
-                loadHistory(jenis, type, rm, kelompok);
+                loadHistory(jenis, type, rm, idDataPemeriksaan, kelompok);
             }
         );
+
 
         $(document).on('click keydown', function (e) {
             if (e.type === 'keydown' && e.key !== 'Escape') return;

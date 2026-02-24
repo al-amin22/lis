@@ -89,6 +89,7 @@
                             <table class="table m-0 align-middle">
                                 <thead>
                                     <tr>
+                                        <th>No</th>
                                         <th>Tanggal</th>
                                         <th>No Lab</th>
                                         <th>Nama Pasien</th>
@@ -99,6 +100,7 @@
                                 <tbody>
                                     @forelse($histories as $patient)
                                     <tr id="row-{{ $patient->no_lab }}" class="{{ request('view') == $patient->no_lab ? 'table-active' : '' }}">
+                                        <td>{{ $loop->iteration + ($histories->currentPage() - 1) * $histories->perPage() }}</td>
                                         <td>
                                             @php
                                                 // Parse tanggal dari nomor_registrasi (yymmdd)
@@ -134,8 +136,13 @@
                                                 <a href="{{ route('user.print', $patient->no_lab) }}" target="_blank" class="btn btn-sm btn-secondary" title="Print">
                                                     <i class="ri-printer-line"></i>
                                                 </a>
-                                                <a href="{{ route('user.history', ['rm_pasien' => $latestPatient->rm_pasien, 'view' => $patient->no_lab]) }}"
-                                                   class="btn btn-sm btn-primary" title="View Detail">
+                                                {{-- Tambahkan parameter sorting ke link --}}
+                                                <a href="{{ route('user.history', [
+                                                    'rm_pasien' => $latestPatient->rm_pasien,
+                                                    'view' => $patient->no_lab,
+                                                    'sort' => 'waktu_validasi',
+                                                    'order' => 'desc'
+                                                ]) }}" class="btn btn-sm btn-primary" title="View Detail">
                                                     <i class="ri-eye-line"></i>
                                                 </a>
                                             </div>
