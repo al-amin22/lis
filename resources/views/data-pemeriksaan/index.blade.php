@@ -62,7 +62,7 @@
 
                         <!-- Modal Trigger for Batch Input -->
                         <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#tambahBatchModal">
-                            <i class="ri-file-list-line me-1"></i> Tambah Data
+                            <i class="ri-file-list-line me-1"></i> Tambah Batch
                         </button>
 
 
@@ -377,10 +377,10 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="tambahBatchModalLabel">Tambah Banyak Data Pemeriksaan</h5>
+                <h5 class="modal-title" id="tambahBatchModalLabel">Tambah Batch Data Pemeriksaan</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form action="{{ route('pasien.store.batch.data.pemeriksaan') }}" method="POST" id="batchForm">
+            <form action="{{ route('pasien.data-pemeriksaan.store-batch') }}" method="POST" id="batchForm">
                 @csrf
                 <div class="modal-body">
                     <div class="row mb-3">
@@ -400,12 +400,13 @@
                             <thead class="table-light">
                                 <tr>
                                     <th width="5%">#</th>
-                                    <th width="35%">Nama Pemeriksaan *</th>
-                                    <!-- <th width="15%">LIS</th> -->
+                                    <th width="20%">Kode Pemeriksaan *</th>
+                                    <th width="25%">Data Pemeriksaan *</th>
                                     <th width="15%">Satuan</th>
                                     <th width="15%">Rujukan</th>
                                     <th width="15%">Metode</th>
-                                    <th width="15%">Urutan</th>
+                                    <th width="8%">CH</th>
+                                    <th width="8%">CL</th>
                                     <th width="5%">Aksi</th>
                                 </tr>
                             </thead>
@@ -426,7 +427,7 @@
 
                     <div class="alert alert-info mt-3">
                         <i class="ri-information-line me-2"></i>
-                        Kode pemeriksaan akan digenerate otomatis berdasarkan jenis pemeriksaan yang dipilih.
+                        Kode pemeriksaan diisi manual. Urutan tidak perlu diisi karena akan disimpan null.
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -503,44 +504,6 @@
     </div>
 </div>
 
-<style>
-    .search-dropdown {
-        max-height: 300px;
-        overflow-y: auto;
-        box-shadow: 0 6px 12px rgba(0,0,0,0.175);
-        border: 1px solid rgba(0,0,0,0.15);
-        border-radius: 4px;
-        margin-top: 2px;
-    }
-
-    .search-dropdown .dropdown-item {
-        padding: 8px 16px;
-        cursor: pointer;
-        white-space: normal;
-        word-wrap: break-word;
-    }
-
-    .search-dropdown .dropdown-item:hover {
-        background-color: #f8f9fa;
-    }
-
-    .search-dropdown .dropdown-item strong {
-        color: #495057;
-    }
-
-    .position-relative {
-        position: relative;
-    }
-
-    .uji-search-input {
-        padding-right: 30px !important;
-    }
-
-    .uji-search-input:focus + .search-dropdown,
-    .uji-search-input:focus ~ .search-dropdown {
-        display: block !important;
-    }
-</style>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // ==================== FILTER JENIS PEMERIKSAAN ====================
@@ -643,18 +606,16 @@
             row.innerHTML = `
                 <td>${rowIndex + 1}</td>
                 <td>
-                    <div class="position-relative search-container">
-                        <input type="text"
-                               class="form-control form-control-sm uji-search-input"
-                               placeholder="Cari kode / nama uji..."
-                               autocomplete="off"
-                               data-row="${rowIndex}">
-                        <div class="search-results dropdown-menu"></div>
-                        <input type="hidden"
-                               name="nama_pemeriksaan[${rowIndex}]"
-                               value=""
-                               class="uji-hidden-input">
-                    </div>
+                    <input type="text"
+                           class="form-control form-control-sm"
+                           name="kode_pemeriksaan[${rowIndex}]"
+                           placeholder="Contoh: 1230 atau 4 digit angka lainnya">
+                </td>
+                <td>
+                    <input type="text"
+                           class="form-control form-control-sm"
+                           name="data_pemeriksaan[${rowIndex}]"
+                           placeholder="Contoh: Hemoglobin">
                 </td>
                 <td>
                     <input type="text"
@@ -673,13 +634,6 @@
                            class="form-control form-control-sm"
                            name="metode[${rowIndex}]"
                            placeholder="Metode">
-                </td>
-                <td>
-                    <input type="number"
-                           class="form-control form-control-sm"
-                           name="urutan[${rowIndex}]"
-                           value="${rowIndex + 1}"
-                           min="1">
                 </td>
                 <td>
                     <input type="text"
@@ -704,9 +658,6 @@
 
             batchTableBody.appendChild(row);
 
-            // Initialize search for this row
-            initializeSearchForRow(row);
-
             // Setup remove button
             const removeBtn = row.querySelector('.remove-row-btn');
             if (removeBtn) {
@@ -727,13 +678,11 @@
                 const firstCell = row.querySelector('td:first-child');
                 if (firstCell) firstCell.textContent = index + 1;
 
-                // Update urutan input
-                const urutanInput = row.querySelector('input[name^="urutan"]');
-                if (urutanInput) urutanInput.value = index + 1;
+                const kodePemeriksaanInput = row.querySelector('input[name^="kode_pemeriksaan"]');
+                if (kodePemeriksaanInput) kodePemeriksaanInput.name = `kode_pemeriksaan[${index}]`;
 
-                // Update hidden input names
-                const hiddenInput = row.querySelector('.uji-hidden-input');
-                if (hiddenInput) hiddenInput.name = `nama_pemeriksaan[${index}]`;
+                const dataPemeriksaanInput = row.querySelector('input[name^="data_pemeriksaan"]');
+                if (dataPemeriksaanInput) dataPemeriksaanInput.name = `data_pemeriksaan[${index}]`;
 
                 const satuanInput = row.querySelector('input[name^="satuan"]');
                 if (satuanInput) satuanInput.name = `satuan[${index}]`;
@@ -752,159 +701,6 @@
             });
         }
 
-        // ==================== SEARCH FUNCTIONALITY ====================
-        function initializeSearchForRow(row) {
-            const searchContainer = row.querySelector('.search-container');
-            if (!searchContainer) return;
-
-            const searchInput = searchContainer.querySelector('.uji-search-input');
-            const resultsContainer = searchContainer.querySelector('.search-results');
-            const hiddenInput = searchContainer.querySelector('.uji-hidden-input');
-
-            if (!searchInput || !resultsContainer) return;
-
-            // Search input event
-            searchInput.addEventListener('input', debounce(function(e) {
-                const keyword = e.target.value.trim();
-                if (keyword.length < 2) {
-                    resultsContainer.style.display = 'none';
-                    return;
-                }
-
-                searchUjiPemeriksaan(keyword, resultsContainer, searchInput, hiddenInput);
-            }, 300));
-
-            // Click outside to hide results
-            document.addEventListener('click', function(e) {
-                if (!searchContainer.contains(e.target)) {
-                    resultsContainer.style.display = 'none';
-                }
-            });
-
-            // Focus event
-            searchInput.addEventListener('focus', function() {
-                const currentValue = this.value.trim();
-                if (currentValue.length >= 2) {
-                    searchUjiPemeriksaan(currentValue, resultsContainer, searchInput, hiddenInput);
-                }
-            });
-        }
-
-        // Initialize search for all existing inputs (for batch edit modals)
-        function initializeAllSearchInputs() {
-            document.querySelectorAll('.search-container').forEach(container => {
-                const searchInput = container.querySelector('.uji-search-input');
-                const resultsContainer = container.querySelector('.search-results');
-                const hiddenInput = container.querySelector('.uji-kode-hidden') ||
-                                   container.querySelector('.uji-hidden-input');
-
-                if (searchInput && resultsContainer) {
-                    searchInput.addEventListener('input', debounce(function(e) {
-                        const keyword = e.target.value.trim();
-                        if (keyword.length < 2) {
-                            resultsContainer.style.display = 'none';
-                            return;
-                        }
-
-                        searchUjiPemeriksaan(keyword, resultsContainer, searchInput, hiddenInput);
-                    }, 300));
-
-                    // Set current value in search input
-                    if (hiddenInput && hiddenInput.value) {
-                        searchInput.value = hiddenInput.value;
-                    }
-                }
-            });
-        }
-
-        function searchUjiPemeriksaan(keyword, resultsContainer, searchInput, hiddenInput) {
-            fetch("{{ route('uji-pemeriksaan.search') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ search: keyword })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return response.json();
-            })
-            .then(data => {
-                displaySearchResults(data, resultsContainer, searchInput, hiddenInput);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                resultsContainer.innerHTML = '<div class="dropdown-item text-danger">Error saat mencari</div>';
-                resultsContainer.style.display = 'block';
-            });
-        }
-
-        function displaySearchResults(data, resultsContainer, searchInput, hiddenInput) {
-            resultsContainer.innerHTML = '';
-
-            if (!data || data.length === 0) {
-                resultsContainer.innerHTML = '<div class="dropdown-item text-muted">Tidak ditemukan</div>';
-                resultsContainer.style.display = 'block';
-                return;
-            }
-
-            data.forEach(uji => {
-                const resultItem = document.createElement('a');
-                resultItem.className = 'dropdown-item';
-                resultItem.href = '#';
-                resultItem.innerHTML = `
-                    <strong>${uji.kode_pemeriksaan}</strong><br>
-                    <small class="text-muted">${uji.nama_pemeriksaan}</small>
-                `;
-
-                resultItem.addEventListener('click', function(e) {
-                    e.preventDefault();
-
-                    // Set value in search input
-                    searchInput.value = uji.kode_pemeriksaan;
-
-                    // Set value in hidden input
-                    if (hiddenInput) {
-                        hiddenInput.value = uji.kode_pemeriksaan;
-                    }
-
-                    // Hide results
-                    resultsContainer.style.display = 'none';
-                });
-
-                resultsContainer.appendChild(resultItem);
-            });
-
-            resultsContainer.style.display = 'block';
-        }
-
-        // Debounce function for search
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Initialize search inputs when page loads
-        initializeAllSearchInputs();
-
-        // Initialize batch modal search when shown
-        if (batchModal) {
-            batchModal.addEventListener('shown.bs.modal', function() {
-                initializeAllSearchInputs();
-            });
-        }
-
         // ==================== FORM VALIDATION ====================
         const batchForm = document.getElementById('batchForm');
         if (batchForm) {
@@ -918,7 +714,7 @@
                 }
 
                 // Check if at least one row has data
-                const hasData = Array.from(batchTableBody.querySelectorAll('.uji-hidden-input'))
+                const hasData = Array.from(batchTableBody.querySelectorAll('input[name^="data_pemeriksaan"]'))
                     .some(input => input.value.trim() !== '');
 
                 if (!hasData) {
@@ -937,11 +733,6 @@
                 batchRowCount = 0;
             });
         }
-
-        // Initialize on page load
-        setTimeout(() => {
-            initializeAllSearchInputs();
-        }, 100);
     });
 </script>
 @endsection

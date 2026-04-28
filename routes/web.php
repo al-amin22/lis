@@ -242,6 +242,7 @@ Route::middleware(['auth', 'role:admin'])
 
         Route::get('/data/data-pemeriksaan/', [DataPemeriksaanController::class, 'index'])->name('index.data.pemeriksaan');
         Route::post('/data-pemeriksaan', [DataPemeriksaanController::class, 'store'])->name('store.data.pemeriksaan');
+        Route::post('/data-pemeriksaan/batch', [DataPemeriksaanController::class, 'storeBatch'])->name('data-pemeriksaan.store-batch');
         Route::get('/data-pemeriksaan/{id}', [DataPemeriksaanController::class, 'show'])->name('data-pemeriksaan.show');
         Route::post('/data-pemeriksaan/store-batch', [DataPemeriksaanController::class, 'storeBatch'])->name('store.batch.data.pemeriksaan');
         Route::put('/data-pemeriksaan/update/{id_data_pemeriksaan}', [DataPemeriksaanController::class, 'update'])->name('update.data.pemeriksaan');

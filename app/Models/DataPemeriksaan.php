@@ -10,10 +10,11 @@ class DataPemeriksaan extends Model
 
     protected $table = 'data_pemeriksaan';
     protected $primaryKey = 'id_data_pemeriksaan';
-    public $incrementing = false;
-    protected $keyType = 'string';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
+        'id_data_pemeriksaan',
         'kode_pemeriksaan',
         'data_pemeriksaan',
         'satuan',

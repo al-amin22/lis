@@ -53,8 +53,10 @@ class DataPemeriksaanController extends Controller
         // Generate kode otomatis
         $kode = $this->generateKodePemeriksaan($request->id_jenis_pemeriksaan_1);
 
+        $this->syncDataPemeriksaanSequence();
+
         DataPemeriksaan::create([
-            'id_data_pemeriksaan' => $kode,
+            'kode_pemeriksaan' => $kode,
             'id_jenis_pemeriksaan_1' => $request->id_jenis_pemeriksaan_1,
             'data_pemeriksaan' => $request->data_pemeriksaan,
             'lis' => $request->lis,
@@ -80,10 +82,10 @@ class DataPemeriksaanController extends Controller
     {
         $request->validate([
             'id_jenis_pemeriksaan_1' => 'required|exists:jenis_pemeriksaan_1,id_jenis_pemeriksaan_1',
-            'nama_pemeriksaan' => 'required|array|min:1',
-            'nama_pemeriksaan.*' => 'required|string|max:255',
-            'lis' => 'nullable|array',
-            'lis.*' => 'nullable|string|max:100',
+            'kode_pemeriksaan' => 'required|array|min:1',
+            'kode_pemeriksaan.*' => 'required|string|max:50',
+            'data_pemeriksaan' => 'required|array|min:1',
+            'data_pemeriksaan.*' => 'nullable|string|max:255',
             'satuan' => 'nullable|array',
             'satuan.*' => 'nullable|string|max:50',
             'rujukan' => 'nullable|array',
@@ -101,20 +103,25 @@ class DataPemeriksaanController extends Controller
         $jenisPemeriksaanId = $request->id_jenis_pemeriksaan_1;
         $createdCount = 0;
 
-        foreach ($request->nama_pemeriksaan as $index => $nama) {
-            if (!empty(trim($nama))) {
-                // Generate kode otomatis untuk setiap item
-                $kode = $this->generateKodePemeriksaan($jenisPemeriksaanId);
+        DB::transaction(function () use ($request, $jenisPemeriksaanId, &$createdCount) {
+            $this->syncDataPemeriksaanSequence();
+
+            foreach ($request->data_pemeriksaan as $index => $nama) {
+                $nama = trim((string) $nama);
+                $kodePemeriksaan = trim((string) ($request->kode_pemeriksaan[$index] ?? ''));
+
+                if ($nama === '' || $kodePemeriksaan === '') {
+                    continue;
+                }
 
                 DataPemeriksaan::create([
-                    'id_data_pemeriksaan' => $kode,
+                    'kode_pemeriksaan' => $kodePemeriksaan,
                     'id_jenis_pemeriksaan_1' => $jenisPemeriksaanId,
-                    'data_pemeriksaan' => trim($nama),
-                    'lis' => $request->lis[$index] ?? null,
+                    'data_pemeriksaan' => $nama,
                     'satuan' => $request->satuan[$index] ?? null,
                     'rujukan' => $request->rujukan[$index] ?? null,
                     'metode' => $request->metode[$index] ?? null,
-                    'urutan' => $request->urutan[$index] ?? null,
+                    'urutan' => null,
                     'ch' => $request->ch[$index] ?? null,
                     'cl' => $request->cl[$index] ?? null,
                 ]);
@@ -122,11 +129,15 @@ class DataPemeriksaanController extends Controller
                 LogActivityService::log(
                     action: 'CREATE',
                     module: 'Pemeriksaan',
-                    description: 'Menambahkan data pemeriksaan baru dengan kode: ' . $kode
+                    description: 'Menambahkan data pemeriksaan baru dengan kode: ' . $kodePemeriksaan
                 );
 
                 $createdCount++;
             }
+        });
+
+        if ($createdCount === 0) {
+            return back()->with('error', 'Tidak ada data pemeriksaan yang diisi.');
         }
 
         LogActivityService::log(
@@ -352,5 +363,19 @@ class DataPemeriksaanController extends Controller
         );
 
         return $kode;
+    }
+
+    /**
+     * Pastikan sequence PostgreSQL untuk primary key data_pemeriksaan mengikuti nilai terbesar saat ini.
+     */
+    private function syncDataPemeriksaanSequence(): void
+    {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::statement(
+            "SELECT setval(pg_get_serial_sequence('data_pemeriksaan', 'id_data_pemeriksaan'), COALESCE((SELECT MAX(id_data_pemeriksaan) FROM data_pemeriksaan), 0), true)"
+        );
     }
 }
